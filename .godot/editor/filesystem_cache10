@@ -1,0 +1,312 @@
+63f7b34db8d8cdea90c76aacccf841ec
+::res://::1772014422
+CLAUDE.md::TextFile::-1::1772013250::0::1::::<><><>0<>0<><>::
+icon.svg::CompressedTexture2D::3361737415969170105::1771911865::1771912318::1::::<><><>0<>0<>aec77e53b5e066b61d62f1744bb08056<>res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex::
+PLAN.md::TextFile::-1::1771930284::0::1::::<><><>0<>0<><>::
+::res://assets/::1771933051
+::res://assets/audio/::1771911841
+::res://assets/cards/::1771921890
+::res://assets/cards/card back/::1772014422
+card back.svg::CompressedTexture2D::5769393544273488230::1772014403::1772014422::1::::<><><>0<>0<>a46deb1b0246660a843ba8b7bd20d26c<>res://.godot/imported/card back.svg-950cbfa39a7ade04408774b41ac1343d.ctex::
+::res://assets/cards/clubs/::1771922484
+1.svg::CompressedTexture2D::5022033485663269295::1771921890::1771922484::1::::<><><>0<>0<>bdd71f5f34b5a28cc1e1d8df43249f31<>res://.godot/imported/1.svg-729035045e3b9ec578307d2e512be686.ctex::
+2.svg::CompressedTexture2D::2212514746092902264::1771921890::1771922484::1::::<><><>0<>0<>cb88ce624032889de00db76f5ed8b330<>res://.godot/imported/2.svg-70d22ded3354559f576867a2feb121ec.ctex::
+3.svg::CompressedTexture2D::8075900438651252674::1771921890::1771922484::1::::<><><>0<>0<>3fa44e24808b65d5550874c4cbe84294<>res://.godot/imported/3.svg-9f5311b7f0815b424edbdb968fe35769.ctex::
+4.svg::CompressedTexture2D::4899290258938379284::1771921890::1771922484::1::::<><><>0<>0<>7d5349b47fb24b5b6451913b26b5038e<>res://.godot/imported/4.svg-16fcd7cd08a0142caa0c74eff69cb3c9.ctex::
+5.svg::CompressedTexture2D::6117719779675801507::1771921890::1771922484::1::::<><><>0<>0<>82043b172f9b48eb981f84aea065a8a8<>res://.godot/imported/5.svg-6fa9ace483cef3129b31f42031302299.ctex::
+6.svg::CompressedTexture2D::8974983702003389495::1771921890::1771922484::1::::<><><>0<>0<>75defb2edeb47abffa4d867517cff0dc<>res://.godot/imported/6.svg-704d4e4e57077029f127ad5907508cb6.ctex::
+7.svg::CompressedTexture2D::7179053069139727441::1771921890::1771922484::1::::<><><>0<>0<>4fc39a9a56aa21a187b6d8f0043c0e27<>res://.godot/imported/7.svg-88f7d4376fb360f7e60ca125f1ccd9f3.ctex::
+8.svg::CompressedTexture2D::8880555236347199847::1771921890::1771922484::1::::<><><>0<>0<>ce6c6bfddc032d95a0498b0a72d5ce37<>res://.godot/imported/8.svg-b9f72d5e4120a4e55ce6ced8614df4b3.ctex::
+9.svg::CompressedTexture2D::6226963244220608487::1771921890::1771922484::1::::<><><>0<>0<>3e46ee2406aea255e3749964b140501e<>res://.godot/imported/9.svg-92755104d6356dde708256b10dc0dea1.ctex::
+10.svg::CompressedTexture2D::521433130184758556::1771921890::1771922484::1::::<><><>0<>0<>2d26f0f55595a8d5e97a9de79c427326<>res://.godot/imported/10.svg-47a64b23755ba32b53cba3db66a2ddf6.ctex::
+11.svg::CompressedTexture2D::2653829278850633351::1771921890::1771922484::1::::<><><>0<>0<>190f4c4f66c94b024c9808ae7ab46f8b<>res://.godot/imported/11.svg-5ec07c80c0a90c6a20c83c0f8466c959.ctex::
+12.svg::CompressedTexture2D::4621237695677801770::1771921890::1771922484::1::::<><><>0<>0<>1b77c5fb794089d31e84540192ef2ff4<>res://.godot/imported/12.svg-d1f92bbaee1113ab31201e73b82f09aa.ctex::
+13.svg::CompressedTexture2D::3346580427985442728::1771921890::1771922484::1::::<><><>0<>0<>107d67a33ea54eb381f497e54c03b654<>res://.godot/imported/13.svg-d58963415c96c3d31fa918d87da4cb04.ctex::
+::res://assets/cards/diamonds/::1771922484
+1.svg::CompressedTexture2D::7202572965427856285::1771921890::1771922484::1::::<><><>0<>0<>879c6f2276ece71478539e0bc7470481<>res://.godot/imported/1.svg-7a052932e8dc8066f29f918d47383efa.ctex::
+2.svg::CompressedTexture2D::4597773342560967794::1771921890::1771922484::1::::<><><>0<>0<>3ff17c6afa75873f4a59825ecb4e67e8<>res://.godot/imported/2.svg-3b00dd3ee9df11090b50cd5ff6b8f458.ctex::
+3.svg::CompressedTexture2D::8251786136733509735::1771921890::1771922484::1::::<><><>0<>0<>746357071da2ec1ab9954ee8af292c66<>res://.godot/imported/3.svg-6fc199403b69b3a6088f83001cd009a8.ctex::
+4.svg::CompressedTexture2D::8027029404258754868::1771921890::1771922484::1::::<><><>0<>0<>effdc3ef3610c13f9b1099be47fdd216<>res://.godot/imported/4.svg-203b9cbc03809f306263434ffd079da8.ctex::
+5.svg::CompressedTexture2D::422054387935509050::1771921890::1771922484::1::::<><><>0<>0<>1f523256f90b678c890630819a2e3f16<>res://.godot/imported/5.svg-750673d75e6bee54f64fbcc14ecc80b9.ctex::
+6.svg::CompressedTexture2D::455326655636462075::1771921890::1771922484::1::::<><><>0<>0<>09f6d7333cc911e1d09aa5839fc65656<>res://.godot/imported/6.svg-4e29ff159e50277fd16f56f00adc3e1f.ctex::
+7.svg::CompressedTexture2D::1831748442058068904::1771921890::1771922484::1::::<><><>0<>0<>909d6da0d95538c94cb17d95fc4daa6c<>res://.godot/imported/7.svg-db6d39082d5c954cc46f21f06b9ff63f.ctex::
+8.svg::CompressedTexture2D::2467198320559459094::1771921890::1771922484::1::::<><><>0<>0<>df09606437ac71e471fbf3fbf33c0566<>res://.godot/imported/8.svg-85df5ed2e2357e265160ca14ff8954ab.ctex::
+9.svg::CompressedTexture2D::1922428572709485622::1771921890::1771922484::1::::<><><>0<>0<>dd36a871c91f2a1bacced7de6ba59b0b<>res://.godot/imported/9.svg-755ccd1633b647dbcd67de83543b95e5.ctex::
+10.svg::CompressedTexture2D::963382255358188313::1771921890::1771922484::1::::<><><>0<>0<>41c46f3d42f9b49b9e697cc900d654d9<>res://.godot/imported/10.svg-0e2a73cba894083321ba2ec6b8a3204c.ctex::
+11.svg::CompressedTexture2D::1596534155773639493::1771921890::1771922484::1::::<><><>0<>0<>63f64a5dfb842f886a9c9033344ebed6<>res://.godot/imported/11.svg-bb460055523639eaadb2d65110248ef5.ctex::
+12.svg::CompressedTexture2D::7813280690489424930::1771921890::1771922484::1::::<><><>0<>0<>361097ce38a3e81806a995c067893880<>res://.godot/imported/12.svg-dc57a32ce4e1d395ef1dded9dbd66177.ctex::
+13.svg::CompressedTexture2D::7261006318906477448::1771921890::1771922484::1::::<><><>0<>0<>b39ddb1dade55eb835405794d6bcbf43<>res://.godot/imported/13.svg-ddc7a10ac76bb1d9857cb1e0339e5814.ctex::
+::res://assets/cards/hearts/::1771922483
+1.svg::CompressedTexture2D::5472621714944036986::1771921890::1771922483::1::::<><><>0<>0<>5c826866dad531a99aa8e41eb87f3768<>res://.godot/imported/1.svg-996f1769feed58138b8e39391be39b52.ctex::
+2.svg::CompressedTexture2D::4850897442253234639::1771921890::1771922483::1::::<><><>0<>0<>a707ea4d8ef1949afdf57941c00c5a24<>res://.godot/imported/2.svg-8b322cd8d9e1a0c161f7b0906ec8efa8.ctex::
+3.svg::CompressedTexture2D::741307691340631092::1771921890::1771922483::1::::<><><>0<>0<>1988f8e47b7ea12e4097c2dfeff022be<>res://.godot/imported/3.svg-2638f90ee654256ded7c8e4e6a0658c4.ctex::
+4.svg::CompressedTexture2D::2470397467051703497::1771921890::1771922483::1::::<><><>0<>0<>22e6781f7432898dc7ed4d1869771051<>res://.godot/imported/4.svg-0f81b234fa8062dfeb7c92e1c0e195f5.ctex::
+5.svg::CompressedTexture2D::3119292812092176750::1771921890::1771922483::1::::<><><>0<>0<>c7435ed0c5a503f55e7a95828f41b4cf<>res://.godot/imported/5.svg-bfadafcc7f3a6d683645ce4affcef2fe.ctex::
+6.svg::CompressedTexture2D::7671249276059260695::1771921890::1771922483::1::::<><><>0<>0<>d820ffca5328179ae32b615142c9cf31<>res://.godot/imported/6.svg-88c5c2cfe6283f3c5606a8eb0bbbbcec.ctex::
+7.svg::CompressedTexture2D::9220505544506138759::1771921890::1771922483::1::::<><><>0<>0<>cae83d9ccb336d83128ea37afa3e915c<>res://.godot/imported/7.svg-b5f1c85dd0892f2227a4d0b954ee19e9.ctex::
+8.svg::CompressedTexture2D::4423138114424556720::1771921890::1771922483::1::::<><><>0<>0<>d6afd5fb79fd495462f82f46d5d00f92<>res://.godot/imported/8.svg-f0df4a49f8533fde84ec011f0e7c8943.ctex::
+9.svg::CompressedTexture2D::210756896029919501::1771921890::1771922483::1::::<><><>0<>0<>bbaf2b29a719c9b6ef5d2179354bcb0f<>res://.godot/imported/9.svg-0da85f557809a54f8c847eb4139ec7b8.ctex::
+10.svg::CompressedTexture2D::5920965106355967177::1771921890::1771922483::1::::<><><>0<>0<>ef99d441dfcbb2bdf8a15de798d24a93<>res://.godot/imported/10.svg-160c52cedd20bf112627ca7cf36738f5.ctex::
+11.svg::CompressedTexture2D::7403453503280684955::1771921890::1771922483::1::::<><><>0<>0<>76635a86a28014cca302b85e3ce6145c<>res://.godot/imported/11.svg-34de98cb6f6cf3113af7b8cb17ddd2d9.ctex::
+12.svg::CompressedTexture2D::3017280346410595759::1771921890::1771922483::1::::<><><>0<>0<>c99ad6aa86ac15e1a47d1ebb1e20c515<>res://.godot/imported/12.svg-6b7d49bc9ba1e15bb18afe29dea43a57.ctex::
+13.svg::CompressedTexture2D::8299589829727179832::1771921890::1771922483::1::::<><><>0<>0<>836af9a7cf719b4fb07b1497e298a485<>res://.godot/imported/13.svg-4c9cc9904a6445d7acc7eb5d34feca67.ctex::
+::res://assets/cards/spades/::1771922484
+1.svg::CompressedTexture2D::7763142370842784096::1771921890::1771922483::1::::<><><>0<>0<>dd072ef17a26af2959c3a61fcda65d41<>res://.godot/imported/1.svg-6e490701e518ae3ec15ce4dfa765562f.ctex::
+2.svg::CompressedTexture2D::6525338050151017845::1771921890::1771922483::1::::<><><>0<>0<>d360f5b962d94c0f3cd3e13282b5dfad<>res://.godot/imported/2.svg-dae60d8b6e385c63d874e0a1cfb2087d.ctex::
+3.svg::CompressedTexture2D::880577596094385349::1771921890::1771922483::1::::<><><>0<>0<>e3e9d50be7d1cc59b538e7758bad016e<>res://.godot/imported/3.svg-f9542aca22a67cbac7d879b9c58f8e05.ctex::
+4.svg::CompressedTexture2D::6231282367742872238::1771921890::1771922483::1::::<><><>0<>0<>901e5dc77680b74e93d1eba1f31c7737<>res://.godot/imported/4.svg-d8a314d4c847871a75574f89cb4a8d27.ctex::
+5.svg::CompressedTexture2D::9011538743827808732::1771921890::1771922483::1::::<><><>0<>0<>d9e6ddf9045cf6319d2d6b08814d6a7c<>res://.godot/imported/5.svg-6d46efeeaac7d4e5b601fa1d4ac3e338.ctex::
+6.svg::CompressedTexture2D::8344407046383529952::1771921890::1771922483::1::::<><><>0<>0<>807f879c37e6eadba231b64604400a55<>res://.godot/imported/6.svg-aecbe392dbc58a37e67e46a6e3a69a80.ctex::
+7.svg::CompressedTexture2D::3606879024353877827::1771921890::1771922483::1::::<><><>0<>0<>38184986d0c1850153e12055bd5e3af5<>res://.godot/imported/7.svg-0018309dbaff5c213e14a8fe25fe68bc.ctex::
+8.svg::CompressedTexture2D::1976415136550874626::1771921890::1771922483::1::::<><><>0<>0<>a44495dd37924474e68a43f25317e588<>res://.godot/imported/8.svg-9dd5dba2aa19184dd39d08231370bdca.ctex::
+9.svg::CompressedTexture2D::1737838619920387926::1771921890::1771922483::1::::<><><>0<>0<>0a97e87a99ff1bf82edb181b86a9a6c0<>res://.godot/imported/9.svg-ba9664e37be52261a1ba8405ad756716.ctex::
+10.svg::CompressedTexture2D::8998488298155081408::1771921890::1771922483::1::::<><><>0<>0<>79ebfeeaf0ac417804fa9faec7e19254<>res://.godot/imported/10.svg-68e63065d44d585080846fe89e19912e.ctex::
+11.svg::CompressedTexture2D::4220291390881082777::1771921890::1771922483::1::::<><><>0<>0<>88d9fd766ee1a97e502293b920f4fc49<>res://.godot/imported/11.svg-aefc6b48346f69fae77d94b194a11390.ctex::
+12.svg::CompressedTexture2D::8644733653228309686::1771921890::1771922483::1::::<><><>0<>0<>e32ba37b7b60285c763acf1de124f7fa<>res://.godot/imported/12.svg-6940c0903027bc6846de92cdc87559f3.ctex::
+13.svg::CompressedTexture2D::1114672694133343728::1771921890::1771922484::1::::<><><>0<>0<>aa76a65331268ccd6174c64a3bad2bab<>res://.godot/imported/13.svg-26b71f0ebc0b003b245268d73ee1e9d1.ctex::
+::res://assets/chair/::1771917921
+chair 1.png::CompressedTexture2D::7097116397620345001::1771914170::1771917921::1::::<><><>0<>0<>abc9e2eb3b3dbfab624b9c97d51928bf<>res://.godot/imported/chair 1.png-3b14a03e71508e1ebaea65fe53bb90c8.ctex::
+chair 2.png::CompressedTexture2D::6510929441772667644::1771914238::1771917921::1::::<><><>0<>0<>c156437f4ac8f9ba3ac2327728f967dd<>res://.godot/imported/chair 2.png-14f486801390041c20a040fd1df672f1.ctex::
+chair 3.png::CompressedTexture2D::6824971384836172917::1771914293::1771917921::1::::<><><>0<>0<>ba48614d620bd826b12bc9739302267d<>res://.godot/imported/chair 3.png-ff2f5eff7ce31e9238cd4c00b9cc556d.ctex::
+chair 4.png::CompressedTexture2D::6497463419385533135::1771917382::1771917921::1::::<><><>0<>0<>577c7fd6ca456c009b65af25282ed889<>res://.godot/imported/chair 4.png-f7538b3a0afdccc64523275cfc216144.ctex::
+chair 5.png::CompressedTexture2D::3229420575547960973::1771917467::1771917921::1::::<><><>0<>0<>0047831224def81d148adf4572355f08<>res://.godot/imported/chair 5.png-ca4f029ffdc7d3730c8721802aa97905.ctex::
+chair 6.png::CompressedTexture2D::675099928246066718::1771917563::1771917921::1::::<><><>0<>0<>ce1f6dfe33a7f0e6df46543bc5f747a3<>res://.godot/imported/chair 6.png-7ac560681b7a5004b82279ec5196dde9.ctex::
+chair 7.png::CompressedTexture2D::7087464066712558051::1771917687::1771917921::1::::<><><>0<>0<>248b7e34f8998c7783c6aa79ed2e803d<>res://.godot/imported/chair 7.png-f49a63c51e58cf57cde8d984649dc5a0.ctex::
+chair 8.png::CompressedTexture2D::6172022109903002656::1771917746::1771917921::1::::<><><>0<>0<>452d9d1d0977a6f59a27ef712d4853ea<>res://.godot/imported/chair 8.png-b9b7c7cefd0a82f870f8b7abd234ddb3.ctex::
+chair 9.png::CompressedTexture2D::925194298841456679::1771917792::1771917921::1::::<><><>0<>0<>004df79c63c4b585274d2b205dbf9a47<>res://.godot/imported/chair 9.png-f84cfb7843194a7c56bcf55070b55dc5.ctex::
+::res://assets/fonts/::1771911841
+::res://assets/players/::1771923509
+player 1.png::CompressedTexture2D::1831358350489575914::1771922743::1771923509::1::::<><><>0<>0<>478b20c29687105388f85777cb830210<>res://.godot/imported/player 1.png-7041bfe08c0b09d520a0f23bb011b446.ctex::
+player 2.png::CompressedTexture2D::4093397967215633186::1771922811::1771923509::1::::<><><>0<>0<>bff19a7235811b64cba6d47feff7f5ef<>res://.godot/imported/player 2.png-047d2e92a96553ce4dd006f5ee363427.ctex::
+player 3.png::CompressedTexture2D::1871018259445132888::1771922870::1771923509::1::::<><><>0<>0<>866f36a7f742118bb2222d831157fc38<>res://.godot/imported/player 3.png-3df4f92b41a0a4c1fc37604e29479f00.ctex::
+player 4.png::CompressedTexture2D::1030754619392150185::1771922959::1771923509::1::::<><><>0<>0<>2df87d1ea895f4c853a91bade7956467<>res://.godot/imported/player 4.png-f65c6cfdec55e2642786ccbb46f78203.ctex::
+player 5.png::CompressedTexture2D::7896121057999914312::1771923129::1771923509::1::::<><><>0<>0<>99d79d1b145fa3eef7b77300767606fd<>res://.godot/imported/player 5.png-311aaab9e563d36082e7f2a19457dbdd.ctex::
+player 6.png::CompressedTexture2D::7075681210974419097::1771923183::1771923509::1::::<><><>0<>0<>6304aafa609d71bc17137528c825d3bd<>res://.godot/imported/player 6.png-685b91c83aa6b29002d2a4dd3c6f73b4.ctex::
+player 7.png::CompressedTexture2D::187195753765437025::1771923245::1771923509::1::::<><><>0<>0<>0ebbc9d92b42d1692633fd8e6dc491c9<>res://.godot/imported/player 7.png-8d123c405fbd0614da0f7f76fa6aed4d.ctex::
+player 8.png::CompressedTexture2D::775582951656402928::1771923284::1771923509::1::::<><><>0<>0<>db87b8674a43d0cfe5765a19ba86a01e<>res://.godot/imported/player 8.png-b0bd8cae80fe9b6867c1f3d0c9254c62.ctex::
+player 9.png::CompressedTexture2D::4748825341861774062::1771923331::1771923509::1::::<><><>0<>0<>fe4f1e8734cb142e73adf4225680de7b<>res://.godot/imported/player 9.png-57d63aeed575e6928468692c9824c316.ctex::
+::res://assets/shaders/::1771933376
+outline.gdshader::Shader::4944239411925311666::1771933376::0::1::::<><><>0<>0<><>::
+::res://assets/table/::1771913922
+Poker Table No Chair.png::CompressedTexture2D::3700840554393571691::1771913795::1771913922::1::::<><><>0<>0<>3af0275fef802666324de870aa7c3fcf<>res://.godot/imported/Poker Table No Chair.png-aa9904668da04f3c884ffd54e27a016a.ctex::
+::res://assets/ui/::1771922484
+pitching_hand.png::CompressedTexture2D::6035927297579394007::1771921891::1771922484::1::::<><><>0<>0<>3ccd63afc5b4648745de69e0c59893ea<>res://.godot/imported/pitching_hand.png-03d33f4d1951002c322bb24be56a0dbc.ctex::
+::res://poker table demonstrator/::1771920117
+firebase.json::JSON::-1::1771053481::0::1::::<><><>0<>0<><>::
+package-lock.json::JSON::-1::1770664705::0::1::::<><><>0<>0<><>::
+package.json::JSON::-1::1771053521::0::1::::<><><>0<>0<><>::
+README.md::TextFile::-1::1770622319::0::1::::<><><>0<>0<><>::
+tsconfig.app.json::JSON::-1::1770623633::0::1::::<><><>0<>0<><>::
+tsconfig.json::JSON::-1::1770622319::0::1::::<><><>0<>0<><>::
+tsconfig.node.json::JSON::-1::1770622319::0::1::::<><><>0<>0<><>::
+::res://poker table demonstrator/dist/::1771920084
+vite.svg::CompressedTexture2D::1325405986256188939::1770622319::1771920084::1::::<><><>0<>0<>02891a3e933455fdf9e83c265ac2de4c<>res://.godot/imported/vite.svg-8102691ba0fe648f9138d11ee1831eee.ctex::
+::res://poker table demonstrator/dist/assets/::1771920084
+pitching hand-DMNm1LoJ.png::CompressedTexture2D::2046417216460654347::1771325318::1771920084::1::::<><><>0<>0<>658fb4f308dc7fb1fc75d71703ac0cb2<>res://.godot/imported/pitching hand-DMNm1LoJ.png-dd8b854c4bbe3ab43ed27df64a647f78.ctex::
+poker table-Ujl2bbyF.png::CompressedTexture2D::5224715855341709010::1771325318::1771920084::1::::<><><>0<>0<>0e3f7dc88455026a0c78eba0a64db156<>res://.godot/imported/poker table-Ujl2bbyF.png-4499437dcc9bd999b034ac5e7bb067be.ctex::
+::res://poker table demonstrator/prompts/::1771920041
+prompts.md::TextFile::-1::1771325209::0::1::::<><><>0<>0<><>::
+::res://poker table demonstrator/public/::1771920084
+vite.svg::CompressedTexture2D::3067720682209129232::1770622319::1771920084::1::::<><><>0<>0<>1fd31e4fc90794e0fa7d231e2a773668<>res://.godot/imported/vite.svg-94dea360d751772fbb716e75d2f5f2be.ctex::
+::res://poker table demonstrator/src/::1771920044
+defaultLayout.json::JSON::-1::1770625494::0::1::::<><><>0<>0<><>::
+::res://poker table demonstrator/src/assets/::1771920084
+defaultLayout.json::JSON::-1::1770666741::0::1::::<><><>0<>0<><>::
+poker table.png::CompressedTexture2D::8728039971873364486::1770662547::1771920084::1::::<><><>0<>0<>6000564c40030f4c8a4b181b48c28896<>res://.godot/imported/poker table.png-e437d3ee8c0afd4f6b0124228ef2ecd4.ctex::
+::res://poker table demonstrator/src/assets/button/::1769149898
+::res://poker table demonstrator/src/assets/cards/::1771920042
+::res://poker table demonstrator/src/assets/cards/card back/::1771920084
+card back.svg::CompressedTexture2D::2426113079533199271::1769057339::1771920084::1::::<><><>0<>0<>3b7220f9eb5a48c5056827314a7c83eb<>res://.godot/imported/card back.svg-cf2d275b8603fee36fe99411437afae4.ctex::
+::res://poker table demonstrator/src/assets/cards/clubs/::1771920084
+1.svg::CompressedTexture2D::5022033485663269295::1764234494::1771920084::1::::<><><>0<>0<>8aba9e5059443b9d09d801b5cf3b5570<>res://.godot/imported/1.svg-8b6d94cdb4d8ef5e9d5ff435f703b481.ctex::
+2.svg::CompressedTexture2D::2212514746092902264::1764234508::1771920084::1::::<><><>0<>0<>652b82effdc83e314cc7bc292f544c1d<>res://.godot/imported/2.svg-89071d0ac62773298f1f29566ebcd62f.ctex::
+3.svg::CompressedTexture2D::8075900438651252674::1764234520::1771920084::1::::<><><>0<>0<>1313542f164738dcff4f1326125b3a3e<>res://.godot/imported/3.svg-4f7783bef0b9a97e8bbab7d599820e9b.ctex::
+4.svg::CompressedTexture2D::4899290258938379284::1764234548::1771920084::1::::<><><>0<>0<>67dec8b741e1c7888a3234861cc8c6be<>res://.godot/imported/4.svg-d0b052c69432a2e3841fdb365be4b902.ctex::
+5.svg::CompressedTexture2D::6117719779675801507::1764234559::1771920084::1::::<><><>0<>0<>7f1cfd8bac3ea79a9fa20a080e36dd59<>res://.godot/imported/5.svg-f2c6a172b9d962e3ecaf3bfc284fe045.ctex::
+6.svg::CompressedTexture2D::8974983702003389495::1764234573::1771920084::1::::<><><>0<>0<>6fe237d91622790aefa19c1cd84883a7<>res://.godot/imported/6.svg-e6196107d443839c0bd7aa57f4f9059b.ctex::
+7.svg::CompressedTexture2D::7179053069139727441::1764234585::1771920084::1::::<><><>0<>0<>b28a40e24445c098e73404632859265f<>res://.godot/imported/7.svg-e898dd5722ca49d0e4478b12f38b2204.ctex::
+8.svg::CompressedTexture2D::8880555236347199847::1764234597::1771920084::1::::<><><>0<>0<>2f938e7c719b3aa941d581357232984c<>res://.godot/imported/8.svg-04ee73e6c9a23f501fd476111d1a4214.ctex::
+9.svg::CompressedTexture2D::6226963244220608487::1764234620::1771920084::1::::<><><>0<>0<>dcbe82e59854f8b995f9431b882647e8<>res://.godot/imported/9.svg-695dd67a8109125d339cbca485b11d2e.ctex::
+10.svg::CompressedTexture2D::521433130184758556::1764234635::1771920084::1::::<><><>0<>0<>ec16f637f6de2d34d3a646f8b98184bf<>res://.godot/imported/10.svg-0049da4bebf8679f475591c90be2e667.ctex::
+11.svg::CompressedTexture2D::2653829278850633351::1764234652::1771920084::1::::<><><>0<>0<>156da2e5c37cdc466474ecffb3de4084<>res://.godot/imported/11.svg-09ebca3d1ea445fda0d73b6174826d72.ctex::
+12.svg::CompressedTexture2D::4621237695677801770::1764234671::1771920084::1::::<><><>0<>0<>c8d337bda9d018a601959b6d48af3ee8<>res://.godot/imported/12.svg-96c62fc597a196ac6535c71c0b6cd638.ctex::
+13.svg::CompressedTexture2D::3346580427985442728::1764234684::1771920084::1::::<><><>0<>0<>7226bb4cf62d5bd9050864a69978fb66<>res://.godot/imported/13.svg-94c8de95a7af4ed26aca939d108f46ed.ctex::
+::res://poker table demonstrator/src/assets/cards/diamonds/::1771920084
+1.svg::CompressedTexture2D::7202572965427856285::1764233877::1771920084::1::::<><><>0<>0<>b35c9f3745b5bc3ccc45fe6036821dbc<>res://.godot/imported/1.svg-e36463fb2f05b3f6913fc8b0055b16c2.ctex::
+2.svg::CompressedTexture2D::4597773342560967794::1764233907::1771920084::1::::<><><>0<>0<>7b131fa22e6a39c506f9189dfb3ca3d5<>res://.godot/imported/2.svg-823eec80aac5c02f835bb36ae07a696c.ctex::
+3.svg::CompressedTexture2D::8251786136733509735::1764233929::1771920084::1::::<><><>0<>0<>ab40926207a762d05a1750ca00d5747d<>res://.godot/imported/3.svg-c3812e0315cf9e1dc829a4aeadcd5e67.ctex::
+4.svg::CompressedTexture2D::8027029404258754868::1764234014::1771920084::1::::<><><>0<>0<>3cc693c89daaa140a68c3f2de9aca0f5<>res://.godot/imported/4.svg-a6ce408d31f5fa46bd0dd45413066d64.ctex::
+5.svg::CompressedTexture2D::422054387935509050::1764234033::1771920084::1::::<><><>0<>0<>ee1276aef0ff1513a53515bc982d165c<>res://.godot/imported/5.svg-fd1f0287a22f1632e6c95fc39b94151f.ctex::
+6.svg::CompressedTexture2D::455326655636462075::1764234051::1771920084::1::::<><><>0<>0<>390a97e02436d7381042fcd1e9fa83d8<>res://.godot/imported/6.svg-f0c32545693196acf72b1960fceb4dc4.ctex::
+7.svg::CompressedTexture2D::1831748442058068904::1764234086::1771920084::1::::<><><>0<>0<>d99b0892f9d2f68a0375168754568542<>res://.godot/imported/7.svg-bf1a3381efcc12d49442a28a769ab7c7.ctex::
+8.svg::CompressedTexture2D::2467198320559459094::1764234098::1771920084::1::::<><><>0<>0<>1cbef750254193b69f9e69f4e29d6121<>res://.godot/imported/8.svg-fc556b0e0af176d613ed54407a53485c.ctex::
+9.svg::CompressedTexture2D::1922428572709485622::1764234121::1771920084::1::::<><><>0<>0<>f7e0d78b1e93c60d0903d49cf320aafa<>res://.godot/imported/9.svg-151c5408cae031b8691fc091e929a9e1.ctex::
+10.svg::CompressedTexture2D::963382255358188313::1764234154::1771920084::1::::<><><>0<>0<>9d61041d98769218642f09a2aee1f9c2<>res://.godot/imported/10.svg-4253a64e4f99881ebbefbd1fb65c4a18.ctex::
+11.svg::CompressedTexture2D::1596534155773639493::1764234172::1771920084::1::::<><><>0<>0<>7e82cc9100f4d09178f6a82d02da87eb<>res://.godot/imported/11.svg-777801948bb3f845406dc25457ee8fe5.ctex::
+12.svg::CompressedTexture2D::7813280690489424930::1764234193::1771920084::1::::<><><>0<>0<>03d49e7df17b8f472e697ad68ee7be25<>res://.godot/imported/12.svg-1e552e2d3c20cae61b5e64bd86f720bd.ctex::
+13.svg::CompressedTexture2D::7261006318906477448::1764234209::1771920084::1::::<><><>0<>0<>352ab0020ab4cb80df4462b949562621<>res://.godot/imported/13.svg-d007103f7bd4df61f6a31f41bc9c7419.ctex::
+::res://poker table demonstrator/src/assets/cards/hearts/::1771920084
+1.svg::CompressedTexture2D::5472621714944036986::1764234251::1771920084::1::::<><><>0<>0<>34f40e58dd6ce8aca03d4d9c45b787e8<>res://.godot/imported/1.svg-30cbedb9b7147cfc0d1ee8c70c6673ce.ctex::
+2.svg::CompressedTexture2D::4850897442253234639::1764234264::1771920084::1::::<><><>0<>0<>1ff362cb1d11f5dd21abed7cb46c4c47<>res://.godot/imported/2.svg-dbd3a55806c3c13505f6f20e19f7e0a4.ctex::
+3.svg::CompressedTexture2D::741307691340631092::1764234292::1771920084::1::::<><><>0<>0<>2d6c803219166e77bb43336efe1dffb4<>res://.godot/imported/3.svg-23d3d81204c9954f3af80b968b821cf6.ctex::
+4.svg::CompressedTexture2D::2470397467051703497::1764234310::1771920084::1::::<><><>0<>0<>fe73984e517f4ee530c705f9491ec1c8<>res://.godot/imported/4.svg-44ca1bd57cf5b9c932db14136a93e74b.ctex::
+5.svg::CompressedTexture2D::3119292812092176750::1764234324::1771920084::1::::<><><>0<>0<>cc8b6a545f8655a797d1a500c8f3449d<>res://.godot/imported/5.svg-6ac08be8493994bca6d941c66cad635f.ctex::
+6.svg::CompressedTexture2D::7671249276059260695::1764234348::1771920084::1::::<><><>0<>0<>3b2f7bd1455885699f5e06fbfac72f97<>res://.godot/imported/6.svg-b743573d74709c61478a1fc5aa00ae48.ctex::
+7.svg::CompressedTexture2D::9220505544506138759::1769057616::1771920084::1::::<><><>0<>0<>326dfae7c54647f6e9f0e02dd7db152b<>res://.godot/imported/7.svg-6df35c3f75f9015c844a0b50c2005aef.ctex::
+8.svg::CompressedTexture2D::4423138114424556720::1764234367::1771920084::1::::<><><>0<>0<>55e3bbea700631e04533e0505901515d<>res://.godot/imported/8.svg-c4d2daaf8e3f1c757c6c0b6a1031be29.ctex::
+9.svg::CompressedTexture2D::210756896029919501::1764234382::1771920084::1::::<><><>0<>0<>b9bd922c521604c1805e7432f8ab8103<>res://.godot/imported/9.svg-a9a9c07c6f531fc1fe73ce91d9b76f2e.ctex::
+10.svg::CompressedTexture2D::5920965106355967177::1764234398::1771920084::1::::<><><>0<>0<>4ee5907868256e21072469a9d8db00ea<>res://.godot/imported/10.svg-55611718ae6a08954ab6032a6e6e8d63.ctex::
+11.svg::CompressedTexture2D::7403453503280684955::1764234415::1771920084::1::::<><><>0<>0<>e7e98558a00b9b36e474e4a4f981ae54<>res://.godot/imported/11.svg-52fdfe6a3d8cf305a2cdd782e61dca45.ctex::
+12.svg::CompressedTexture2D::3017280346410595759::1764234435::1771920084::1::::<><><>0<>0<>7087276cbbed78e9f0c17476f4fd0e6f<>res://.godot/imported/12.svg-fc86b2a78fae544e1fd9bbc893659212.ctex::
+13.svg::CompressedTexture2D::8299589829727179832::1764234451::1771920084::1::::<><><>0<>0<>44d485833d9c3becdc075552f1b57180<>res://.godot/imported/13.svg-42e784eee9a73931368903b0ea6996a5.ctex::
+::res://poker table demonstrator/src/assets/cards/spades/::1771920084
+1.svg::CompressedTexture2D::7763142370842784096::1764234766::1771920084::1::::<><><>0<>0<>76fdf53d3e56d4cc82166e33156035b5<>res://.godot/imported/1.svg-9f241c6d3d14f9ef8944f4bfc4659fdb.ctex::
+2.svg::CompressedTexture2D::6525338050151017845::1764234777::1771920084::1::::<><><>0<>0<>7543da965fdffb2cb2abcd29943697eb<>res://.godot/imported/2.svg-e2ef2829313eb10dc5625aabe67d928f.ctex::
+3.svg::CompressedTexture2D::880577596094385349::1764234789::1771920084::1::::<><><>0<>0<>29fc98ec28bb2191a27d8618da9727c0<>res://.godot/imported/3.svg-9530916d59101c914505f8cfa3e69a4a.ctex::
+4.svg::CompressedTexture2D::6231282367742872238::1764234801::1771920084::1::::<><><>0<>0<>49f261460c1df2aab63e363791a2d5c2<>res://.godot/imported/4.svg-81cacb9d8e552244d72e4962353425a1.ctex::
+5.svg::CompressedTexture2D::9011538743827808732::1764234815::1771920084::1::::<><><>0<>0<>50ce6c64261a4df0cdd5e44df20df5e0<>res://.godot/imported/5.svg-ed2430a490ae6b414d5682a6aee25c80.ctex::
+6.svg::CompressedTexture2D::8344407046383529952::1764234827::1771920084::1::::<><><>0<>0<>a3c286852155baddb7d082acc8275d14<>res://.godot/imported/6.svg-84602a5e0c6917c92b72c9e3d71122ce.ctex::
+7.svg::CompressedTexture2D::3606879024353877827::1764234840::1771920084::1::::<><><>0<>0<>e65466d72541098a69a72d7b67cfac55<>res://.godot/imported/7.svg-3113d61e5a3db4fe538ec8a52ec0ec4e.ctex::
+8.svg::CompressedTexture2D::1976415136550874626::1764234852::1771920084::1::::<><><>0<>0<>90bcebc2f9ecd58c4b64b342c38e99db<>res://.godot/imported/8.svg-f2888d62c3cb08c5586849217efe0316.ctex::
+9.svg::CompressedTexture2D::1737838619920387926::1764234865::1771920084::1::::<><><>0<>0<>acef5591c5c83559e5d58df9842a024e<>res://.godot/imported/9.svg-377c213c4492f8d468f68aa0163b7e2b.ctex::
+10.svg::CompressedTexture2D::8998488298155081408::1764234877::1771920084::1::::<><><>0<>0<>f60e800b951555c346baae1f427b70be<>res://.godot/imported/10.svg-4e900138ebcf9cae15804a69e3d07ab5.ctex::
+11.svg::CompressedTexture2D::4220291390881082777::1764234898::1771920084::1::::<><><>0<>0<>e55664a25525dd5c037299219278903e<>res://.godot/imported/11.svg-54f281ffbad0a96c92612f43e75b5e3d.ctex::
+12.svg::CompressedTexture2D::8644733653228309686::1764234912::1771920084::1::::<><><>0<>0<>c4cfd63a0be8aed37eae80ac439fdf8d<>res://.godot/imported/12.svg-25b88605b2dae30e202d9905e2ee1824.ctex::
+13.svg::CompressedTexture2D::1114672694133343728::1764234925::1771920084::1::::<><><>0<>0<>b8662d64a78d23499c9ea7d1794cee0b<>res://.godot/imported/13.svg-94ea1bdab9b8ef21dd24e7f0836193ee.ctex::
+::res://poker table demonstrator/src/assets/cheques/::1771920043
+::res://poker table demonstrator/src/assets/cheques/black/::1771920084
+ang1.svg::CompressedTexture2D::3822538597041509157::1764230000::1771920084::1::::<><><>0<>0<>cc1970603b0d49ddf9fe6cc7213556a5<>res://.godot/imported/ang1.svg-691d022dbc43ffebf27998e479d20601.ctex::
+ang2.svg::CompressedTexture2D::9176563582743927324::1764230014::1771920084::1::::<><><>0<>0<>955ebd8579436d7c2d4c637a72b0ed8b<>res://.godot/imported/ang2.svg-ab8bc070888226032d159986008985b2.ctex::
+ang3.svg::CompressedTexture2D::6972996407063623832::1764230043::1771920084::1::::<><><>0<>0<>603cf22b18364163e55e3d768873494a<>res://.godot/imported/ang3.svg-03d4b60a978d80cf62e3701ea18595b9.ctex::
+ang4.svg::CompressedTexture2D::2141990846449457433::1764230060::1771920084::1::::<><><>0<>0<>aa5cc6d731e0eed69f4a2642acb2b76c<>res://.godot/imported/ang4.svg-7d27be5db5c5fb901d7ce849c2980386.ctex::
+::res://poker table demonstrator/src/assets/cheques/blue100k/::1771920084
+ang1.svg::CompressedTexture2D::8806549176084251539::1764230850::1771920084::1::::<><><>0<>0<>29a32756cdfae59156078b05d2a08382<>res://.godot/imported/ang1.svg-94528656bd6af5aa545eac4af498474d.ctex::
+ang2.svg::CompressedTexture2D::1626625281633568171::1764230870::1771920084::1::::<><><>0<>0<>707cbbd221b5ba8bfb3f4143745077ec<>res://.godot/imported/ang2.svg-8c0e09e5cd0d253cb9a4930dc314cd6b.ctex::
+ang3.svg::CompressedTexture2D::1800964853369506921::1764230896::1771920084::1::::<><><>0<>0<>1177ca6c83634da750a27311f2d99ff4<>res://.godot/imported/ang3.svg-0ba0154bbddc0dbf5034abac290f6118.ctex::
+ang4.svg::CompressedTexture2D::8817239082958906196::1764230907::1771920084::1::::<><><>0<>0<>beae64a2562021b167d8ab7e2fbeef66<>res://.godot/imported/ang4.svg-cf29e3e22add9ceaa6ce8b7231b927f5.ctex::
+::res://poker table demonstrator/src/assets/cheques/brown/::1771920084
+ang1.svg::CompressedTexture2D::7049420592128179605::1764229668::1771920084::1::::<><><>0<>0<>d4426241697bd0cd702f3fe5fa182918<>res://.godot/imported/ang1.svg-abdfe2ada2c4c88adfac1b9a913f2664.ctex::
+ang2.svg::CompressedTexture2D::3383075449713126349::1764229700::1771920084::1::::<><><>0<>0<>7971b53de65844057d0fc78146b5c5b6<>res://.godot/imported/ang2.svg-f382098fb9494227fdd74f1dc389abf1.ctex::
+ang3.svg::CompressedTexture2D::5355174376021393277::1764229731::1771920084::1::::<><><>0<>0<>f1d28d2d626b465b92bc9477c9c8e723<>res://.godot/imported/ang3.svg-6d3c010b9fc0393a28fa930003a18ad9.ctex::
+ang4.svg::CompressedTexture2D::192060094225629666::1764229758::1771920084::1::::<><><>0<>0<>1dbdf954308df12b776ee69d725d0048<>res://.godot/imported/ang4.svg-7b424d29f4b938bcbf0d75abc084fcdb.ctex::
+::res://poker table demonstrator/src/assets/cheques/green/::1771920084
+ang1.svg::CompressedTexture2D::8296412449129182246::1764229850::1771920084::1::::<><><>0<>0<>d49624936c9875cbf4dd661e9acf93b4<>res://.godot/imported/ang1.svg-0dd09cc51c1ad2f325b85aa50ba142a1.ctex::
+ang2.svg::CompressedTexture2D::4521688653989767895::1764229882::1771920084::1::::<><><>0<>0<>1ade84710da2fa5ad3158c0f17e2d534<>res://.godot/imported/ang2.svg-99bf09d0d0bedbc91bf8f53d794773c9.ctex::
+ang3.svg::CompressedTexture2D::3688639230099249620::1764229906::1771920084::1::::<><><>0<>0<>2de3ff66e8a3b9a12a749fc1b8cc9d01<>res://.godot/imported/ang3.svg-cdf545b287f570020a3cf09ccab6ff76.ctex::
+ang4.svg::CompressedTexture2D::2795200960843746062::1764229927::1771920084::1::::<><><>0<>0<>c3cdbcb5dc32d22d9fc2bc7cee0d42be<>res://.godot/imported/ang4.svg-940c62791ca22634c25c5c8a0455e2de.ctex::
+::res://poker table demonstrator/src/assets/cheques/green25k/::1771920084
+ang1.svg::CompressedTexture2D::8866320263915942621::1764230731::1771920084::1::::<><><>0<>0<>ed7862e084e903cc5069c8ea5272af18<>res://.godot/imported/ang1.svg-8490716c06091bce978cbc6d95d7de0c.ctex::
+ang2.svg::CompressedTexture2D::1342384250383560581::1764230750::1771920084::1::::<><><>0<>0<>e8d8dfb0ab6613f219778bd5ed6fa403<>res://.godot/imported/ang2.svg-e3304e882906df4e591a7f323c2fad5d.ctex::
+ang3.svg::CompressedTexture2D::6536230805572816449::1764230773::1771920084::1::::<><><>0<>0<>b6b92972b961622b7cbda6968d1aba0f<>res://.godot/imported/ang3.svg-5bcee1abe37a0295e54e365b60e0f5a0.ctex::
+ang4.svg::CompressedTexture2D::2071804478764758553::1764230789::1771920084::1::::<><><>0<>0<>c698cbf8446bef2880e18d8fc434777b<>res://.godot/imported/ang4.svg-91d7f42a320081f96ca24328069b9842.ctex::
+::res://poker table demonstrator/src/assets/cheques/pink/::1771920084
+ang1.svg::CompressedTexture2D::8035456816650048492::1769052844::1771920084::1::::<><><>0<>0<>37372777546bd6dca72bc3bb86494949<>res://.godot/imported/ang1.svg-86df999b159c49f076500051da324eda.ctex::
+ang2.svg::CompressedTexture2D::7571812742824173722::1769052844::1771920084::1::::<><><>0<>0<>35ec80ff5a22388384eaef35b3b4a396<>res://.godot/imported/ang2.svg-908119420d20052d07a318bf839ec96d.ctex::
+ang3.svg::CompressedTexture2D::3032149852997488217::1769052844::1771920084::1::::<><><>0<>0<>f0d48744453db3e70cf19bdefc2abb56<>res://.godot/imported/ang3.svg-fe931b5c673e48c4ba15b40dd3eb23c1.ctex::
+ang4.svg::CompressedTexture2D::1771222395516701344::1769052844::1771920084::1::::<><><>0<>0<>0e7e50ca082cdf06ec1fea86d169a80a<>res://.godot/imported/ang4.svg-621ec3aae8feef31e7d239b75d7d5969.ctex::
+::res://poker table demonstrator/src/assets/cheques/purple/::1771920084
+ang1.svg::CompressedTexture2D::4564028177840200794::1764230177::1771920084::1::::<><><>0<>0<>4095a4b8818b07ede2777a9a77d38b24<>res://.godot/imported/ang1.svg-50d7b164c5a6fba47cb46b2ae20e255d.ctex::
+ang2.svg::CompressedTexture2D::5086578436906118977::1764230202::1771920084::1::::<><><>0<>0<>f3f8b14b94d7af5ff4daad11d5338cfb<>res://.godot/imported/ang2.svg-288e1da165872e0a0f4cfbc549e1fecb.ctex::
+ang3.svg::CompressedTexture2D::7812695397039810910::1764230230::1771920084::1::::<><><>0<>0<>ec45e7a0b3c0905cec6b9716467cce11<>res://.godot/imported/ang3.svg-276280b5e838acb346c7423f9369a0ed.ctex::
+ang4.svg::CompressedTexture2D::1189944530488662977::1764230246::1771920084::1::::<><><>0<>0<>21c6a75f0d9ab8ebd054406c7677ee42<>res://.godot/imported/ang4.svg-6cf06380901f66566b002f2486ef3d14.ctex::
+::res://poker table demonstrator/src/assets/cheques/red/::1771920084
+ang1.svg::CompressedTexture2D::4096743405515557535::1764140513::1771920084::1::::<><><>0<>0<>72d655fcd1fb938ddd8b5379c5d8aa73<>res://.godot/imported/ang1.svg-4fc79d2aff2cce74521dcfcac68afb9f.ctex::
+ang2.svg::CompressedTexture2D::108524752128851151::1764140513::1771920084::1::::<><><>0<>0<>70e84b2575069357faf5925bb1971a52<>res://.godot/imported/ang2.svg-f494ec4522e15d0ff2fa5546bfc37d6d.ctex::
+ang3.svg::CompressedTexture2D::4237704879845359353::1764140513::1771920084::1::::<><><>0<>0<>d34b8692ac3aae9486f9dfe0819036e0<>res://.godot/imported/ang3.svg-bb13c648b87ff9397d83cc251d52be42.ctex::
+ang4.svg::CompressedTexture2D::5103458195865364864::1764140513::1771920084::1::::<><><>0<>0<>648a7e9b8a13ffaf3976a55e4802b214<>res://.godot/imported/ang4.svg-a076ed1eba614b4473f7c295b4aa55a3.ctex::
+::res://poker table demonstrator/src/assets/cheques/red5k/::1771920084
+ang1.svg::CompressedTexture2D::1991405711848638615::1764230537::1771920084::1::::<><><>0<>0<>c47db932ea28b19429c18e960bcacd59<>res://.godot/imported/ang1.svg-b1c51aecab8b4db1f7004e232720189f.ctex::
+ang2.svg::CompressedTexture2D::3425697576098779600::1764230554::1771920084::1::::<><><>0<>0<>86c2c517e986f9a12d466ac6197b1dd2<>res://.godot/imported/ang2.svg-3c1372f3be0d02df18ada70b41793575.ctex::
+ang3.svg::CompressedTexture2D::1747567508870721277::1764230579::1771920084::1::::<><><>0<>0<>d27d6e39e9f31eea61995fa819ed94c1<>res://.godot/imported/ang3.svg-6cddf3651ec3fc41021f66c5b77d0e4c.ctex::
+ang4.svg::CompressedTexture2D::4732191069210979562::1764230614::1771920084::1::::<><><>0<>0<>f6e7e21fd8472844ea51ba49ab657585<>res://.godot/imported/ang4.svg-aa65f6e867cf5185b4b853c707e53780.ctex::
+::res://poker table demonstrator/src/assets/cheques/white/::1771920084
+ang1.svg::CompressedTexture2D::2884659730056243845::1764140607::1771920084::1::::<><><>0<>0<>230124a907302b455d2929c5de5d8564<>res://.godot/imported/ang1.svg-b73e91db2208abca8240eaad74fa16a1.ctex::
+ang2.svg::CompressedTexture2D::102550337318205907::1764140607::1771920084::1::::<><><>0<>0<>9cf5315b3fcf76ed00597964a518b984<>res://.godot/imported/ang2.svg-46f724d835c8f50ba3771438debf149b.ctex::
+ang3.svg::CompressedTexture2D::6067378317457708992::1764140607::1771920084::1::::<><><>0<>0<>6e429eb1f7fff2bb488e6e53797ef701<>res://.godot/imported/ang3.svg-f8e9805647c6a99535ba03f48393adc3.ctex::
+ang4.svg::CompressedTexture2D::1464596676096193779::1764140607::1771920084::1::::<><><>0<>0<>50759ac2cbb5fd908616367cd6ab51b6<>res://.godot/imported/ang4.svg-e961d780f020e14b9599e5ae3cfd0e58.ctex::
+::res://poker table demonstrator/src/assets/cheques/yellow/::1771920084
+ang1.svg::CompressedTexture2D::6502674391962073788::1764230361::1771920084::1::::<><><>0<>0<>dc315a3a49fd149821d8ac8625b034e4<>res://.godot/imported/ang1.svg-af9e566fc8e3d0253d6f6db304b3204a.ctex::
+ang2.svg::CompressedTexture2D::5736680010372821397::1764230384::1771920084::1::::<><><>0<>0<>320e499f241f2c0d4021080f033ddd07<>res://.godot/imported/ang2.svg-c267132f1be51b757b56f0ae7c05698b.ctex::
+ang3.svg::CompressedTexture2D::4186371437256218712::1764230401::1771920084::1::::<><><>0<>0<>b424a508dfa5a366f843f85d98ef81cf<>res://.godot/imported/ang3.svg-3db4730d7c426ee39049feef120e9d94.ctex::
+ang4.svg::CompressedTexture2D::2732717913268933097::1764230420::1771920084::1::::<><><>0<>0<>7b90826afbde32bae6f30be385b177be<>res://.godot/imported/ang4.svg-5e2d1ce006a99fdea99fa0cdca45164b.ctex::
+::res://poker table demonstrator/src/assets/chips/::1771920043
+::res://poker table demonstrator/src/assets/chips/black100/::1771920084
+ang1.svg::CompressedTexture2D::6876568712087974529::1764231008::1771920084::1::::<><><>0<>0<>97f8df868470494ce90eeb440ad1e8b1<>res://.godot/imported/ang1.svg-e3f2482b7a66492c5744285dc948f2ae.ctex::
+ang2.svg::CompressedTexture2D::194693771627148573::1764231034::1771920084::1::::<><><>0<>0<>1248125bff308279a3592e22caba9faf<>res://.godot/imported/ang2.svg-c646af4c4c49429c268009f9cb6a3b7a.ctex::
+ang3.svg::CompressedTexture2D::4050460501028194680::1764231054::1771920084::1::::<><><>0<>0<>0c4e98789eca40f97bfff178da0b49bd<>res://.godot/imported/ang3.svg-999a264e1c2bb6de47e71a2ca9409613.ctex::
+ang4.svg::CompressedTexture2D::5034029478636725462::1764231069::1771920084::1::::<><><>0<>0<>ea60dd841a8f0c42e0c1efcc656fc903<>res://.godot/imported/ang4.svg-c3e7de0906512e85db52e7c2d8b04715.ctex::
+::res://poker table demonstrator/src/assets/chips/blue100k/::1771920084
+ang1.svg::CompressedTexture2D::7229761513789311071::1764231731::1771920084::1::::<><><>0<>0<>3635aa3be584a64b97959e4df09dc043<>res://.godot/imported/ang1.svg-2130372990eba675be55e26222ae5c1b.ctex::
+ang2.svg::CompressedTexture2D::2330262382036307929::1764231750::1771920084::1::::<><><>0<>0<>14f138ed7a1276a2fcd6da72c70d4628<>res://.godot/imported/ang2.svg-b7dbe1d54e6b27f8de980d9c5fcf0cec.ctex::
+ang3.svg::CompressedTexture2D::5665121677213276111::1764231763::1771920084::1::::<><><>0<>0<>5f0bfa8e9140dbb905a15dc544bc1ea1<>res://.godot/imported/ang3.svg-8e101dfb74cd2b5a50225aac8ae1454e.ctex::
+ang4.svg::CompressedTexture2D::5276109188336343545::1764231775::1771920084::1::::<><><>0<>0<>4f4fc94eef03cb189bcbb356e19c41db<>res://.godot/imported/ang4.svg-6179d80a241cb5d08c1594e1b9e5f26e.ctex::
+::res://poker table demonstrator/src/assets/chips/green25k/::1771920084
+ang1.svg::CompressedTexture2D::8878920081100324754::1764231611::1771920084::1::::<><><>0<>0<>0bd3f95818fcd5b74a4a951a30ba47ea<>res://.godot/imported/ang1.svg-88d54d7e0fd9b1a6b2b474382f1188df.ctex::
+ang2.svg::CompressedTexture2D::7226467518062938433::1764231625::1771920084::1::::<><><>0<>0<>6262dd3d87536d4c3843801a4e77a413<>res://.godot/imported/ang2.svg-9ac31ec5fd042b8a43f55d170e31c7eb.ctex::
+ang3.svg::CompressedTexture2D::4684997073758124860::1764231636::1771920084::1::::<><><>0<>0<>a8329e90c23ba4db6b6df6edbf5cec47<>res://.godot/imported/ang3.svg-9be893609e8ba779a18874705be99048.ctex::
+ang4.svg::CompressedTexture2D::8561915366865819094::1764231646::1771920084::1::::<><><>0<>0<>ac9cad112964a11308fdab15cf1034bc<>res://.godot/imported/ang4.svg-72431a7d28c0816783034f6a95faa757.ctex::
+::res://poker table demonstrator/src/assets/chips/grey5m/::1771920084
+ang1.svg::CompressedTexture2D::7793350483281913611::1764232021::1771920084::1::::<><><>0<>0<>c90083ef2d080db7ce3a0e7f2df76d5d<>res://.godot/imported/ang1.svg-f1f9ecf6b196616c4d2aae688808cd41.ctex::
+ang2.svg::CompressedTexture2D::526982165882771190::1764232044::1771920084::1::::<><><>0<>0<>a72b184c0c5398af6f751c3a95645393<>res://.godot/imported/ang2.svg-005760250df0bbbd1103dd583070f984.ctex::
+ang3.svg::CompressedTexture2D::7386535983608947848::1764232060::1771920084::1::::<><><>0<>0<>7341592312df82e60a05d4ddf7272601<>res://.godot/imported/ang3.svg-a7643a2a0e437437951fc7bbfc0d63b7.ctex::
+ang4.svg::CompressedTexture2D::5414412227120764314::1764232078::1771920084::1::::<><><>0<>0<>532a0293416f197840f301435379abc3<>res://.godot/imported/ang4.svg-88a0937ac878744b7230f94188eb701c.ctex::
+::res://poker table demonstrator/src/assets/chips/orange1m/::1771920084
+ang1.svg::CompressedTexture2D::1940131851034793195::1764231937::1771920084::1::::<><><>0<>0<>8935badfc7ce59a2b54621c39c715755<>res://.godot/imported/ang1.svg-af62b82774bd9953214532b277ea1030.ctex::
+ang2.svg::CompressedTexture2D::6196151532924276601::1764231951::1771920084::1::::<><><>0<>0<>4b887f0395d653617f99e9a574187646<>res://.godot/imported/ang2.svg-991b0e01b418c82a866b5dc38d7734f7.ctex::
+ang3.svg::CompressedTexture2D::8343944473578718281::1764231962::1771920084::1::::<><><>0<>0<>e456bdf12b174d5e38c8252e3bab94b8<>res://.godot/imported/ang3.svg-7fe664ded7c036589a15c4a2242bd7fe.ctex::
+ang4.svg::CompressedTexture2D::2334178823050514418::1764231971::1771920084::1::::<><><>0<>0<>e14b0484831f99ab4d57318ee0cdf3f4<>res://.godot/imported/ang4.svg-8c30311c5ac351cea02e6ed27579e6ef.ctex::
+::res://poker table demonstrator/src/assets/chips/pink500k/::1771920084
+ang1.svg::CompressedTexture2D::4429611096588153242::1764231843::1771920084::1::::<><><>0<>0<>a83d3402f35e963c123a173ae698e631<>res://.godot/imported/ang1.svg-e44228f5f13d0d0f4771af006fd598da.ctex::
+ang2.svg::CompressedTexture2D::8829901759010498884::1764231857::1771920084::1::::<><><>0<>0<>68197be8747a931e499fff442bbc8ba6<>res://.godot/imported/ang2.svg-538acc01b4dae61de8d84ce720f730a0.ctex::
+ang3.svg::CompressedTexture2D::7020278659458617114::1764231869::1771920084::1::::<><><>0<>0<>226e6e4a337d645d8b1f0d01d7e6585e<>res://.godot/imported/ang3.svg-1525dc48216ebe0fd9eabb440902a89b.ctex::
+ang4.svg::CompressedTexture2D::5077297683775271158::1764231882::1771920084::1::::<><><>0<>0<>68733c7e10c4194ce626b5491b515ab8<>res://.godot/imported/ang4.svg-a1de33a0021d844affdf2cf121fd29ac.ctex::
+::res://poker table demonstrator/src/assets/chips/purple500/::1771920084
+ang1.svg::CompressedTexture2D::8670457602693964397::1764231144::1771920084::1::::<><><>0<>0<>8b0b72deeaa75b0df4db5283ed67fd21<>res://.godot/imported/ang1.svg-a0bdb043cd8ed1a9ccd215c4567c10fc.ctex::
+ang2.svg::CompressedTexture2D::2110916976801117942::1764231192::1771920084::1::::<><><>0<>0<>9d6b3b1d0a563e5a7d18583a627147b9<>res://.godot/imported/ang2.svg-2c05c1df2a311913921e30b2d6f4ab1d.ctex::
+ang3.svg::CompressedTexture2D::6885875306810302415::1764231222::1771920084::1::::<><><>0<>0<>17f640d110ada5a33da527017f794013<>res://.godot/imported/ang3.svg-c4e3dd75ccd794d08cb986c932733a25.ctex::
+ang4.svg::CompressedTexture2D::5131283786539472346::1764231247::1771920084::1::::<><><>0<>0<>403d14249ee68d2f92fd852f588c74bf<>res://.godot/imported/ang4.svg-17fd64379ce864afd9bf3ba63027f4b0.ctex::
+::res://poker table demonstrator/src/assets/chips/red5k/::1771920084
+ang1.svg::CompressedTexture2D::4537043379301107435::1764231467::1771920084::1::::<><><>0<>0<>07f4e0a552bc22d7c2f921f001bafdd5<>res://.godot/imported/ang1.svg-92ae6f97f818d66887b79f9601951e08.ctex::
+ang2.svg::CompressedTexture2D::8845060892212355940::1764231482::1771920084::1::::<><><>0<>0<>c99e8038674c9127d095152d1e10f1e1<>res://.godot/imported/ang2.svg-d4ffc552b10bb594d0c3141002ac02ec.ctex::
+ang3.svg::CompressedTexture2D::6886037732753310597::1764231498::1771920084::1::::<><><>0<>0<>e75868eaac9d6e6fd48c9eb0395e781d<>res://.godot/imported/ang3.svg-08dbe90ff9ce9851f120fc46ba38c316.ctex::
+ang4.svg::CompressedTexture2D::4462458553825417533::1764231514::1771920084::1::::<><><>0<>0<>cc74a7120aad8f9244920e6092e1b06b<>res://.godot/imported/ang4.svg-5ba9275b112b472046c03b4054b5f156.ctex::
+::res://poker table demonstrator/src/assets/chips/yellow1k/::1771920084
+ang1.svg::CompressedTexture2D::6654693710736002053::1764231344::1771920084::1::::<><><>0<>0<>27d22f8acd0543dfe6c8c8a155f26408<>res://.godot/imported/ang1.svg-8537d9a72cf3a909b357b9ad8b8a518b.ctex::
+ang2.svg::CompressedTexture2D::6332556808119950788::1764231372::1771920084::1::::<><><>0<>0<>23986b735126f763a634905034de12a5<>res://.godot/imported/ang2.svg-cc5a3fc5cf1f2f8bbc1fb49da7cc9c18.ctex::
+ang3.svg::CompressedTexture2D::7777040917402627972::1764231392::1771920084::1::::<><><>0<>0<>08eadc514a44af0e5001711b79ae22e9<>res://.godot/imported/ang3.svg-8849775b30f5fec4b64b4c0602b73dab.ctex::
+ang4.svg::CompressedTexture2D::2237824375151537915::1764231407::1771920084::1::::<><><>0<>0<>44cc14f2fb82fbd2b01967237b35590a<>res://.godot/imported/ang4.svg-0f83841b91073f88421f9e6b437f4e9c.ctex::
+::res://poker table demonstrator/src/assets/hands/::1771920084
+pitching hand.png::CompressedTexture2D::7001622128946769024::1771318925::1771920084::1::::<><><>0<>0<>313a2b679f8a33dd926e99a82e963be1<>res://.godot/imported/pitching hand.png-5df1fd59b7db4a7a93ae3fe5dd2ba69c.ctex::
+::res://poker table demonstrator/src/components/::1771920044
+::res://poker table demonstrator/src/composables/::1771920044
+::res://poker table demonstrator/src/services/::1771920044
+::res://poker table demonstrator/src/stores/::1771920044
+::res://poker table demonstrator/src/types/::1771920044
+::res://prompts/::1771911346
+propmts.md::TextFile::-1::1772013733::0::1::::<><><>0<>0<><>::
+::res://scenes/::1771911884
+main.tscn::PackedScene::-1::1771911884::0::1::::<><><>0<>0<><>::res://scripts/main.gd<>res://scenes/main_menu/main_menu.tscn
+::res://scenes/game/::1771921081
+game_table.tscn::PackedScene::-1::1771919756::0::1::::<><><>0<>0<><>::res://scripts/game/game_table.gd<>res://assets/table/Poker Table No Chair.png<>res://assets/chair/chair 1.png<>res://assets/chair/chair 2.png<>res://assets/chair/chair 3.png<>res://assets/chair/chair 4.png<>res://assets/chair/chair 5.png<>res://assets/chair/chair 6.png<>res://assets/chair/chair 7.png<>res://assets/chair/chair 8.png<>res://assets/chair/chair 9.png
+::res://scenes/game/components/::1771921923
+card_display.tscn::PackedScene::-1::1771921923::0::1::::<><><>0<>0<><>::res://scripts/game/components/card_display.gd
+::res://scenes/main_menu/::1771911883
+main_menu.tscn::PackedScene::-1::1771911882::0::1::::<><><>0<>0<><>::res://scripts/main_menu/main_menu.gd
+::res://scripts/::1771921081
+main.gd::GDScript::6609386827923988285::1771912553::0::1::::<>Node<><>0<>0<><>::
+::res://scripts/autoload/::1772013080
+game_manager.gd::GDScript::1680273668616767538::1772013079::0::1::::<>Node<><>0<>0<><>::
+::res://scripts/data/::1771931317
+card_data.gd::GDScript::1485271691852648819::1771921122::0::1::::CardData<>RefCounted<><>0<>0<><>::
+pitch_state.gd::GDScript::3449137270175892800::1771921123::0::1::::PitchState<>RefCounted<><>0<>0<><>::
+player_data.gd::GDScript::1193886399347463864::1771921122::0::1::::PlayerData<>RefCounted<><>0<>0<><>::
+table_layout.gd::GDScript::5654859988734608316::1771931317::0::1::::TableLayout<>RefCounted<><>0<>0<><>::
+::res://scripts/game/::1772014139
+game_table.gd::GDScript::3654622990762890617::1772014139::0::1::::<>Control<><>0<>0<><>::
+layout_editor.gd::GDScript::3799203523672613339::1771934165::0::1::::<>RefCounted<><>0<>0<><>::
+::res://scripts/game/components/::1771922483
+card_display.gd::GDScript::9028291711371283967::1771921916::0::1::::<>TextureRect<><>0<>0<><>::
+::res://scripts/main_menu/::1771912317
+main_menu.gd::GDScript::7287724862950626712::1771911867::0::1::::<>Control<><>0<>0<><>::
+::res://scripts/util/::1771922483
+card_textures.gd::GDScript::6693818976763686424::1771921916::0::1::::CardTextures<>RefCounted<><>0<>0<><>::

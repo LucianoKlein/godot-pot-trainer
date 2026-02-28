@@ -1,0 +1,122 @@
+[gd_scene load_steps=12 format=3 uid="uid://game_table_scene"]
+
+[ext_resource type="Script" path="res://scripts/game/game_table.gd" id="1_table"]
+[ext_resource type="Texture2D" path="res://assets/table/Poker Table No Chair.png" id="2_table_bg"]
+[ext_resource type="Texture2D" path="res://assets/chair/chair 1.png" id="3_chair1"]
+[ext_resource type="Texture2D" path="res://assets/chair/chair 2.png" id="4_chair2"]
+[ext_resource type="Texture2D" path="res://assets/chair/chair 3.png" id="5_chair3"]
+[ext_resource type="Texture2D" path="res://assets/chair/chair 4.png" id="6_chair4"]
+[ext_resource type="Texture2D" path="res://assets/chair/chair 5.png" id="7_chair5"]
+[ext_resource type="Texture2D" path="res://assets/chair/chair 6.png" id="8_chair6"]
+[ext_resource type="Texture2D" path="res://assets/chair/chair 7.png" id="9_chair7"]
+[ext_resource type="Texture2D" path="res://assets/chair/chair 8.png" id="10_chair8"]
+[ext_resource type="Texture2D" path="res://assets/chair/chair 9.png" id="11_chair9"]
+
+[node name="GameTable" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_table")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 131.0
+offset_top = 130.0
+offset_right = 1807.2
+offset_bottom = 1072.8
+texture = ExtResource("2_table_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Chair1" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 436.0
+offset_top = 866.0
+offset_right = 621.0
+offset_bottom = 1051.0
+texture = ExtResource("3_chair1")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Chair2" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 52.0
+offset_top = 731.0
+offset_right = 237.0
+offset_bottom = 916.0
+texture = ExtResource("4_chair2")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Chair3" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 41.0
+offset_top = 94.0
+offset_right = 226.0
+offset_bottom = 279.0
+texture = ExtResource("5_chair3")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Chair4" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 450.0
+offset_top = -56.0
+offset_right = 635.0
+offset_bottom = 129.0
+texture = ExtResource("6_chair4")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Chair5" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 921.0
+offset_top = -52.0
+offset_right = 1106.0
+offset_bottom = 133.0
+texture = ExtResource("7_chair5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Chair6" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 1536.0
+offset_top = -39.0
+offset_right = 1721.0
+offset_bottom = 146.0
+texture = ExtResource("8_chair6")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Chair7" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 1760.0
+offset_top = 159.0
+offset_right = 1945.0
+offset_bottom = 344.0
+texture = ExtResource("9_chair7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Chair8" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 1747.0
+offset_top = 687.0
+offset_right = 1932.0
+offset_bottom = 872.0
+texture = ExtResource("10_chair8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Chair9" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 1401.0
+offset_top = 867.0
+offset_right = 1586.0
+offset_bottom = 1052.0
+texture = ExtResource("11_chair9")
+expand_mode = 1
+stretch_mode = 5

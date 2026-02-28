@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:stackoverflow.com)",
+      "WebFetch(domain:dev.to)",
+      "WebFetch(domain:vueschool.io)",
+      "Bash(npm create:*)",
+      "Bash(npx --yes create-vite@latest . --template vue-ts)",
+      "Bash(powershell -Command \"Copy-Item -Path ''poker-temp\\\\*'' -Destination ''.'' -Recurse -Force\")",
+      "Bash(powershell -Command \"Remove-Item -Path ''poker-temp'' -Recurse -Force\")",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(del /Q srccomponentsHelloWorld.vue srcstyle.css srcassetsvue.svg)",
+      "Bash(powershell -Command:*)",
+      "Bash(npx vue-tsc:*)",
+      "Bash(npx vite build)",
+      "Bash(npx vite --port 5173)",
+      "Bash(npx vite)",
+      "Bash(node:*)",
+      "Bash(if not exist \"E:\\\\poker table demonstrator\\\\src\\\\services\" mkdir \"E:\\\\poker table demonstrator\\\\src\\\\services\")",
+      "Bash(dir:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npx firebase:*)",
+      "Bash(npm run build:*)"
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+res://scripts/autoload/game_manager.gd
+res://scripts/game/game_table.gd
+res://scripts/data/table_layout.gd
+res://assets/shaders/outline.gdshader
+res://scripts/game/layout_editor.gd

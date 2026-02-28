@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/components/card_display.gd" id="1_card"]
+
+[node name="CardDisplay" type="TextureRect"]
+custom_minimum_size = Vector2(26, 36)
+offset_right = 26.0
+offset_bottom = 36.0
+expand_mode = 1
+stretch_mode = 6
+script = ExtResource("1_card")

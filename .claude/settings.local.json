@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo Godot not found in PATH:*)",
+      "WebSearch",
+      "Bash(\"E:/godot/Godot_v4.6.1-stable_win64.exe/Godot_v4.6.1-stable_win64.exe\":*)",
+      "Bash(echo $PATH:*)",
+      "Bash(powershell:*)",
+      "Bash(file:*)",
+      "Bash(find E:\\\\Poker Simulator:*)",
+      "Bash(cp:*)",
+      "Bash(find:*)",
+      "Bash(cd:*)",
+      "Bash(python3:*)"
+    ]
+  }
+}
