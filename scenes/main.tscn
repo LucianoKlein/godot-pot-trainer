@@ -9,3 +9,9 @@ script = ExtResource("1_main")
 [node name="CurrentScene" type="Node" parent="."]
 
 [node name="MainMenu" parent="CurrentScene" instance=ExtResource("2_menu")]
+
+[node name="IntroMusic" type="AudioStreamPlayer" parent="."]
+
+[node name="MainMusic" type="AudioStreamPlayer" parent="."]
+
+[node name="SfxPlayer" type="AudioStreamPlayer" parent="."]

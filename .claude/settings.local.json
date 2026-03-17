@@ -11,7 +11,11 @@
       "Bash(cp:*)",
       "Bash(find:*)",
       "Bash(cd:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(find \"C:\\\\Users\\\\Administrator\\\\Desktop\\\\zsj\\\\code\\\\reg\\\\godot-game-project\\\\BoardAnalysis-game\" -type f -name \"*.gd\" | xargs wc -l | sort -rn | head -20)",
+      "Bash(find \"C:\\\\Users\\\\Administrator\\\\Desktop\\\\zsj\\\\code\\\\reg\\\\godot-game-project\\\\BoardAnalysis-game\" -type f -name \"*.gd\" | xargs grep -l \"class_name\" | wc -l)",
+      "Bash(find \"C:\\\\Users\\\\Administrator\\\\Desktop\\\\zsj\\\\code\\\\reg\\\\godot-game-project\\\\BoardAnalysis-game\" -type f -name \"*.gd\" | xargs grep -l \"AudioStreamPlayer\\\\|play_sfx\" | sort)",
+      "Bash(find \"C:\\\\Users\\\\Administrator\\\\Desktop\\\\zsj\\\\code\\\\reg\\\\godot-game-project\\\\BoardAnalysis-game\" -type f -name \"*.gd\" | xargs grep -l \"AudioStreamPlayer\\\\|play_sfx\")"
     ]
   }
 }

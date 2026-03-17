@@ -20,7 +20,7 @@ static func get_texture(card: CardData) -> Texture2D:
 
 
 static func get_back_texture() -> Texture2D:
-	var path := "res://assets/cards/card back/card back.svg"
+	var path := "res://assets/cards/card back/card back.png"
 	if ResourceLoader.exists(path):
 		return load(path) as Texture2D
 	push_warning("Card back texture not found")

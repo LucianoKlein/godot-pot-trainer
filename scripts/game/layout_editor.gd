@@ -1,188 +1,115 @@
 extends RefCounted
-## Layout Editor — handles, sliders, preview, export/import for the table layout system.
+## Layout Editor — 布局编辑器协调器
+## 使用子管理器组件协调布局编辑功能
 
-const CardDisplayScene := preload("res://scenes/game/components/card_display.tscn")
-
-const HANDLE_DEFS := [
-	["seats", 0, "S1", Color(0.2, 0.6, 0.9)],
-	["seats", 1, "S2", Color(0.2, 0.6, 0.9)],
-	["seats", 2, "S3", Color(0.2, 0.6, 0.9)],
-	["seats", 3, "S4", Color(0.2, 0.6, 0.9)],
-	["seats", 4, "S5", Color(0.2, 0.6, 0.9)],
-	["seats", 5, "S6", Color(0.2, 0.6, 0.9)],
-	["seats", 6, "S7", Color(0.2, 0.6, 0.9)],
-	["seats", 7, "S8", Color(0.2, 0.6, 0.9)],
-	["seats", 8, "S9", Color(0.2, 0.6, 0.9)],
-	["cards", 0, "C1", Color(0.9, 0.3, 0.2)],
-	["cards", 1, "C2", Color(0.9, 0.3, 0.2)],
-	["cards", 2, "C3", Color(0.9, 0.3, 0.2)],
-	["cards", 3, "C4", Color(0.9, 0.3, 0.2)],
-	["cards", 4, "C5", Color(0.9, 0.3, 0.2)],
-	["cards", 5, "C6", Color(0.9, 0.3, 0.2)],
-	["cards", 6, "C7", Color(0.9, 0.3, 0.2)],
-	["cards", 7, "C8", Color(0.9, 0.3, 0.2)],
-	["cards", 8, "C9", Color(0.9, 0.3, 0.2)],
-	["stacks", 0, "$1", Color(0.2, 0.8, 0.4)],
-	["stacks", 1, "$2", Color(0.2, 0.8, 0.4)],
-	["stacks", 2, "$3", Color(0.2, 0.8, 0.4)],
-	["stacks", 3, "$4", Color(0.2, 0.8, 0.4)],
-	["stacks", 4, "$5", Color(0.2, 0.8, 0.4)],
-	["stacks", 5, "$6", Color(0.2, 0.8, 0.4)],
-	["stacks", 6, "$7", Color(0.2, 0.8, 0.4)],
-	["stacks", 7, "$8", Color(0.2, 0.8, 0.4)],
-	["stacks", 8, "$9", Color(0.2, 0.8, 0.4)],
-	["bets", 0, "B1", Color(0.95, 0.77, 0.06)],
-	["bets", 1, "B2", Color(0.95, 0.77, 0.06)],
-	["bets", 2, "B3", Color(0.95, 0.77, 0.06)],
-	["bets", 3, "B4", Color(0.95, 0.77, 0.06)],
-	["bets", 4, "B5", Color(0.95, 0.77, 0.06)],
-	["bets", 5, "B6", Color(0.95, 0.77, 0.06)],
-	["bets", 6, "B7", Color(0.95, 0.77, 0.06)],
-	["bets", 7, "B8", Color(0.95, 0.77, 0.06)],
-	["bets", 8, "B9", Color(0.95, 0.77, 0.06)],
-	["dealer_buttons", 0, "D1", Color.WHITE],
-	["dealer_buttons", 1, "D2", Color.WHITE],
-	["dealer_buttons", 2, "D3", Color.WHITE],
-	["dealer_buttons", 3, "D4", Color.WHITE],
-	["dealer_buttons", 4, "D5", Color.WHITE],
-	["dealer_buttons", 5, "D6", Color.WHITE],
-	["dealer_buttons", 6, "D7", Color.WHITE],
-	["dealer_buttons", 7, "D8", Color.WHITE],
-	["dealer_buttons", 8, "D9", Color.WHITE],
-	["chairs", 0, "Ch1", Color(0.6, 0.4, 0.2)],
-	["chairs", 1, "Ch2", Color(0.6, 0.4, 0.2)],
-	["chairs", 2, "Ch3", Color(0.6, 0.4, 0.2)],
-	["chairs", 3, "Ch4", Color(0.6, 0.4, 0.2)],
-	["chairs", 4, "Ch5", Color(0.6, 0.4, 0.2)],
-	["chairs", 5, "Ch6", Color(0.6, 0.4, 0.2)],
-	["chairs", 6, "Ch7", Color(0.6, 0.4, 0.2)],
-	["chairs", 7, "Ch8", Color(0.6, 0.4, 0.2)],
-	["chairs", 8, "Ch9", Color(0.6, 0.4, 0.2)],
-	["pot", -1, "POT", Color(0.6, 0.35, 0.7)],
-	["muck", -1, "MUCK", Color(0.6, 0.35, 0.7)],
-	["community_cards", -1, "CC", Color(0.6, 0.35, 0.7)],
-	["pitch_hand", -1, "PH", Color(0.9, 0.6, 0.2)],
-]
+const PinchZoomDetector := preload("res://scripts/util/pinch_zoom_detector.gd")
+const LayoutDragHandler := preload("res://scripts/game/layout/layout_drag_handler.gd")
+const LayoutPanelUI := preload("res://scripts/game/layout/layout_panel_ui.gd")
+const LayoutPreviewManager := preload("res://scripts/game/layout/layout_preview_manager.gd")
+const LayoutVisibilityManager := preload("res://scripts/game/layout/layout_visibility_manager.gd")
 
 var _parent: Control
 var _table_overlay: Control
+var _control_panel: PanelContainer
+var _back_to_menu_callback: Callable
+var _layout_back_btn: Button
 
-# UI nodes
-var _layout_panel: PanelContainer
-var _layout_handles_container: Control
-var _layout_handles: Array[Control] = []
-var _avatar_scale_slider: HSlider
-var _dealer_scale_slider: HSlider
-var _hole_card_scale_slider: HSlider
-var _hole_card_gap_slider: HSlider
-var _community_card_scale_slider: HSlider
-var _muck_card_scale_slider: HSlider
-var _pitch_hand_scale_slider: HSlider
-var _pitch_hand_rotation_slider: HSlider
-var _dragging_handle: Control = null
-var _handle_drag_offset: Vector2 = Vector2.ZERO
-var _dragging_layout_panel: bool = false
-var _layout_panel_drag_offset: Vector2 = Vector2.ZERO
-var _preview_cards: Array[Control] = []
+# References to actual game UI elements (passed in from game_table)
+var _avatars: Array[TextureRect]
+var _chairs: Array[TextureRect]
+var _bet_labels: Array[Label]
+var _stack_labels: Array[Label]
+var _dealer_button: Control
+var _pot_display: VBoxContainer
+var _community_cards_container: HBoxContainer
+var _purple_stacks: Array[Node2D]
+var _black_stacks: Array[Node2D]
+var _green_stacks: Array[Node2D]
+var _player_bet_chips: Array[Control]
+var _pot_chip_area: Control
+var _chip_record: Control
+var _action_boxes: Array[Label]
+
+# Sub-managers
+var _drag_handler: LayoutDragHandler
+var _panel_ui: LayoutPanelUI
+var _preview_manager: LayoutPreviewManager
+var _visibility_manager: LayoutVisibilityManager
+
+# Pinch-to-zoom support
+var _pinch_zoom: RefCounted  # PinchZoomDetector
 
 # Reference to the layout toggle button (owned by control panel, passed in)
 var _layout_btn: Button
 
+var is_dragging: bool:
+	get: return _drag_handler.is_dragging if _drag_handler else false
 
-func _init(parent: Control, table_overlay: Control, layout_btn: Button) -> void:
+
+func _init(parent: Control, table_overlay: Control, layout_btn: Button, control_panel: PanelContainer, back_to_menu_cb: Callable, refs: Dictionary) -> void:
 	_parent = parent
 	_table_overlay = table_overlay
 	_layout_btn = layout_btn
+	_control_panel = control_panel
+	_back_to_menu_callback = back_to_menu_cb
+	_avatars.assign(refs.get("avatars", []))
+	_chairs.assign(refs.get("chairs", []))
+	_bet_labels.assign(refs["bet_labels"])
+	_stack_labels.assign(refs["stack_labels"])
+	_dealer_button = refs["dealer_button"]
+	_pot_display = refs["pot_display"]
+	_community_cards_container = refs["community_cards_container"]
+	_purple_stacks.assign(refs.get("purple_stacks", []))
+	_black_stacks.assign(refs.get("black_stacks", []))
+	_green_stacks.assign(refs.get("green_stacks", []))
+	_player_bet_chips.assign(refs.get("player_bet_chips", []))
+	_pot_chip_area = refs.get("pot_chip_area", null)
+	_chip_record = refs.get("chip_record", null)
+	_action_boxes.assign(refs.get("action_boxes", []))
 
 
 func build() -> void:
-	# Layout handles container (hidden by default)
-	_layout_handles_container = Control.new()
-	_layout_handles_container.name = "LayoutHandles"
-	_layout_handles_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_layout_handles_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_layout_handles_container.z_index = 150
-	_layout_handles_container.visible = false
-	_parent.add_child(_layout_handles_container)
+	# Initialize sub-managers
+	_drag_handler = LayoutDragHandler.new(_parent, _table_overlay)
+	_drag_handler.drag_ended.connect(_on_drag_ended)
+	_panel_ui = LayoutPanelUI.new(_parent)
+	_preview_manager = LayoutPreviewManager.new(_table_overlay)
+	_visibility_manager = LayoutVisibilityManager.new({
+		"bet_labels": _bet_labels,
+		"stack_labels": _stack_labels,
+		"dealer_button": _dealer_button,
+		"pot_display": _pot_display,
+		"community_cards_container": _community_cards_container,
+		"purple_stacks": _purple_stacks,
+		"black_stacks": _black_stacks,
+		"green_stacks": _green_stacks,
+		"player_bet_chips": _player_bet_chips,
+		"pot_chip_area": _pot_chip_area,
+		"chip_record": _chip_record,
+		"action_boxes": _action_boxes,
+	})
 
-	# Create handles
-	for def in HANDLE_DEFS:
-		_create_handle(def[0], def[1], def[2], def[3])
+	# Initialize pinch-to-zoom detector
+	_pinch_zoom = PinchZoomDetector.new()
+	_pinch_zoom.zoom_changed.connect(_on_pinch_zoom)
 
-	# Layout panel (draggable)
-	_layout_panel = PanelContainer.new()
-	_layout_panel.name = "LayoutPanel"
-	var lp_style := StyleBoxFlat.new()
-	lp_style.bg_color = Color(0.1, 0.1, 0.18, 0.92)
-	lp_style.set_corner_radius_all(8)
-	lp_style.set_content_margin_all(12)
-	_layout_panel.add_theme_stylebox_override("panel", lp_style)
-	_layout_panel.z_index = 200
-	_layout_panel.visible = false
-	_layout_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	_parent.add_child(_layout_panel)
-	_layout_panel.position = Vector2(1550, 50)
+	# Build panel UI
+	_panel_ui.build()
+	_panel_ui.save_requested.connect(_on_save)
+	_panel_ui.reset_requested.connect(_on_reset)
+	_panel_ui.display_mode_changed.connect(_on_display_mode_changed)
 
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 8)
-	_layout_panel.add_child(vbox)
+	# Build panel content
+	var content := _panel_ui.get_content_container()
+	_visibility_manager.build_select_all_checkbox(content)
+	_panel_ui.build_sliders(_visibility_manager)
+	_panel_ui.build_action_buttons()
 
-	# Draggable title bar
-	var title_bar := Control.new()
-	title_bar.custom_minimum_size = Vector2(0, 28)
-	title_bar.mouse_filter = Control.MOUSE_FILTER_STOP
-	title_bar.gui_input.connect(_on_title_input)
-	vbox.add_child(title_bar)
-	var title := _make_label("Layout Editor  (drag here)", 14, Color(0.8, 0.8, 0.9))
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.set_anchors_preset(Control.PRESET_FULL_RECT)
-	title_bar.add_child(title)
+	# Build back button
+	_layout_back_btn = _panel_ui.build_back_button(_back_to_menu_callback)
 
-	# Sliders
-	_avatar_scale_slider = _make_scale_row(vbox, "Avatar", 0.3, 3.0,
-		GameManager.layout_config.get("avatar_scale", 1.0),
-		func(v: float) -> void: GameManager.set_avatar_scale(v))
-
-	_dealer_scale_slider = _make_scale_row(vbox, "Dealer Btn", 0.5, 3.0,
-		GameManager.layout_config.get("dealer_button_scale", 1.0),
-		func(v: float) -> void: GameManager.set_dealer_button_scale(v))
-
-	_hole_card_scale_slider = _make_scale_row(vbox, "Hole Cards", 0.3, 3.0,
-		GameManager.layout_config.get("hole_card_scale", 1.0),
-		func(v: float) -> void: GameManager.set_hole_card_scale(v))
-
-	_hole_card_gap_slider = _make_scale_row(vbox, "Card Gap", 0.0, 1.5,
-		GameManager.layout_config.get("hole_card_gap", 0.6),
-		func(v: float) -> void: GameManager.set_hole_card_gap(v))
-
-	_community_card_scale_slider = _make_scale_row(vbox, "Comm Cards", 0.3, 3.0,
-		GameManager.layout_config.get("community_card_scale", 1.0),
-		func(v: float) -> void: GameManager.set_community_card_scale(v))
-
-	_muck_card_scale_slider = _make_scale_row(vbox, "Muck Cards", 0.3, 3.0,
-		GameManager.layout_config.get("muck_card_scale", 1.0),
-		func(v: float) -> void: GameManager.set_muck_card_scale(v))
-
-	_pitch_hand_scale_slider = _make_scale_row(vbox, "Pitch Hand", 0.3, 3.0,
-		GameManager.layout_config.get("pitch_hand_scale", 1.0),
-		func(v: float) -> void: GameManager.set_pitch_hand_scale(v))
-
-	_pitch_hand_rotation_slider = _make_scale_row(vbox, "PH Rotation", -180.0, 180.0,
-		GameManager.layout_config.get("pitch_hand_rotation", 0.0),
-		func(v: float) -> void: GameManager.set_pitch_hand_rotation(v))
-	_pitch_hand_rotation_slider.step = 1.0
-
-	# Buttons
-	var export_btn := _make_btn("Export to Console", Color(0.3, 0.5, 0.8), _on_export)
-	vbox.add_child(export_btn)
-	var save_btn := _make_btn("Save to File", Color(0.2, 0.7, 0.3), _on_save)
-	vbox.add_child(save_btn)
-	var load_btn := _make_btn("Load from File", Color(0.6, 0.5, 0.2), _on_load)
-	vbox.add_child(load_btn)
-	var reset_btn := _make_btn("Reset Layout", Color(0.7, 0.2, 0.2), _on_reset)
-	vbox.add_child(reset_btn)
-	var exit_btn := _make_btn("Exit Layout", Color(0.5, 0.5, 0.5), func() -> void: toggle())
-	vbox.add_child(exit_btn)
+	# Connect visibility manager signals
+	_visibility_manager.visibility_changed.connect(_on_visibility_changed)
 
 
 # =============================================================================
@@ -192,197 +119,163 @@ func build() -> void:
 func toggle() -> void:
 	GameManager.toggle_layout_mode()
 	var active := GameManager.layout_mode
-	_layout_handles_container.visible = active
-	_layout_panel.visible = active
+	_panel_ui.set_visible(active)
+	_layout_back_btn.visible = active
+	_control_panel.visible = not active
+
+	# Toggle pot chip area editing mode
+	if _pot_chip_area and is_instance_valid(_pot_chip_area):
+		_pot_chip_area.is_editing = active
+		_pot_chip_area._rebuild()
+
+	# Show/hide chip record in layout mode
+	if _chip_record and is_instance_valid(_chip_record):
+		if active:
+			_chip_record.visible = true
+			_chip_record.mouse_filter = Control.MOUSE_FILTER_STOP
+		else:
+			_chip_record.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	if active:
-		_layout_btn.text = "Exit Layout"
+		_layout_btn.text = "退出布局"
+		_dealer_button.visible = false
+		# Enable mouse interaction on avatars and chairs for dragging
+		for av in _avatars:
+			av.mouse_filter = Control.MOUSE_FILTER_STOP
+		for ch in _chairs:
+			ch.mouse_filter = Control.MOUSE_FILTER_STOP
+		# Enable mouse interaction on action boxes for dragging
+		for ab in _action_boxes:
+			ab.mouse_filter = Control.MOUSE_FILTER_STOP
 		sync_sliders()
-		update_handles()
+		_enable_drag()
 		show_preview()
+		# First select all, then apply display mode so chip/number visibility is correct
+		_visibility_manager.select_all()
+		_visibility_manager.apply_display_mode(_panel_ui.get_display_mode())
+		# Enable pinch-to-zoom
+		_parent.gui_input.connect(_on_parent_input)
 	else:
-		_layout_btn.text = "Layout"
+		# Auto-save layout when exiting layout mode
+		GameManager.save_layout_to_file()
+		_layout_btn.text = "布局"
+		_dealer_button.visible = true
+		# Restore mouse filter on avatars and chairs
+		for av in _avatars:
+			av.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		for ch in _chairs:
+			ch.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# Restore mouse filter on action boxes
+		for ab in _action_boxes:
+			ab.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_disable_drag()
 		hide_preview()
+		_visibility_manager.restore_all_visibility()
+		# Disable pinch-to-zoom
+		if _parent.gui_input.is_connected(_on_parent_input):
+			_parent.gui_input.disconnect(_on_parent_input)
+		_pinch_zoom.reset()
 
 
 func on_layout_changed() -> void:
-	if GameManager.layout_mode:
-		update_handles()
+	if GameManager.layout_mode and not is_dragging:
 		show_preview()
 
 
+func rebuild_drag_connections() -> void:
+	_disable_drag()
+	_enable_drag()
+	# Re-show preview so that preview elements (hole cards, dealer buttons,
+	# answer boxes, community cards) get re-registered as draggable
+	show_preview()
+
+
 func sync_sliders() -> void:
-	_avatar_scale_slider.value = GameManager.layout_config.get("avatar_scale", 1.0)
-	_dealer_scale_slider.value = GameManager.layout_config.get("dealer_button_scale", 1.0)
-	_hole_card_scale_slider.value = GameManager.layout_config.get("hole_card_scale", 1.0)
-	_hole_card_gap_slider.value = GameManager.layout_config.get("hole_card_gap", 0.6)
-	_community_card_scale_slider.value = GameManager.layout_config.get("community_card_scale", 1.0)
-	_muck_card_scale_slider.value = GameManager.layout_config.get("muck_card_scale", 1.0)
-	_pitch_hand_scale_slider.value = GameManager.layout_config.get("pitch_hand_scale", 1.0)
-	_pitch_hand_rotation_slider.value = GameManager.layout_config.get("pitch_hand_rotation", 0.0)
-
-
-func update_handles() -> void:
-	var db_scale: float = GameManager.layout_config.get("dealer_button_scale", 1.0)
-	var db_handle_size := Vector2(24, 24) * db_scale
-	for handle in _layout_handles:
-		var category: String = handle.get_meta("category")
-		var idx: int = handle.get_meta("index")
-		var pos: Vector2
-		if idx >= 0:
-			pos = GameManager.get_layout_position_px(category, idx)
-		else:
-			pos = GameManager.get_layout_position_px(category)
-		if category == "dealer_buttons":
-			handle.custom_minimum_size = db_handle_size
-			handle.size = db_handle_size
-			handle.position = pos - db_handle_size / 2
-			var bg_label: Label = handle.get_child(0)
-			bg_label.custom_minimum_size = db_handle_size
-			bg_label.size = db_handle_size
-			var bg_style: StyleBoxFlat = bg_label.get_theme_stylebox("normal")
-			bg_style.set_corner_radius_all(int(db_handle_size.x / 2))
-		else:
-			handle.position = pos - Vector2(12, 12)
+	_panel_ui.sync_sliders()
 
 
 func show_preview() -> void:
-	hide_preview()
-	var hc_scale: float = GameManager.layout_config.get("hole_card_scale", 1.0)
-	var cc_scale: float = GameManager.layout_config.get("community_card_scale", 1.0)
-	var hc_size := Vector2(48, 66) * hc_scale
-	var cc_size := Vector2(48, 66) * cc_scale
-	var hc_gap: float = GameManager.layout_config.get("hole_card_gap", 0.6)
-
-	# Preview hole cards: 2 face-down cards per seat
-	for i in range(9):
-		var card_pos: Vector2 = GameManager.get_layout_position_px("cards", i)
-		var total_w: float = hc_size.x + hc_size.x * hc_gap
-		var start_x: float = card_pos.x - total_w / 2
-		for c in range(2):
-			var card_node: TextureRect = CardDisplayScene.instantiate()
-			card_node.custom_minimum_size = hc_size
-			card_node.size = hc_size
-			card_node.position = Vector2(start_x + c * hc_size.x * hc_gap, card_pos.y - hc_size.y / 2)
-			card_node.z_index = 5
-			card_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			_table_overlay.add_child(card_node)
-			card_node.set_face_down()
-			_preview_cards.append(card_node)
-
-	# Preview community cards: 5 face-up sample cards
-	var sample_cards: Array[CardData] = [
-		CardData.new(CardData.Suit.SPADES, CardData.Rank.ACE, true),
-		CardData.new(CardData.Suit.HEARTS, CardData.Rank.KING, true),
-		CardData.new(CardData.Suit.DIAMONDS, CardData.Rank.QUEEN, true),
-		CardData.new(CardData.Suit.CLUBS, CardData.Rank.JACK, true),
-		CardData.new(CardData.Suit.SPADES, CardData.Rank.TEN, true),
-	]
-	var comm_pos: Vector2 = GameManager.get_layout_position_px("community_cards", -1)
-	for c in range(5):
-		var card_node: TextureRect = CardDisplayScene.instantiate()
-		card_node.custom_minimum_size = cc_size
-		card_node.size = cc_size
-		card_node.position = comm_pos - Vector2(cc_size.x * 2.5 + 8, cc_size.y / 2) + Vector2(c * (cc_size.x + 4), 0)
-		card_node.z_index = 5
-		card_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_table_overlay.add_child(card_node)
-		card_node.set_card(sample_cards[c])
-		_preview_cards.append(card_node)
+	_preview_manager.show_preview(_visibility_manager, _drag_handler)
 
 
 func hide_preview() -> void:
-	for card in _preview_cards:
-		if is_instance_valid(card):
-			card.queue_free()
-	_preview_cards.clear()
+	_preview_manager.hide_preview()
+
+
+func apply_all_visibility() -> void:
+	_visibility_manager.apply_all_visibility()
 
 
 # =============================================================================
-# INTERNAL
+# INTERNAL — drag management
 # =============================================================================
 
-func _create_handle(category: String, idx: int, label_text: String, color: Color) -> void:
-	var handle := Control.new()
-	handle.custom_minimum_size = Vector2(24, 24)
-	handle.size = Vector2(24, 24)
-	handle.mouse_filter = Control.MOUSE_FILTER_STOP
-	handle.set_meta("category", category)
-	handle.set_meta("index", idx)
+func _enable_drag() -> void:
+	_drag_handler.disable_drag()
 
-	var bg := Label.new()
-	bg.text = label_text
-	bg.add_theme_font_size_override("font_size", 9)
-	bg.add_theme_color_override("font_color", Color.BLACK if color.get_luminance() > 0.5 else Color.WHITE)
-	bg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	bg.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	var bg_style := StyleBoxFlat.new()
-	bg_style.bg_color = color
-	bg_style.set_corner_radius_all(12)
-	bg.add_theme_stylebox_override("normal", bg_style)
-	handle.add_child(bg)
+	var nodes := {}
+	# Seats (avatars) and chairs are always draggable in layout mode
+	nodes["seats"] = _avatars
+	nodes["chairs"] = _chairs
+	if _visibility_manager.is_element_visible("bet_labels"):
+		nodes["bets"] = _bet_labels
+	if _visibility_manager.is_element_visible("stack_labels"):
+		nodes["stacks"] = _stack_labels
+	if _visibility_manager.is_element_visible("player_chips"):
+		nodes["purple_stacks"] = _purple_stacks
+		nodes["black_stacks"] = _black_stacks
+		nodes["green_stacks"] = _green_stacks
+	if _visibility_manager.is_element_visible("bet_chips"):
+		nodes["bet_chips"] = _player_bet_chips
+	if _visibility_manager.is_element_visible("pot_display"):
+		nodes["pot"] = _pot_display
+	if _visibility_manager.is_element_visible("pot_chips") and _pot_chip_area:
+		nodes["pot_chips"] = _pot_chip_area
+	if _visibility_manager.is_element_visible("chip_record") and _chip_record:
+		nodes["chip_record"] = _chip_record
+	if _visibility_manager.is_element_visible("community_cards"):
+		nodes["community_cards"] = _community_cards_container
+	if _visibility_manager.is_element_visible("action_boxes"):
+		nodes["action_boxes"] = _action_boxes
 
-	handle.gui_input.connect(_on_handle_input.bind(handle))
-
-	var pos: Vector2
-	if idx >= 0:
-		pos = GameManager.get_layout_position_px(category, idx)
-	else:
-		pos = GameManager.get_layout_position_px(category)
-	handle.position = pos - Vector2(12, 12)
-
-	_layout_handles_container.add_child(handle)
-	_layout_handles.append(handle)
+	_drag_handler.enable_drag(nodes)
 
 
-func _on_handle_input(event: InputEvent, handle: Control) -> void:
-	if event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT:
-			if mb.pressed:
-				_dragging_handle = handle
-				_handle_drag_offset = handle.position - mb.global_position
-			else:
-				_dragging_handle = null
-	elif event is InputEventMouseMotion and _dragging_handle == handle:
-		var new_pos: Vector2 = (event as InputEventMouseMotion).global_position + _handle_drag_offset
-		handle.position = new_pos
-		var center := new_pos + Vector2(12, 12)
-		var pct := TableLayout.px_to_pct(center)
-		var category: String = handle.get_meta("category")
-		var idx: int = handle.get_meta("index")
-		GameManager.update_layout_position(category, idx, pct.x, pct.y)
-
-
-func _on_title_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT:
-			if mb.pressed:
-				_dragging_layout_panel = true
-				_layout_panel_drag_offset = _layout_panel.position - mb.global_position
-			else:
-				_dragging_layout_panel = false
-	elif event is InputEventMouseMotion and _dragging_layout_panel:
-		_layout_panel.position = (event as InputEventMouseMotion).global_position + _layout_panel_drag_offset
-
-
-func _on_export() -> void:
-	var json := GameManager.export_layout()
-	print("")
-	print("========== LAYOUT EXPORT ==========")
-	print(json)
-	print("====================================")
-	print("")
+func _disable_drag() -> void:
+	_drag_handler.disable_drag()
 
 
 func _on_save() -> void:
-	GameManager.save_layout_to_file()
+	var success := GameManager.save_layout_to_file()
+	if success:
+		_show_save_dialog("布局已保存")
+	else:
+		_show_save_dialog("保存失败，请重试")
 
 
-func _on_load() -> void:
-	GameManager.load_layout_from_file()
-	sync_sliders()
+func _show_save_dialog(text: String) -> void:
+	var toast := Label.new()
+	toast.text = "✓ " + text if "保存" in text else "✗ " + text
+	toast.add_theme_font_size_override("font_size", 20)
+	toast.add_theme_color_override("font_color", Color.WHITE)
+	toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	toast.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color(0.15, 0.5, 0.25, 0.9) if "保存" in text else Color(0.6, 0.2, 0.2, 0.9)
+	bg.set_corner_radius_all(8)
+	bg.set_content_margin_all(12)
+	toast.add_theme_stylebox_override("normal", bg)
+	toast.set_anchors_preset(Control.PRESET_CENTER)
+	toast.offset_left = -80
+	toast.offset_right = 80
+	toast.offset_top = -20
+	toast.offset_bottom = 20
+	toast.z_index = 300
+	_parent.add_child(toast)
+	var tw := _parent.create_tween()
+	tw.tween_interval(1.0)
+	tw.tween_property(toast, "modulate:a", 0.0, 0.5)
+	tw.tween_callback(toast.queue_free)
 
 
 func _on_reset() -> void:
@@ -390,45 +283,116 @@ func _on_reset() -> void:
 	sync_sliders()
 
 
-func _make_scale_row(parent: VBoxContainer, label_text: String, min_val: float, max_val: float, initial: float, callback: Callable) -> HSlider:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
-	parent.add_child(row)
-	var lbl := _make_label(label_text, 12, Color(0.7, 0.7, 0.7))
-	lbl.custom_minimum_size.x = 80
-	row.add_child(lbl)
-	var slider := HSlider.new()
-	slider.min_value = min_val
-	slider.max_value = max_val
-	slider.step = 0.05
-	slider.value = initial
-	slider.custom_minimum_size.x = 120
-	slider.value_changed.connect(callback)
-	row.add_child(slider)
-	return slider
+func _on_drag_ended() -> void:
+	# After drag ends, emit layout_changed to refresh dependent elements
+	# (e.g., name_label, action_box positions relative to avatar)
+	GameManager.layout_changed.emit()
 
 
-func _make_label(text: String, font_size: int, color: Color) -> Label:
-	var lbl := Label.new()
-	lbl.text = text
-	lbl.add_theme_font_size_override("font_size", font_size)
-	lbl.add_theme_color_override("font_color", color)
-	return lbl
+func _on_display_mode_changed(mode: String) -> void:
+	_visibility_manager.apply_display_mode(mode)
 
 
-func _make_btn(text: String, color: Color, callback: Callable) -> Button:
-	var btn := Button.new()
-	btn.text = text
-	var style := StyleBoxFlat.new()
-	style.bg_color = color
-	style.set_corner_radius_all(4)
-	style.set_content_margin_all(6)
-	btn.add_theme_stylebox_override("normal", style)
-	var hover := StyleBoxFlat.new()
-	hover.bg_color = color.lightened(0.15)
-	hover.set_corner_radius_all(4)
-	hover.set_content_margin_all(6)
-	btn.add_theme_stylebox_override("hover", hover)
-	btn.add_theme_color_override("font_color", Color.WHITE)
-	btn.pressed.connect(callback)
-	return btn
+func _on_visibility_changed(element_key: String, visible: bool) -> void:
+	if element_key == "all":
+		# Rebuild all drag connections and preview
+		if GameManager.layout_mode:
+			_disable_drag()
+			_enable_drag()
+			show_preview()
+	else:
+		# Handle individual element visibility change
+		if GameManager.layout_mode:
+			if visible:
+				_enable_drag_for_element(element_key)
+			else:
+				_disable_drag_for_element(element_key)
+			# Rebuild preview for elements that use preview nodes
+			if element_key in ["hole_cards", "community_cards", "dealer_buttons", "answer_boxes"]:
+				show_preview()
+
+
+func _enable_drag_for_element(element_key: String) -> void:
+	if not GameManager.layout_mode:
+		return
+	match element_key:
+		"bet_labels":
+			_drag_handler.enable_drag_for_element("bets", _bet_labels)
+		"stack_labels":
+			_drag_handler.enable_drag_for_element("stacks", _stack_labels)
+		"player_chips":
+			_drag_handler.enable_drag_for_element("purple_stacks", _purple_stacks)
+			_drag_handler.enable_drag_for_element("black_stacks", _black_stacks)
+			_drag_handler.enable_drag_for_element("green_stacks", _green_stacks)
+		"bet_chips":
+			_drag_handler.enable_drag_for_element("bet_chips", _player_bet_chips)
+		"pot_display":
+			_drag_handler.enable_drag_for_element("pot", _pot_display)
+		"pot_chips":
+			if _pot_chip_area:
+				_drag_handler.enable_drag_for_element("pot_chips", _pot_chip_area)
+		"chip_record":
+			if _chip_record:
+				_drag_handler.enable_drag_for_element("chip_record", _chip_record)
+		"community_cards":
+			_drag_handler.enable_drag_for_element("community_cards", _community_cards_container)
+		"action_boxes":
+			_drag_handler.enable_drag_for_element("action_boxes", _action_boxes)
+
+
+func _disable_drag_for_element(element_key: String) -> void:
+	if not GameManager.layout_mode:
+		return
+	var nodes_to_remove: Array[Node] = []
+	match element_key:
+		"bet_labels":
+			for l in _bet_labels:
+				nodes_to_remove.append(l)
+		"stack_labels":
+			for l in _stack_labels:
+				nodes_to_remove.append(l)
+		"player_chips":
+			for s in _purple_stacks:
+				nodes_to_remove.append(s)
+			for s in _black_stacks:
+				nodes_to_remove.append(s)
+			for s in _green_stacks:
+				nodes_to_remove.append(s)
+		"bet_chips":
+			for b in _player_bet_chips:
+				nodes_to_remove.append(b)
+		"pot_display":
+			nodes_to_remove.append(_pot_display)
+		"pot_chips":
+			if _pot_chip_area:
+				nodes_to_remove.append(_pot_chip_area)
+		"chip_record":
+			if _chip_record:
+				nodes_to_remove.append(_chip_record)
+		"community_cards":
+			nodes_to_remove.append(_community_cards_container)
+		"action_boxes":
+			for ab in _action_boxes:
+				nodes_to_remove.append(ab)
+
+	_drag_handler.disable_drag_for_element(nodes_to_remove)
+
+
+func _on_parent_input(event: InputEvent) -> void:
+	if _pinch_zoom.process_input(event):
+		# Pinch gesture detected, adjust active chip slider
+		var active_slider := _panel_ui.get_active_chip_slider()
+		if active_slider:
+			pass  # Slider will be adjusted in _on_pinch_zoom
+
+
+func _on_pinch_zoom(zoom_factor: float) -> void:
+	var active_slider := _panel_ui.get_active_chip_slider()
+	if not active_slider:
+		return
+
+	var current_value := active_slider.value
+	var new_value := clampf(current_value * zoom_factor, active_slider.min_value, active_slider.max_value)
+
+	if abs(new_value - current_value) > 0.01:
+		active_slider.value = new_value

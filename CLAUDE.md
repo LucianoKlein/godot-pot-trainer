@@ -1,88 +1,114 @@
-# Poker Dealer Simulator — Godot 4.6
+# Pot Trainer — Godot 4.6
 
 ## Project Structure
 ```
 scripts/
-  autoload/game_manager.gd    — Game state, layout system, signals (~900 lines)
+  autoload/game_manager.gd    — Game state, engine integration, layout, signals
   data/
     card_data.gd               — Card suit/rank data model
-    player_data.gd             — Player state (chips, hole cards, folded, etc.)
-    pitch_state.gd             — Pitch phase tracking
-    table_layout.gd            — Layout constants, pct_to_px/px_to_pct conversion
+    player_data.gd             — Player state (chips, template, round_contribution, status)
+    table_layout.gd            — Layout constants, pct_to_px/px_to_pct conversion, chip presets
+  pot_trainer/
+    pot_engine.gd              — Pure game logic engine (state machine, NPC AI, pot-limit calc)
+    player_templates.gd        — 6 AI personality types with weighted action probabilities
+    table_presets.gd           — 6 table presets (GTO, Mixed, Casual, etc.)
+    training_config.gd         — Training config data class (blinds, probability, mode)
   game/
-    game_table.gd              — Main UI controller / orchestrator (~1700 lines)
-    layout_editor.gd           — Layout editor (handles, sliders, preview, export/import, RefCounted)
-    components/card_display.gd — Card display component (TextureRect-based)
-  util/card_textures.gd        — Card texture loading
+    game_table.gd              — Main UI controller
+    layout_editor.gd           — Layout editor coordinator
+    layout/
+      layout_drag_handler.gd   — Drag logic handler (~189 lines)
+      layout_panel_ui.gd       — Layout panel UI builder (~440 lines)
+      layout_preview_manager.gd — Preview cards/buttons manager (~282 lines)
+      layout_visibility_manager.gd — Element visibility control (~205 lines)
+    components/
+      seat_ui.gd               — Single seat UI manager
+      table_center.gd          — Table center UI manager
+      card_display.gd          — Card display component
+      chip.gd                  — Single chip component (9 colors × 4 angles)
+      chip_stack.gd            — Single-color vertical chip stack
+      ordered_chip_stacks.gd   — Multi-color ordered stacks (player chips)
+      scattered_chips.gd       — Scattered triangle layout (bet chips)
+      pot_chip_area.gd         — Large scattered triangle (pot chips)
+      chip_record.gd           — Chip abacus (算盘式底池金额显示)
+      answer_box.gd            — Answer input box for training questions
+    ui/
+      control_panel_manager.gd — Control panel manager
+  util/
+    card_textures.gd           — Card texture loading
+    chip_utils.gd              — Chip amount-to-color conversion
   main.gd                      — Entry point
   main_menu/main_menu.gd       — Main menu
 assets/
-  shaders/outline.gdshader     — Gold outline shader with breathing effect (for active player)
+  shaders/outline.gdshader     — Gold outline shader (active player highlight)
   cards/                       — 52 card SVGs + card back
+  chips/                       — 9 chip colors × 4 angles (SVG)
   players/player 1-9.png       — Player avatars (70x70 base)
   chair/                       — 9 chair images
   table/                       — Poker table background
-  ui/pitching_hand.png         — Pitching hand image (400x562, aspect 0.7117)
 scenes/
   game/components/card_display.tscn — Card display scene
-Poker table demonstrator/      — Original Vue.js web app (reference implementation)
 ```
 
 ## Architecture
-- GameManager (autoload singleton) owns all game state and emits 20+ signals (including `mispitch_animated`)
-- game_table.gd builds all UI programmatically (no scene tree UI nodes except card_display.tscn)
-- layout_editor.gd is a RefCounted helper class, instantiated by game_table.gd with `LayoutEditor.new(parent, table_overlay, layout_btn)`
+- GameManager (autoload singleton) owns display state, integrates PotEngine, emits signals
+- PotEngine (RefCounted) is the pure game logic layer — no UI, no signals, no side effects
+- game_table.gd builds all UI programmatically, reacts to GameManager signals
 - Layout system uses percentage-based positioning (0-100) relative to table background
-- All card base size unified to 48x66 px, scaled by per-category scale factors
 - Signal-driven: GameManager emits → game_table.gd reacts
+- Chip system: 3 components for different layouts (ordered stacks, scattered, pot area) + chip record abacus
+
+## Chip System
+- Default player stack: 3 separate stacks per seat — 10 purple (500), 20 black (100), 20 green (25) = 7500 total
+- Each color stack is independently draggable in layout mode with its own position (`purple_stacks`, `black_stacks`, `green_stacks`)
+- Default bet chips: 1 purple, 2 black, 1 green = 725 total
+- Pot chips: Large amount (7500) in triangle scatter layout
+- Layout editor: Draggable positions + scale sliders for all chip types
+- Mobile support: Pinch-to-zoom for chip scale adjustment
+
+## Pot Trainer Game Flow
+```
+Start Game → create_initial_state (post blinds)
+  → run_until_question loop:
+    ├─ advance_game (NPC acts: fold/check/call/bet/raise)
+    ├─ If bet/raise → create_training_question
+    │   ├─ is_answer=true → show question panel, wait for user input
+    │   └─ is_answer=false → auto-complete, continue loop
+    ├─ User submits answer → validate against max_raise_to
+    │   ├─ Correct → complete_raise, continue loop
+    │   └─ Wrong → show error, retry
+    └─ If game_over → restart (scenario) or stop (single hand)
+```
+
+## Pot-Limit Max Raise Formula
+- Bet (currentBet == 0): `maxRaiseTo = pot.total`
+- Raise (currentBet > 0): `maxRaiseTo = currentBet * 3 + pot.total + otherPlayersContributions`
+  - otherPlayersContributions excludes current player AND one player at max bet
+
+## AI Player Templates (6 types)
+- T1_GTO: Balanced
+- T2_CALLING_STATION: Passive, calls a lot
+- T3_LAG: Aggressive, high bet/raise frequency
+- T4_TAG_MAX: Tight, folds often, goes big when playing
+- T5_NORMAL: Live-like, moderate
+- T6_TRICKY: Deceptive, small/big probes
+
+## Table Presets (6 types)
+- P1: All GTO | P2: Half GTO, half random | P3: 1 GTO, rest random
+- P4: No GTO (casual) | P5: All crazy (LAG/Normal/Tricky) | P6: All Normal
 
 ## Layout System
-- Scale configs: `avatar_scale`, `dealer_button_scale`, `hole_card_scale`, `hole_card_gap`, `community_card_scale`, `muck_card_scale`, `pitch_hand_scale`, `pitch_hand_rotation`
-- Position categories (arrays of 9): `seats`, `cards`, `stacks`, `bets`, `dealer_buttons`, `chairs`
-- Position categories (single): `pot`, `muck`, `community_cards`, `pitch_hand`
+- Hardcoded rotation: `DEFAULT_HOLE_CARD_ROTATION` in table_layout.gd — per-seat card rotation (not editable in layout editor)
+- Scale configs: `avatar_scale`, `dealer_button_scale`, `hole_card_scale`, `hole_card_gap`, `community_card_scale`, `muck_card_scale`
+- Position categories (arrays of 9): `seats`, `cards`, `stacks`, `bets`, `dealer_buttons`, `chairs`, `purple_stacks`, `black_stacks`, `green_stacks`
+- Position categories (single): `pot`, `muck`, `community_cards`, `chip_record`
 - Coordinate conversion: `TableLayout.pct_to_px()` / `TableLayout.px_to_pct()`
 - BG_OFFSET=Vector2(131,130), BG_SIZE=Vector2(1676,943)
 - Saved to `user://layout.json`, auto-loaded on start
-- Default `hole_card_scale` is 0.55 — use 0.55 (not 1.0) as fallback in `.get()` calls
 
 ## Key Conventions
 - Cards: base size Vector2(48, 66), scaled by category-specific scale factor
-- Hole card default scale: 0.55 (visually ~26x36), community card default: 1.0
-- Pitch hand: base size Vector2(57, 80) constant `PITCH_HAND_BASE_SIZE`, preserves 400:562 aspect ratio via `STRETCH_KEEP_ASPECT_CENTERED`
-- Pitch zones: dynamically sized to wrap hole cards exactly (hc_total_w x hc_size.y + 3px padding each side)
-- Active player indicated by gold outline shader on avatar (breathing animation 30%-100% opacity) + orange action arrow from table center
-- Action arrow: Control node with `_draw()`, orange `Color(1.0, 0.55, 0.0)`, rect body (80x18) + triangle head (30x36) + white "Action" text, positioned at 45% from table center toward seat, rotated via `direction.angle()`, looping radial bounce tween (12px, 0.4s, SINE ease), z_index=5, same show/hide condition as gold outline (`cp >= 0 && in_hand && !PITCH`)
-- Context menu triggered by clicking player avatar or name label
-- Game flow: PITCH → PREFLOP → FLOP → TURN → RIVER → SHOWDOWN
-- Keyboard shortcuts: F=Fold, C=Call/Check, R=Raise, B=Bet
-- Dealer button: white circle with black border (`border_color = Color.BLACK`, `set_border_width_all(2)`), corner radius = size/2 to stay circular at any scale. Child Label size must be explicitly set on resize to prevent square rendering.
-
-## Game Mode & Blinds
-- `GameMode` enum: `CASH`, `TOURNAMENT` (in GameManager)
-- Default mode: `CASH`, default blinds: 1/2
-- Cash blind presets: 1/2, 1/3, 2/3, 2/5, 3/5, 5/5, 5/10, 10/20, 10/25, 20/40, 25/50, 50/100, 100/100
-- Tournament blind presets: 100/100, 100/200, 200/300, 200/400, 300/600, 400/800, 500/1000, 600/1200, 800/1600, 1000/1500, 1000/2000, 1500/3000
-- Presets stored as `CASH_BLINDS` and `TOURNAMENT_BLINDS` const arrays in GameManager
-- Control panel has two `OptionButton` dropdowns: Mode (Cash/Tournament) and Blinds (preset list)
-- Switching mode repopulates blinds dropdown and auto-selects first preset
-- `set_game_mode()` and `set_blinds()` emit `blinds_changed` signal
-
-## Pitch System
-- Card flight: linear path (TRANS_LINEAR) + continuous rotation (TAU*4 over 0.6s), starts from `_pitch_hand.position + _pitch_hand.pivot_offset`
-- Mispitch to wrong player: card flies to wrong seat and STAYS on table (stored in `_mispitch_cards`), misdeal X appears
-- Mispitch to table: click outside zones → `GameManager.mispitch()` draws a card from deck, emits `mispitch_animated` signal, card flies to click position and stays
-- Misdeal X: clicking X toggles a menu with "Misdeal" button (not direct reset). Menu at `_misdeal_menu`, positioned above X button
-- `_clear_pitched_cards()` cleans up both `_arrived_cards` and `_mispitch_cards` — called on misdeal, new hand, reset, street change
-- Pitch zones color-coded: white=empty, green=1 card, gray=full(2), yellow=hover, red=replacement
-- Auto-pitch timer: 0.15s interval, stops on mispitch or replacement phase
-- Pitch hand follows mouse rotation in `_process()` with base rotation offset from layout config
-
-## Card Assets
-- Card SVGs in `assets/cards/{suit}/{rank}.svg`, card back in `assets/cards/card back/card back.svg`
-- Card back SVG viewBox must match actual content bounds (was 735.61 height with transparent padding, trimmed to ~714.5)
-- CardDisplay uses `EXPAND_IGNORE_SIZE` + `STRETCH_KEEP_ASPECT_CENTERED` — SVG viewBox directly affects rendered size within Control bounds
-
-## Refactoring Notes
-- game_table.gd was 1800+ lines, layout editor extracted to layout_editor.gd (~380 lines saved)
-- Further candidates for extraction: pitch controller (~180 lines), context menu + raise dialog
-- Pattern for extraction: RefCounted class taking parent Control reference, called from game_table.gd
+- Initial stack: 7500 chips per player
+- All amounts rounded to multiples of 25
+- Dealer button: white circle with black border, corner radius = size/2
+- Active player: gold outline shader on avatar (breathing animation)
