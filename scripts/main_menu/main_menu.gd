@@ -1,15 +1,56 @@
 extends Control
 
 var _entry_panel: Control
-var _settings_panel: Control
+var _entry_vbox: VBoxContainer
 var _back_btn: Button
-var _music_slider: HSlider
-var _music_value_lbl: Label
-var _sfx_toggle_btn: Button
+var _new_game_btn: Button
+var _settings_btn: Button
+
+# Delegated managers
+var _login_panel_mgr: Node
+var _settings_panel_mgr: Node
+var _login_status_area: HBoxContainer
+var _login_status_lbl: Label
+var _logout_btn: Button
+
+# Debug backdoor
+var _debug_click_count := 0
+var _debug_click_timer := 0.0
+const DEBUG_CLICK_THRESHOLD := 20
+const DEBUG_CLICK_TIMEOUT := 3.0
 
 
 func _ready() -> void:
+	var login_script := load("res://scripts/main_menu/login_panel.gd")
+	var login_node := Node.new()
+	login_node.set_script(login_script)
+	_login_panel_mgr = login_node
+	_login_panel_mgr.setup(self, _make_entry_btn)
+	_login_panel_mgr.login_status_changed.connect(_on_login_status_changed)
+	_login_panel_mgr.play_sfx_requested.connect(_play_sfx)
+	_login_panel_mgr.connect_firebase_signals()
 	_build_ui()
+	Locale.language_changed.connect(_on_language_changed)
+	if FirebaseAuth.is_logged_in:
+		_update_new_game_btn_state()
+
+
+func _process(delta: float) -> void:
+	if _debug_click_timer > 0.0:
+		_debug_click_timer -= delta
+		if _debug_click_timer <= 0.0:
+			_debug_click_count = 0
+	_login_panel_mgr.process(delta)
+
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if not FirebaseAuth.is_logged_in:
+			_debug_click_count += 1
+			_debug_click_timer = DEBUG_CLICK_TIMEOUT
+			if _debug_click_count >= DEBUG_CLICK_THRESHOLD:
+				_debug_click_count = 0
+				_activate_debug_mode()
 
 
 func _build_ui() -> void:
@@ -36,7 +77,7 @@ func _build_ui() -> void:
 
 	# Title
 	var title := Label.new()
-	title.text = "底池训练器"
+	title.text = Locale.tr_key("title")
 	title.add_theme_font_size_override("font_size", 36)
 	title.add_theme_color_override("font_color", Color(0.94, 0.80, 0.31))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -51,106 +92,49 @@ func _build_ui() -> void:
 	_entry_panel.offset_top = 100
 	add_child(_entry_panel)
 
-	var entry_vbox := VBoxContainer.new()
-	entry_vbox.set_anchors_preset(Control.PRESET_CENTER)
-	entry_vbox.offset_left = -200
-	entry_vbox.offset_right = 200
-	entry_vbox.offset_top = -100
-	entry_vbox.offset_bottom = 100
-	entry_vbox.add_theme_constant_override("separation", 24)
-	_entry_panel.add_child(entry_vbox)
+	_entry_vbox = VBoxContainer.new()
+	_entry_vbox.set_anchors_preset(Control.PRESET_CENTER)
+	_entry_vbox.offset_left = -200
+	_entry_vbox.offset_right = 200
+	_entry_vbox.offset_top = -160
+	_entry_vbox.offset_bottom = 160
+	_entry_vbox.add_theme_constant_override("separation", 24)
+	_entry_panel.add_child(_entry_vbox)
 
-	var new_game_btn := _make_entry_btn("开始游戏", Color(0.08, 0.08, 0.10, 0.82), Color(0.82, 0.66, 0.26))
-	new_game_btn.pressed.connect(_on_new_game_pressed)
-	entry_vbox.add_child(new_game_btn)
+	# Spacer to push content to bottom
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_entry_vbox.add_child(spacer)
 
-	var settings_btn := _make_entry_btn("设置", Color(0.08, 0.08, 0.10, 0.82), Color(0.82, 0.66, 0.26))
-	settings_btn.pressed.connect(_on_settings_pressed)
-	entry_vbox.add_child(settings_btn)
+	# Login status area
+	_login_status_area = HBoxContainer.new()
+	_login_status_area.add_theme_constant_override("separation", 10)
+	_login_status_area.alignment = BoxContainer.ALIGNMENT_BEGIN
+	_login_status_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_entry_vbox.add_child(_login_status_area)
 
-	# --- Settings panel (hidden) ---
-	_settings_panel = Control.new()
-	_settings_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_settings_panel.offset_top = 100
-	_settings_panel.visible = false
-	add_child(_settings_panel)
+	_new_game_btn = _make_entry_btn(Locale.tr_key("start_game"), Color(0.08, 0.08, 0.10, 0.82), Color(0.82, 0.66, 0.26))
+	_new_game_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_new_game_btn.pressed.connect(_on_new_game_pressed)
 
-	var settings_title := Label.new()
-	settings_title.text = "设置"
-	settings_title.add_theme_font_size_override("font_size", 26)
-	settings_title.add_theme_color_override("font_color", Color(0.90, 0.80, 0.55))
-	settings_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	settings_title.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	settings_title.offset_top = 0
-	settings_title.offset_bottom = 40
-	_settings_panel.add_child(settings_title)
+	_settings_btn = _make_entry_btn(Locale.tr_key("settings"), Color(0.08, 0.08, 0.10, 0.82), Color(0.82, 0.66, 0.26))
+	_settings_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_settings_btn.pressed.connect(_on_settings_pressed)
 
-	var settings_vbox := VBoxContainer.new()
-	settings_vbox.set_anchors_preset(Control.PRESET_CENTER)
-	settings_vbox.offset_left = -300
-	settings_vbox.offset_right = 300
-	settings_vbox.offset_top = -200
-	settings_vbox.offset_bottom = 200
-	settings_vbox.add_theme_constant_override("separation", 32)
-	_settings_panel.add_child(settings_vbox)
+	_build_login_status()
+	_update_new_game_btn_state()
 
-	# Music volume row
-	var music_row := HBoxContainer.new()
-	music_row.add_theme_constant_override("separation", 16)
-	settings_vbox.add_child(music_row)
-
-	var music_label := Label.new()
-	music_label.text = "背景音乐音量"
-	music_label.add_theme_font_size_override("font_size", 28)
-	music_label.add_theme_color_override("font_color", Color(0.92, 0.78, 0.32))
-	music_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	music_row.add_child(music_label)
-
-	_music_slider = HSlider.new()
-	_music_slider.min_value = 0.0
-	_music_slider.max_value = 1.0
-	_music_slider.step = 0.01
-	_music_slider.custom_minimum_size = Vector2(240, 48)
-	_music_slider.size_flags_horizontal = Control.SIZE_SHRINK_END
-	var main_node := get_tree().root.get_node_or_null("Main")
-	_music_slider.value = main_node.music_volume if main_node else 1.0
-	_music_slider.value_changed.connect(_on_music_volume_changed)
-	music_row.add_child(_music_slider)
-
-	_music_value_lbl = Label.new()
-	_music_value_lbl.add_theme_font_size_override("font_size", 24)
-	_music_value_lbl.add_theme_color_override("font_color", Color(0.88, 0.74, 0.30))
-	_music_value_lbl.custom_minimum_size = Vector2(60, 0)
-	_music_value_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_music_value_lbl.text = "%d%%" % [roundi(_music_slider.value * 100)]
-	music_row.add_child(_music_value_lbl)
-
-	# Sound effects toggle row
-	var sfx_row := HBoxContainer.new()
-	sfx_row.add_theme_constant_override("separation", 16)
-	settings_vbox.add_child(sfx_row)
-
-	var sfx_label := Label.new()
-	sfx_label.text = "音效"
-	sfx_label.add_theme_font_size_override("font_size", 28)
-	sfx_label.add_theme_color_override("font_color", Color(0.92, 0.78, 0.32))
-	sfx_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	sfx_row.add_child(sfx_label)
-
-	var sfx_on: bool = main_node.sfx_enabled if main_node else true
-	_sfx_toggle_btn = _make_toolbar_btn("", Color(0.08, 0.08, 0.10, 0.82), Color(0.82, 0.66, 0.26))
-	_sfx_toggle_btn.custom_minimum_size = Vector2(120, 48)
-	_sfx_toggle_btn.pressed.connect(_on_sfx_toggle_pressed)
-	sfx_row.add_child(_sfx_toggle_btn)
-	_refresh_sfx_btn()
-
-	# Layout adjust button
-	var layout_btn := _make_entry_btn("布局调整", Color(0.08, 0.08, 0.10, 0.82), Color(0.82, 0.66, 0.26))
-	layout_btn.pressed.connect(_on_layout_pressed)
-	settings_vbox.add_child(layout_btn)
+	# --- Settings panel (delegated to SettingsPanel) ---
+	var settings_script := load("res://scripts/main_menu/settings_panel.gd")
+	var settings_node := Node.new()
+	settings_node.set_script(settings_script)
+	_settings_panel_mgr = settings_node
+	_settings_panel_mgr.setup(self, _make_entry_btn)
+	_settings_panel_mgr.layout_pressed.connect(_on_layout_pressed)
+	_settings_panel_mgr.build()
 
 	# Back button — top-left
-	_back_btn = _make_toolbar_btn("← 返回", Color(0.08, 0.08, 0.10, 0.82), Color(0.55, 0.25, 0.15))
+	_back_btn = _make_toolbar_btn(Locale.tr_key("back"), Color(0.08, 0.08, 0.10, 0.82), Color(0.55, 0.25, 0.15))
 	_back_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_back_btn.offset_top = 16
 	_back_btn.offset_left = 16
@@ -180,13 +164,13 @@ func _on_new_game_pressed() -> void:
 func _on_settings_pressed() -> void:
 	_play_sfx("res://assets/music/sounds_effect/button.ogg")
 	_entry_panel.visible = false
-	_settings_panel.visible = true
+	_settings_panel_mgr.panel.visible = true
 	_back_btn.visible = true
 
 
 func _on_back_pressed() -> void:
 	_play_sfx("res://assets/music/sounds_effect/button.ogg")
-	_settings_panel.visible = false
+	_settings_panel_mgr.panel.visible = false
 	_back_btn.visible = false
 	_entry_panel.visible = true
 
@@ -198,47 +182,93 @@ func _on_layout_pressed() -> void:
 	get_tree().root.get_node("Main").switch_scene("res://scenes/game/game_table.tscn")
 
 
-func _on_music_volume_changed(value: float) -> void:
-	if _music_value_lbl:
-		_music_value_lbl.text = "%d%%" % [roundi(value * 100)]
-	var main_node := get_tree().root.get_node_or_null("Main")
-	if main_node:
-		main_node.music_volume = value
+# =============================================================================
+# Login status & panel
+# =============================================================================
+
+func _build_login_status() -> void:
+	for c in _login_status_area.get_children():
+		_login_status_area.remove_child(c)
+		c.queue_free()
+	for c in _entry_vbox.get_children():
+		if c != _login_status_area and c.size_flags_vertical != Control.SIZE_EXPAND_FILL:
+			_entry_vbox.remove_child(c)
+	if _logout_btn and is_instance_valid(_logout_btn):
+		_logout_btn.queue_free()
+		_logout_btn = null
+
+	if FirebaseAuth.is_logged_in:
+		_login_status_lbl = Label.new()
+		_login_status_lbl.text = FirebaseAuth.user_email
+		_login_status_lbl.add_theme_font_size_override("font_size", 24)
+		_login_status_lbl.add_theme_color_override("font_color", Color(0.88, 0.74, 0.30))
+		_login_status_lbl.clip_text = true
+		_login_status_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_login_status_area.add_child(_login_status_lbl)
+		_entry_vbox.add_child(_new_game_btn)
+		_entry_vbox.add_child(_settings_btn)
+		_logout_btn = _make_entry_btn(Locale.tr_key("logout"), Color(0.08, 0.08, 0.10, 0.82), Color(0.68, 0.45, 0.20))
+		_logout_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_logout_btn.pressed.connect(_on_logout_pressed)
+		_entry_vbox.add_child(_logout_btn)
+	else:
+		var login_btn := _make_entry_btn(Locale.tr_key("login"), Color(0.08, 0.08, 0.10, 0.82), Color(0.82, 0.66, 0.26))
+		login_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		login_btn.pressed.connect(func() -> void:
+			_play_sfx("res://assets/music/sounds_effect/button.ogg")
+			_login_panel_mgr.show()
+		)
+		_entry_vbox.add_child(login_btn)
+		_entry_vbox.add_child(_new_game_btn)
+		_entry_vbox.add_child(_settings_btn)
 
 
-func _on_sfx_toggle_pressed() -> void:
-	var main_node := get_tree().root.get_node_or_null("Main")
-	if main_node:
-		main_node.sfx_enabled = not main_node.sfx_enabled
-	_refresh_sfx_btn()
-	_play_sfx("res://assets/music/sounds_effect/button.ogg")
-
-
-func _refresh_sfx_btn() -> void:
-	if not _sfx_toggle_btn:
+func _update_new_game_btn_state(force_enable: bool = false) -> void:
+	if not _new_game_btn:
 		return
-	var main_node := get_tree().root.get_node_or_null("Main")
-	var on: bool = main_node.sfx_enabled if main_node else true
-	_sfx_toggle_btn.text = "开启" if on else "关闭"
-	var border_color := Color(0.25, 0.55, 0.30) if on else Color(0.55, 0.25, 0.15)
-	var normal := StyleBoxFlat.new()
-	normal.set_corner_radius_all(6)
-	normal.set_content_margin_all(10)
-	normal.bg_color = Color(0.08, 0.08, 0.10, 0.82)
-	normal.border_color = border_color
-	normal.set_border_width_all(1)
-	_sfx_toggle_btn.add_theme_stylebox_override("normal", normal)
-	var hover := StyleBoxFlat.new()
-	hover.set_corner_radius_all(6)
-	hover.set_content_margin_all(10)
-	hover.bg_color = Color(0.14, 0.13, 0.10, 0.85)
-	hover.border_color = border_color.lightened(0.15)
-	hover.set_border_width_all(1)
-	_sfx_toggle_btn.add_theme_stylebox_override("hover", hover)
-	_sfx_toggle_btn.add_theme_stylebox_override("pressed", hover)
-	_sfx_toggle_btn.add_theme_color_override("font_color", Color(0.90, 0.80, 0.55))
-	_sfx_toggle_btn.add_theme_color_override("font_hover_color", Color(0.90, 0.80, 0.55))
-	_sfx_toggle_btn.add_theme_font_size_override("font_size", 24)
+	_new_game_btn.disabled = not (FirebaseAuth.is_logged_in or force_enable)
+	if not FirebaseAuth.is_logged_in and not force_enable:
+		var ds := StyleBoxFlat.new()
+		ds.bg_color = Color(0.08, 0.08, 0.10, 0.60)
+		ds.border_color = Color(0.30, 0.25, 0.12)
+		ds.set_border_width_all(1)
+		ds.set_corner_radius_all(6)
+		ds.set_content_margin_all(14)
+		_new_game_btn.add_theme_stylebox_override("disabled", ds)
+		_new_game_btn.add_theme_color_override("font_disabled_color", Color(0.40, 0.35, 0.20))
+	else:
+		var s := StyleBoxFlat.new()
+		s.bg_color = Color(0.08, 0.08, 0.10, 0.82)
+		s.border_color = Color(0.82, 0.66, 0.26)
+		s.set_border_width_all(1)
+		s.set_corner_radius_all(6)
+		s.set_content_margin_all(14)
+		_new_game_btn.add_theme_stylebox_override("normal", s)
+
+
+func _on_logout_pressed() -> void:
+	_play_sfx("res://assets/music/sounds_effect/button.ogg")
+	_login_panel_mgr.show_logout_confirm()
+
+
+func _on_login_status_changed() -> void:
+	_build_login_status()
+	_update_new_game_btn_state()
+
+
+func _activate_debug_mode() -> void:
+	print("Debug mode activated - New Game unlocked")
+	_play_sfx("res://assets/music/sounds_effect/button.ogg")
+	_update_new_game_btn_state(true)
+
+
+func _on_language_changed() -> void:
+	# Rebuild the entire UI to apply new language
+	for c in get_children():
+		c.queue_free()
+	_build_ui()
+	_build_login_status()
+	_update_new_game_btn_state()
 
 
 # =============================================================================

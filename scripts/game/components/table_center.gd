@@ -16,9 +16,10 @@ var community_cards_container: HBoxContainer
 var last_action_label: Label
 
 
-func _init(p: Control, overlay: Control) -> void:
+func setup(p: Control, overlay: Control) -> RefCounted:
 	parent = p
 	table_overlay = overlay
+	return self
 
 
 func build() -> void:
@@ -37,7 +38,7 @@ func _build_pot_display() -> void:
 	table_overlay.add_child(pot_display)
 
 	pot_amount_label = Label.new()
-	pot_amount_label.text = "底池: 0"
+	pot_amount_label.text = Locale.tr_key("pot_display") % 0
 	pot_amount_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	pot_amount_label.add_theme_font_size_override("font_size", 14)
 	pot_amount_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
@@ -46,7 +47,7 @@ func _build_pot_display() -> void:
 	# Street badge — separate from pot_display so it stays visible in chips mode
 	street_badge = Label.new()
 	street_badge.name = "StreetBadge"
-	street_badge.text = "翻牌前"
+	street_badge.text = Locale.tr_key("street_preflop")
 	street_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	street_badge.add_theme_font_size_override("font_size", 12)
 	street_badge.add_theme_color_override("font_color", Color(0.8, 0.8, 1.0))
@@ -86,12 +87,12 @@ func _build_last_action_label() -> void:
 ## 刷新底池显示
 func refresh_pot(pot_chip_area: Control = null) -> void:
 	# Only show pot_total (settled rounds + folded players' contributions)
-	var total := GameManager.engine.pot_total
-	pot_amount_label.text = "底池: %d" % total
+	var total: int = GameManager.engine.pot_total
+	pot_amount_label.text = Locale.tr_key("pot_display") % total
 
 	# In game mode, respect display_mode
 	if not GameManager.layout_mode:
-		var is_numbers := GameManager.display_mode == "numbers"
+		var is_numbers: bool = GameManager.display_mode == "numbers"
 		pot_display.visible = is_numbers
 		if pot_chip_area and is_instance_valid(pot_chip_area):
 			pot_chip_area.visible = not is_numbers
@@ -104,10 +105,10 @@ func refresh_pot(pot_chip_area: Control = null) -> void:
 ## 刷新街道标签
 func refresh_street() -> void:
 	match GameManager.engine.street:
-		"preflop": street_badge.text = "翻牌前"
-		"flop": street_badge.text = "翻牌"
-		"turn": street_badge.text = "转牌"
-		"river": street_badge.text = "河牌"
+		"preflop": street_badge.text = Locale.tr_key("street_preflop")
+		"flop": street_badge.text = Locale.tr_key("street_flop")
+		"turn": street_badge.text = Locale.tr_key("street_turn")
+		"river": street_badge.text = Locale.tr_key("street_river")
 		_: street_badge.text = GameManager.engine.street
 
 
@@ -125,7 +126,7 @@ func refresh_community_cards() -> void:
 	community_cards_container.position = cc_pos - Vector2(total_w / 2, card_size.y / 2)
 	community_cards_container.size = Vector2(total_w, card_size.y)
 
-	for card: CardData in GameManager.community_cards:
+	for card in GameManager.community_cards:
 		var display = CardDisplayScene.instantiate()
 		display.custom_minimum_size = card_size
 		display.size = card_size

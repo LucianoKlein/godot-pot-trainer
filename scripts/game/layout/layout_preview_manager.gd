@@ -17,17 +17,18 @@ var _preview_dealer_buttons: Array[Control] = []  # 9 preview dealer buttons
 var _preview_answer_boxes: Array[Control] = []  # 9 preview answer boxes
 
 
-func _init(table_overlay: Control) -> void:
+func setup(table_overlay: Control) -> RefCounted:
 	_table_overlay = table_overlay
+	return self
 
 
-func show_preview(visibility_manager: LayoutVisibilityManager, drag_handler: LayoutDragHandler) -> void:
+func show_preview(visibility_manager: RefCounted, drag_handler: RefCounted) -> void:
 	hide_preview()
 
 	var hc_scale: float = GameManager.layout_config.get("hole_card_scale", 1.0)
 	var cc_scale: float = GameManager.layout_config.get("community_card_scale", 1.0)
-	var hc_size := Vector2(48, 66) * hc_scale
-	var cc_size := Vector2(48, 66) * cc_scale
+	var hc_size: Vector2 = Vector2(48, 66) * hc_scale
+	var cc_size: Vector2 = Vector2(48, 66) * cc_scale
 	var hc_gap: float = GameManager.layout_config.get("hole_card_gap", 0.6)
 
 	# Preview hole cards
@@ -84,7 +85,7 @@ func get_preview_nodes() -> Array[Node]:
 	return nodes
 
 
-func _show_preview_hole_cards(hc_size: Vector2, hc_gap: float, drag_handler: LayoutDragHandler) -> void:
+func _show_preview_hole_cards(hc_size: Vector2, hc_gap: float, drag_handler: RefCounted) -> void:
 	for i in range(9):
 		var card_pos: Vector2 = GameManager.get_layout_position_px("cards", i)
 		var total_w: float = hc_size.x + hc_size.x * hc_gap
@@ -123,8 +124,8 @@ func _show_preview_hole_cards(hc_size: Vector2, hc_gap: float, drag_handler: Lay
 			drag_handler._make_draggable(container, "cards", i)
 
 
-func _show_preview_community_cards(cc_size: Vector2, drag_handler: LayoutDragHandler) -> void:
-	var sample_cards: Array[CardData] = [
+func _show_preview_community_cards(cc_size: Vector2, drag_handler: RefCounted) -> void:
+	var sample_cards: Array = [
 		CardData.new(CardData.Suit.SPADES, CardData.Rank.ACE, true),
 		CardData.new(CardData.Suit.HEARTS, CardData.Rank.KING, true),
 		CardData.new(CardData.Suit.DIAMONDS, CardData.Rank.QUEEN, true),
@@ -133,7 +134,7 @@ func _show_preview_community_cards(cc_size: Vector2, drag_handler: LayoutDragHan
 	]
 	var comm_pos: Vector2 = GameManager.get_layout_position_px("community_cards", -1)
 	var comm_container := Control.new()
-	var comm_total_w := cc_size.x * 5 + 4 * 4  # 5 cards + 4 gaps
+	var comm_total_w: float = cc_size.x * 5 + 4 * 4  # 5 cards + 4 gaps
 	comm_container.custom_minimum_size = Vector2(comm_total_w, cc_size.y)
 	comm_container.size = Vector2(comm_total_w, cc_size.y)
 	comm_container.position = comm_pos - Vector2(comm_total_w / 2, cc_size.y / 2)
@@ -160,9 +161,9 @@ func _show_preview_community_cards(cc_size: Vector2, drag_handler: LayoutDragHan
 		drag_handler._make_draggable(comm_container, "community_cards", -1)
 
 
-func _show_preview_dealer_buttons(drag_handler: LayoutDragHandler) -> void:
+func _show_preview_dealer_buttons(drag_handler: RefCounted) -> void:
 	var scale: float = GameManager.layout_config.get("dealer_button_scale", 1.0)
-	var btn_size := Vector2(28, 28) * scale
+	var btn_size: Vector2 = Vector2(28, 28) * scale
 	for i in range(9):
 		var pos: Vector2 = GameManager.get_layout_position_px("dealer_buttons", i)
 		var btn := Control.new()
@@ -178,7 +179,7 @@ func _show_preview_dealer_buttons(drag_handler: LayoutDragHandler) -> void:
 		sb.bg_color = Color.WHITE
 		sb.border_color = Color.BLACK
 		sb.set_border_width_all(2)
-		var radius := int(btn_size.x / 2)
+		var radius: int = int(btn_size.x / 2)
 		sb.corner_radius_top_left = radius
 		sb.corner_radius_top_right = radius
 		sb.corner_radius_bottom_left = radius
@@ -192,7 +193,7 @@ func _show_preview_dealer_buttons(drag_handler: LayoutDragHandler) -> void:
 		lbl.text = "D"
 		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		lbl.add_theme_font_size_override("font_size", int(28 * scale))
+		lbl.add_theme_font_size_override("font_size", int(14 * scale))
 		lbl.add_theme_color_override("font_color", Color.BLACK)
 		lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -203,7 +204,7 @@ func _show_preview_dealer_buttons(drag_handler: LayoutDragHandler) -> void:
 		drag_handler._make_draggable(btn, "dealer_buttons", i)
 
 
-func _show_preview_answer_boxes(drag_handler: LayoutDragHandler) -> void:
+func _show_preview_answer_boxes(drag_handler: RefCounted) -> void:
 	var scale: float = GameManager.layout_config.get("answer_box_scale", 1.0)
 	for i in range(9):
 		var pos: Vector2 = GameManager.get_layout_position_px("answer_boxes", i)
@@ -213,8 +214,8 @@ func _show_preview_answer_boxes(drag_handler: LayoutDragHandler) -> void:
 		box.scale_factor = scale
 		box.position = pos - box.size * 0.5
 		box.z_index = 10
-		box.set_player_label(i, "预览")
-		box.set_question_text("底池限注最大加注是多少？")
+		box.set_player_label(i, Locale.tr_key("preview"))
+		box.set_question_text(Locale.tr_key("question_text"))
 		_table_overlay.add_child(box)
 		_preview_answer_boxes.append(box)
 		drag_handler._make_draggable(box, "answer_boxes", i)

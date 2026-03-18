@@ -2,7 +2,7 @@ extends TextureRect
 
 signal card_clicked(card_display: TextureRect)
 
-var _card: CardData = null
+var _card: RefCounted = null
 var _show_face: bool = false
 var seat_index: int = -1
 var card_index: int = -1
@@ -15,7 +15,7 @@ func _ready() -> void:
 	stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
 
-func set_card(card: CardData) -> void:
+func set_card(card: RefCounted) -> void:
 	_card = card
 	_show_face = card.face_up
 	_update_display()
@@ -32,7 +32,7 @@ func set_face_up() -> void:
 		_update_display()
 
 
-func get_card() -> CardData:
+func get_card() -> RefCounted:
 	return _card
 
 

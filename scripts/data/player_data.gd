@@ -4,7 +4,7 @@ extends RefCounted
 var id: int
 var player_name: String
 var chips: int = 7500
-var hole_cards: Array[CardData] = []
+var hole_cards: Array = []
 var current_bet: int = 0
 var folded: bool = false
 var has_acted: bool = false
@@ -21,7 +21,7 @@ func _init(p_id: int = 0, p_name: String = "") -> void:
 	player_name = p_name
 
 
-func duplicate_player() -> PlayerData:
+func duplicate_player() -> RefCounted:
 	var p := PlayerData.new(id, player_name)
 	p.chips = chips
 	p.current_bet = current_bet

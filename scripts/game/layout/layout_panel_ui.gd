@@ -33,6 +33,7 @@ var _bet_chip_scale_slider: HSlider
 var _bet_chip_spread_slider: HSlider
 var _pot_chip_scale_slider: HSlider
 var _chip_record_scale_slider: HSlider
+var _ordered_bet_chip_scale_slider: HSlider
 
 # Display mode: "numbers" shows labels, "chips" shows chip UI
 var _display_mode: String = "numbers"
@@ -44,8 +45,9 @@ var _numbers_rows: Array[Control] = []  # bet_label, stack_label, pot_display ro
 var _chips_rows: Array[Control] = []    # player_chips, bet_chips, pot_chips rows
 
 
-func _init(parent: Control) -> void:
+func setup(parent: Control) -> RefCounted:
 	_parent = parent
+	return self
 
 
 func build() -> PanelContainer:
@@ -103,7 +105,7 @@ func _build_title_bar(parent: VBoxContainer) -> void:
 	title_bar.add_child(drag_area)
 
 	var title := Label.new()
-	title.text = "布局编辑器  (拖动此处)"
+	title.text = Locale.tr_key("layout_editor_title")
 	title.add_theme_font_size_override("font_size", 28)
 	title.add_theme_color_override("font_color", Color(0.8, 0.8, 0.9))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -122,7 +124,7 @@ func _build_title_bar(parent: VBoxContainer) -> void:
 
 func _on_title_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
+		var mb: InputEventMouseButton = event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
 				_dragging_panel = true
@@ -150,26 +152,26 @@ func set_visible(visible: bool) -> void:
 		_layout_panel.visible = visible
 
 
-func build_sliders(visibility_manager: LayoutVisibilityManager) -> void:
-	var parent := _layout_panel_content
+func build_sliders(visibility_manager: RefCounted) -> void:
+	var parent: VBoxContainer = _layout_panel_content
 
 	# Dealer button scale
-	_dealer_scale_slider = _make_scale_row(parent, "庄位按钮", "dealer_buttons", 0.5, 3.0,
+	_dealer_scale_slider = _make_scale_row(parent, Locale.tr_key("dealer_button_label"), "dealer_buttons", 0.5, 3.0,
 		GameManager.layout_config.get("dealer_button_scale", 1.0),
 		func(v: float) -> void: GameManager.set_dealer_button_scale(v), [], visibility_manager)
 
 	# Hole card scale
-	_hole_card_scale_slider = _make_scale_row(parent, "手牌", "hole_cards", 0.3, 3.0,
+	_hole_card_scale_slider = _make_scale_row(parent, Locale.tr_key("hole_cards_label"), "hole_cards", 0.3, 3.0,
 		GameManager.layout_config.get("hole_card_scale", 1.0),
 		func(v: float) -> void: GameManager.set_hole_card_scale(v), [], visibility_manager)
 
 	# Hole card gap
-	_hole_card_gap_slider = _make_scale_row(parent, "手牌间距", "", 0.0, 1.5,
+	_hole_card_gap_slider = _make_scale_row(parent, Locale.tr_key("hole_card_gap_label"), "", 0.0, 1.5,
 		GameManager.layout_config.get("hole_card_gap", 0.6),
 		func(v: float) -> void: GameManager.set_hole_card_gap(v), [], visibility_manager)
 
 	# Community card scale
-	_community_card_scale_slider = _make_scale_row(parent, "公共牌", "community_cards", 0.3, 3.0,
+	_community_card_scale_slider = _make_scale_row(parent, Locale.tr_key("community_cards_label"), "community_cards", 0.3, 3.0,
 		GameManager.layout_config.get("community_card_scale", 1.0),
 		func(v: float) -> void: GameManager.set_community_card_scale(v), [], visibility_manager)
 
@@ -177,61 +179,67 @@ func build_sliders(visibility_manager: LayoutVisibilityManager) -> void:
 	_build_display_mode_toggle(parent)
 
 	# --- Numbers mode rows (bet label, stack label, pot display) ---
-	var bet_row_start := parent.get_child_count()
-	_bet_label_scale_slider = _make_scale_row(parent, "下注标签", "bet_labels", 0.5, 3.0,
+	var bet_row_start: int = parent.get_child_count()
+	_bet_label_scale_slider = _make_scale_row(parent, Locale.tr_key("bet_label_label"), "bet_labels", 0.5, 3.0,
 		GameManager.layout_config.get("bet_label_scale", 1.0),
 		func(v: float) -> void: GameManager.set_bet_label_scale(v), [], visibility_manager)
 	_numbers_rows.append(parent.get_child(bet_row_start))
 
-	var stack_row_start := parent.get_child_count()
-	_stack_label_scale_slider = _make_scale_row(parent, "本金标签", "stack_labels", 0.5, 3.0,
+	var stack_row_start: int = parent.get_child_count()
+	_stack_label_scale_slider = _make_scale_row(parent, Locale.tr_key("stack_label_label"), "stack_labels", 0.5, 3.0,
 		GameManager.layout_config.get("stack_label_scale", 1.0),
 		func(v: float) -> void: GameManager.set_stack_label_scale(v), [], visibility_manager)
 	_numbers_rows.append(parent.get_child(stack_row_start))
 
-	var pot_disp_row_start := parent.get_child_count()
-	_make_scale_row(parent, "底池显示", "pot_display", 0.5, 3.0, 1.0,
+	var pot_disp_row_start: int = parent.get_child_count()
+	_make_scale_row(parent, Locale.tr_key("pot_display_label"), "pot_display", 0.5, 3.0, 1.0,
 		func(_v: float) -> void: pass, [], visibility_manager)
 	_numbers_rows.append(parent.get_child(pot_disp_row_start))
 
 	# --- Chips mode rows (player chips, bet chips, pot chips) ---
-	var player_chip_row_start := parent.get_child_count()
-	_player_chip_scale_slider = _make_scale_row(parent, "玩家筹码", "player_chips", 0.3, 3.0,
+	var player_chip_row_start: int = parent.get_child_count()
+	_player_chip_scale_slider = _make_scale_row(parent, Locale.tr_key("player_chips_label"), "player_chips", 0.3, 3.0,
 		GameManager.layout_config.get("player_chip_scale", 1.0),
 		func(v: float) -> void: GameManager.set_player_chip_scale(v), [], visibility_manager)
 	_chips_rows.append(parent.get_child(player_chip_row_start))
 
-	var bet_chip_row_start := parent.get_child_count()
-	_bet_chip_scale_slider = _make_scale_row(parent, "下注筹码", "bet_chips", 0.3, 3.0,
+	var bet_chip_row_start: int = parent.get_child_count()
+	_bet_chip_scale_slider = _make_scale_row(parent, Locale.tr_key("bet_chips_label"), "bet_chips", 0.3, 3.0,
 		GameManager.layout_config.get("bet_chip_scale", 1.0),
 		func(v: float) -> void: GameManager.set_bet_chip_scale(v), [], visibility_manager)
 	_chips_rows.append(parent.get_child(bet_chip_row_start))
 
-	var bet_chip_spread_start := parent.get_child_count()
-	_bet_chip_spread_slider = _make_scale_row(parent, "散落间距", "", 0.5, 3.0,
+	var bet_chip_spread_start: int = parent.get_child_count()
+	_bet_chip_spread_slider = _make_scale_row(parent, Locale.tr_key("bet_spread_label"), "", 0.5, 3.0,
 		GameManager.layout_config.get("bet_chip_spread", 1.0),
 		func(v: float) -> void: GameManager.set_bet_chip_spread(v), [], visibility_manager)
 	_chips_rows.append(parent.get_child(bet_chip_spread_start))
 
-	var pot_chip_row_start := parent.get_child_count()
-	_pot_chip_scale_slider = _make_scale_row(parent, "底池筹码", "pot_chips", 0.3, 3.0,
+	var pot_chip_row_start: int = parent.get_child_count()
+	_pot_chip_scale_slider = _make_scale_row(parent, Locale.tr_key("pot_chips_label"), "pot_chips", 0.3, 3.0,
 		GameManager.layout_config.get("pot_chip_scale", 1.0),
 		func(v: float) -> void: GameManager.set_pot_chip_scale(v), [], visibility_manager)
 	_chips_rows.append(parent.get_child(pot_chip_row_start))
 
-	var chip_record_row_start := parent.get_child_count()
-	_chip_record_scale_slider = _make_scale_row(parent, "筹码记录", "chip_record", 0.3, 3.0,
+	var chip_record_row_start: int = parent.get_child_count()
+	_chip_record_scale_slider = _make_scale_row(parent, Locale.tr_key("chip_record_label"), "chip_record", 0.3, 3.0,
 		GameManager.layout_config.get("chip_record_scale", 1.0),
 		func(v: float) -> void: GameManager.set_chip_record_scale(v), [], visibility_manager)
 	_chips_rows.append(parent.get_child(chip_record_row_start))
 
+	var ordered_bet_chip_row_start: int = parent.get_child_count()
+	_ordered_bet_chip_scale_slider = _make_scale_row(parent, Locale.tr_key("ordered_chips_label"), "ordered_bet_chips", 0.3, 3.0,
+		GameManager.layout_config.get("ordered_bet_chip_scale", 1.0),
+		func(v: float) -> void: GameManager.set_ordered_bet_chip_scale(v), [], visibility_manager)
+	_chips_rows.append(parent.get_child(ordered_bet_chip_row_start))
+
 	# Answer box scale
-	_answer_box_scale_slider = _make_scale_row(parent, "答题框", "answer_boxes", 0.5, 3.0,
+	_answer_box_scale_slider = _make_scale_row(parent, Locale.tr_key("answer_box_label"), "answer_boxes", 0.5, 3.0,
 		GameManager.layout_config.get("answer_box_scale", 1.0),
 		func(v: float) -> void: GameManager.set_answer_box_scale(v), [], visibility_manager)
 
 	# Action box scale
-	_action_box_scale_slider = _make_scale_row(parent, "行动框", "action_boxes", 0.5, 3.0,
+	_action_box_scale_slider = _make_scale_row(parent, Locale.tr_key("action_box_label"), "action_boxes", 0.5, 3.0,
 		GameManager.layout_config.get("action_box_scale", 1.0),
 		func(v: float) -> void: GameManager.set_action_box_scale(v), [], visibility_manager)
 
@@ -240,14 +248,14 @@ func build_sliders(visibility_manager: LayoutVisibilityManager) -> void:
 
 
 func build_action_buttons() -> void:
-	var parent := _layout_panel_content
+	var parent: VBoxContainer = _layout_panel_content
 
 	# Save button
-	var save_btn := _make_btn("保存到文件", Color(0.25, 0.55, 0.30), func() -> void: save_requested.emit())
+	var save_btn := _make_btn(Locale.tr_key("save_to_file"), Color(0.25, 0.55, 0.30), func() -> void: save_requested.emit())
 	parent.add_child(save_btn)
 
 	# Reset button
-	var reset_btn := _make_btn("重置布局", Color(0.55, 0.25, 0.15), func() -> void: reset_requested.emit())
+	var reset_btn := _make_btn(Locale.tr_key("reset_layout"), Color(0.55, 0.25, 0.15), func() -> void: reset_requested.emit())
 	parent.add_child(reset_btn)
 
 
@@ -265,6 +273,7 @@ func sync_sliders() -> void:
 	_bet_chip_spread_slider.value = GameManager.layout_config.get("bet_chip_spread", 1.0)
 	_pot_chip_scale_slider.value = GameManager.layout_config.get("pot_chip_scale", 1.0)
 	_chip_record_scale_slider.value = GameManager.layout_config.get("chip_record_scale", 1.0)
+	_ordered_bet_chip_scale_slider.value = GameManager.layout_config.get("ordered_bet_chip_scale", 1.0)
 	# Sync display mode from GameManager
 	_display_mode = GameManager.display_mode
 	_apply_display_mode()
@@ -278,7 +287,7 @@ func get_active_chip_slider() -> HSlider:
 
 func build_back_button(back_to_menu_callback: Callable) -> Button:
 	var layout_back_btn := Button.new()
-	layout_back_btn.text = "返回主菜单"
+	layout_back_btn.text = Locale.tr_key("back_to_menu")
 	layout_back_btn.custom_minimum_size = Vector2(280, 60)
 	layout_back_btn.z_index = 200
 	layout_back_btn.visible = false
@@ -322,13 +331,13 @@ func _build_display_mode_toggle(parent: VBoxContainer) -> void:
 	parent.add_child(row)
 
 	var lbl := Label.new()
-	lbl.text = "显示模式:"
+	lbl.text = Locale.tr_key("display_mode_toggle")
 	lbl.add_theme_font_size_override("font_size", 28)
 	lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 	row.add_child(lbl)
 
 	_mode_numbers_btn = Button.new()
-	_mode_numbers_btn.text = "数字"
+	_mode_numbers_btn.text = Locale.tr_key("numbers_mode")
 	_mode_numbers_btn.custom_minimum_size = Vector2(120, 50)
 	_mode_numbers_btn.add_theme_font_size_override("font_size", 28)
 	_mode_numbers_btn.add_theme_color_override("font_color", Color(0.8, 0.8, 0.9))
@@ -336,7 +345,7 @@ func _build_display_mode_toggle(parent: VBoxContainer) -> void:
 	row.add_child(_mode_numbers_btn)
 
 	_mode_chips_btn = Button.new()
-	_mode_chips_btn.text = "筹码"
+	_mode_chips_btn.text = Locale.tr_key("chips_mode")
 	_mode_chips_btn.custom_minimum_size = Vector2(120, 50)
 	_mode_chips_btn.add_theme_font_size_override("font_size", 28)
 	_mode_chips_btn.add_theme_color_override("font_color", Color(0.8, 0.8, 0.9))
@@ -356,7 +365,7 @@ func _set_display_mode(mode: String) -> void:
 
 
 func _apply_display_mode() -> void:
-	var is_numbers := _display_mode == "numbers"
+	var is_numbers: bool = _display_mode == "numbers"
 	for row in _numbers_rows:
 		row.visible = is_numbers
 	for row in _chips_rows:
@@ -364,8 +373,8 @@ func _apply_display_mode() -> void:
 
 
 func _update_mode_button_styles() -> void:
-	var active_color := Color(0.3, 0.3, 0.5, 0.9)
-	var inactive_color := Color(0.1, 0.1, 0.18, 0.85)
+	var active_color: Color = Color(0.3, 0.3, 0.5, 0.9)
+	var inactive_color: Color = Color(0.1, 0.1, 0.18, 0.85)
 
 	var active_style := StyleBoxFlat.new()
 	active_style.bg_color = active_color
@@ -435,7 +444,7 @@ func _make_btn(text: String, color: Color, callback: Callable) -> Button:
 	return btn
 
 
-func _make_scale_row(parent: VBoxContainer, label_text: String, element_key: String, min_val: float, max_val: float, initial: float, callback: Callable, _snap_points: Array = [], visibility_manager: LayoutVisibilityManager = null) -> HSlider:
+func _make_scale_row(parent: VBoxContainer, label_text: String, element_key: String, min_val: float, max_val: float, initial: float, callback: Callable, _snap_points: Array = [], visibility_manager: RefCounted = null) -> HSlider:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -443,7 +452,7 @@ func _make_scale_row(parent: VBoxContainer, label_text: String, element_key: Str
 
 	# Checkbox (if element_key is provided and visibility_manager exists)
 	if element_key != "" and visibility_manager:
-		var checkbox := visibility_manager.create_element_checkbox(element_key)
+		var checkbox: CheckBox = visibility_manager.create_element_checkbox(element_key)
 		row.add_child(checkbox)
 
 	var lbl := _make_label(label_text, 28, Color(0.7, 0.7, 0.7))

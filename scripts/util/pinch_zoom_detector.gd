@@ -70,7 +70,7 @@ func _calculate_distance() -> float:
 	if _touch_points.size() != 2:
 		return 0.0
 
-	var points := _touch_points.values()
+	var points: Array = _touch_points.values()
 	var p1: Vector2 = points[0]
 	var p2: Vector2 = points[1]
 	return p1.distance_to(p2)

@@ -6,6 +6,7 @@ extends RefCounted
 const OutlineShader := preload("res://assets/shaders/outline.gdshader")
 const ChipStack := preload("res://scripts/game/components/chip_stack.gd")
 const BetChipStack := preload("res://scripts/game/components/bet_chip_stack.gd")
+const OrderedChipStacks := preload("res://scripts/game/components/ordered_chip_stacks.gd")
 const CardDisplayScene := preload("res://scenes/game/components/card_display.tscn")
 
 # Fixed player images per seat (座位1→Image 3, 座位2→Image 4, etc.)
@@ -34,11 +35,13 @@ var purple_stack: Node2D
 var black_stack: Node2D
 var green_stack: Node2D
 var bet_chips_container: Control
+var ordered_bet_chips: Node2D
 
 
-func _init(index: int, overlay: Control) -> void:
+func setup(index: int, overlay: Control) -> RefCounted:
 	seat_index = index
 	table_overlay = overlay
+	return self
 
 
 func build() -> void:
@@ -77,7 +80,7 @@ func _build_labels() -> void:
 
 	# Name label (below avatar)
 	name_label = Label.new()
-	name_label.text = "玩家%d" % (seat_index + 1)
+	name_label.text = Locale.tr_key("player_n") % (seat_index + 1)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.add_theme_font_size_override("font_size", 11)
 	name_label.size = Vector2(av_size.x + 20, 16)
@@ -143,7 +146,7 @@ func _build_labels() -> void:
 
 	# Fold label (centered on avatar)
 	fold_label = Label.new()
-	fold_label.text = "弃牌"
+	fold_label.text = Locale.tr_key("fold")
 	fold_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	fold_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	fold_label.add_theme_font_size_override("font_size", 14)
@@ -155,7 +158,7 @@ func _build_labels() -> void:
 
 	# Seat badge (top-left of avatar)
 	seat_badge = Label.new()
-	seat_badge.text = "座%d" % (seat_index + 1)
+	seat_badge.text = Locale.tr_key("seat_n") % (seat_index + 1)
 	seat_badge.add_theme_font_size_override("font_size", 9)
 	seat_badge.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 	seat_badge.position = avatar.position + Vector2(0, -12)
@@ -232,9 +235,22 @@ func _build_chip_containers() -> void:
 	table_overlay.add_child(bet_chips_container)
 	bet_chips_container.set_chips(TableLayout.get_default_bet_chips())
 
+	# Ordered bet chips (layout mode only — 10 purple + 20 black + 20 green = 7500)
+	ordered_bet_chips = Node2D.new()
+	ordered_bet_chips.set_script(OrderedChipStacks)
+	ordered_bet_chips.name = "OrderedBetChips%d" % seat_index
+	ordered_bet_chips.z_index = 12
+	var obc_scale: float = GameManager.layout_config.get("ordered_bet_chip_scale", 1.0)
+	ordered_bet_chips.chip_size = 32.0 * obc_scale
+	var obc_pos: Vector2 = GameManager.get_layout_position_px("ordered_bet_chips", seat_index)
+	ordered_bet_chips.position = obc_pos
+	ordered_bet_chips.visible = false
+	table_overlay.add_child(ordered_bet_chips)
+	ordered_bet_chips.set_chips(TableLayout.get_default_player_stack_chips())
+
 
 ## 刷新座位显示（根据玩家数据或布局模式）
-func refresh(player_data: PlayerData = null, layout_mode: bool = false) -> void:
+func refresh(player_data: RefCounted = null, layout_mode: bool = false) -> void:
 	var visible_seat: bool = layout_mode or (player_data != null)
 
 	avatar.visible = visible_seat
@@ -245,7 +261,7 @@ func refresh(player_data: PlayerData = null, layout_mode: bool = false) -> void:
 	# In layout mode, chip/label visibility is controlled by LayoutVisibilityManager
 	# In game mode, respect display_mode setting
 	if not layout_mode:
-		var is_numbers := GameManager.display_mode == "numbers"
+		var is_numbers: bool = GameManager.display_mode == "numbers"
 		var has_bet: bool = player_data != null and player_data.round_contribution > 0
 		stack_label.visible = visible_seat and is_numbers
 		bet_label.visible = visible_seat and is_numbers and has_bet
@@ -266,7 +282,7 @@ func refresh(player_data: PlayerData = null, layout_mode: bool = false) -> void:
 			name_label.text = player_data.player_name
 			stack_label.text = "%d" % player_data.chips
 		else:
-			name_label.text = "玩家%d" % (seat_index + 1)
+			name_label.text = Locale.tr_key("player_n") % (seat_index + 1)
 			stack_label.text = "7500"
 		bet_label.text = "100"
 		_set_action_box("call", 200)
@@ -289,10 +305,11 @@ func refresh(player_data: PlayerData = null, layout_mode: bool = false) -> void:
 			bet_label.text = ""
 			_update_bet_chips(0)
 
-		# Action box
+		# Action box — in game mode, visibility is controlled by auto-hide tween
 		if player_data.last_action != "":
 			_set_action_box(player_data.last_action, player_data.round_contribution)
-			action_box.visible = true
+			if GameManager.config.training_mode != "game":
+				action_box.visible = true
 		else:
 			action_box.visible = false
 
@@ -370,6 +387,10 @@ func update_position() -> void:
 	green_stack.position = GameManager.get_layout_position_px("green_stacks", seat_index)
 	bet_chips_container.position = bet_pos - Vector2(40, 30)
 
+	# Update ordered bet chips position
+	if is_instance_valid(ordered_bet_chips):
+		ordered_bet_chips.position = GameManager.get_layout_position_px("ordered_bet_chips", seat_index)
+
 	# Update hole cards position
 	var card_pos: Vector2 = GameManager.get_layout_position_px("cards", seat_index)
 	hole_cards_container.position = card_pos
@@ -408,6 +429,10 @@ func update_chip_scale() -> void:
 		var bet_chip_spread: float = GameManager.layout_config.get("bet_chip_spread", 1.0)
 		bet_chips_container.set_spread_factor(bet_chip_spread)
 
+	if is_instance_valid(ordered_bet_chips):
+		var obc_scale: float = GameManager.layout_config.get("ordered_bet_chip_scale", 1.0)
+		ordered_bet_chips.set_chip_size(32.0 * obc_scale)
+
 
 func _set_default_chip_display() -> void:
 	# Default: 10 purple, 20 black, 20 green
@@ -426,7 +451,14 @@ func _update_chip_stack(amount: int) -> void:
 		green_stack.set_stack(ChipUtils.ChipColor.GREEN25, 0)
 		return
 
-	# Convert amount to chips and count per color
+	# Initial stack (7500) uses fixed preset: 10 purple + 20 black + 20 green
+	if amount == 7500:
+		purple_stack.set_stack(ChipUtils.ChipColor.PURPLE500, 10)
+		black_stack.set_stack(ChipUtils.ChipColor.BLACK100, 20)
+		green_stack.set_stack(ChipUtils.ChipColor.GREEN25, 20)
+		return
+
+	# Other amounts: convert via balanced algorithm
 	var chips := ChipUtils.amount_to_chips(amount)
 	var p_count := 0
 	var b_count := 0
@@ -453,12 +485,12 @@ func _update_bet_chips(amount: int) -> void:
 
 func _format_action(action: String) -> String:
 	match action:
-		"blind": return "盲注"
-		"fold": return "弃牌"
-		"check": return "过牌"
-		"call": return "跟注"
-		"bet": return "下注"
-		"raise": return "加注"
+		"blind": return Locale.tr_key("action_blind")
+		"fold": return Locale.tr_key("action_fold")
+		"check": return Locale.tr_key("action_check")
+		"call": return Locale.tr_key("action_call")
+		"bet": return Locale.tr_key("action_bet")
+		"raise": return Locale.tr_key("action_raise")
 		_: return ""
 
 
@@ -473,14 +505,14 @@ func _get_action_color(action: String) -> Color:
 
 
 func _set_action_box(action: String, amount: int = 0) -> void:
-	var text := "座%d " % (seat_index + 1) + _format_action(action)
+	var text := Locale.tr_key("seat_action_prefix") % (seat_index + 1) + _format_action(action)
 	if amount > 0 and action not in ["fold", "check"]:
 		text += " %d" % amount
 	action_box.text = text
 	_action_style.bg_color = _get_action_color(action)
 
 
-func _refresh_hole_cards(player_data: PlayerData = null) -> void:
+func _refresh_hole_cards(player_data: RefCounted = null) -> void:
 	# Clear existing
 	for child in hole_cards_container.get_children():
 		child.queue_free()
@@ -503,7 +535,7 @@ func _refresh_hole_cards(player_data: PlayerData = null) -> void:
 	if seat_index < rotations.size():
 		rotation_deg = rotations[seat_index]
 
-	var card_count := player_data.hole_cards.size()
+	var card_count: int = player_data.hole_cards.size()
 	var total_w: float = card_size.x + (card_count - 1) * card_size.x * hc_gap
 	var total_h: float = card_size.y
 

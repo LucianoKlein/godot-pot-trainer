@@ -11,15 +11,21 @@ enum PresetId {
 	P6_ALL_NORMAL,
 }
 
-# Preset display names
-const PRESET_NAMES := {
-	PresetId.P1_ROBOT_TABLE: "GTO牌桌",
-	PresetId.P2_HALF_FISH_HALF_ROBOT: "混合牌桌",
-	PresetId.P3_ONE_ROBOT_REST_RANDOM: "单GTO牌桌",
-	PresetId.P4_FISH_HEAVEN: "休闲牌桌",
-	PresetId.P5_ALL_CRAZY: "激进牌桌",
-	PresetId.P6_ALL_NORMAL: "常规牌桌",
+# Preset display name keys (for Locale lookup)
+const PRESET_NAME_KEYS := {
+	PresetId.P1_ROBOT_TABLE: "preset_gto_table",
+	PresetId.P2_HALF_FISH_HALF_ROBOT: "preset_mixed",
+	PresetId.P3_ONE_ROBOT_REST_RANDOM: "preset_one_gto",
+	PresetId.P4_FISH_HEAVEN: "preset_casual",
+	PresetId.P5_ALL_CRAZY: "preset_crazy",
+	PresetId.P6_ALL_NORMAL: "preset_normal",
 }
+
+static func get_preset_names() -> Dictionary:
+	var names := {}
+	for key in PRESET_NAME_KEYS:
+		names[key] = Locale.tr_key(PRESET_NAME_KEYS[key])
+	return names
 
 # Non-GTO pool weights (live-like distribution)
 const LIVE_LIKE_POOL := {

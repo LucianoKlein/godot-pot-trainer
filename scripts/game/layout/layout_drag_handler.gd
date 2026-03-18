@@ -16,10 +16,11 @@ var is_dragging: bool:
 	get: return _dragging_node != null
 
 
-func _init(parent: Control, table_overlay: Control) -> void:
+func setup(parent: Control, table_overlay: Control) -> RefCounted:
 	_parent = parent
 	_table_overlay = table_overlay
 	_build_tooltip()
+	return self
 
 
 func _build_tooltip() -> void:
@@ -79,7 +80,7 @@ func disable_drag_for_element(nodes_to_remove: Array[Node]) -> void:
 			continue
 		var node: Node = pair[0]
 		var cb: Callable = pair[1]
-		var match_found := false
+		var match_found: bool = false
 		if node in nodes_to_remove:
 			match_found = true
 		elif node.name == "DragOverlay" and node.get_parent() in nodes_to_remove:
@@ -99,15 +100,15 @@ func _make_draggable(node: Node, category: String, idx: int) -> void:
 	node.set_meta("layout_index", idx)
 	if node is Control:
 		node.mouse_filter = Control.MOUSE_FILTER_STOP
-		var cb := _on_drag_input.bind(node)
+		var cb: Callable = _on_drag_input.bind(node)
 		node.gui_input.connect(cb)
 		_drag_connections.append([node, cb])
 	elif node is Node2D:
 		# Plain Node2D has no gui_input signal; add a transparent Control overlay
-		var overlay := Control.new()
+		var overlay: Control = Control.new()
 		overlay.name = "DragOverlay"
 		overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-		var sz := Vector2(80, 80)
+		var sz: Vector2 = Vector2(80, 80)
 		if node.has_method("get_total_size"):
 			sz = node.get_total_size()
 			if sz.length_squared() < 1.0:
@@ -116,14 +117,14 @@ func _make_draggable(node: Node, category: String, idx: int) -> void:
 		# Chip stacks grow upward (negative Y), offset overlay to cover visual area
 		overlay.position = Vector2(0, -sz.y + sz.x) if node.has_method("get_stack_height") else Vector2.ZERO
 		node.add_child(overlay)
-		var cb := _on_drag_input.bind(node)
+		var cb: Callable = _on_drag_input.bind(node)
 		overlay.gui_input.connect(cb)
 		_drag_connections.append([overlay, cb])
 
 
 func _on_drag_input(event: InputEvent, node: Node) -> void:
 	if event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
+		var mb: InputEventMouseButton = event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
 				_dragging_node = node
@@ -144,9 +145,9 @@ func _on_drag_input(event: InputEvent, node: Node) -> void:
 		elif node is Node2D and node.has_method("get_size"):
 			node_size = node.get_size()
 		var center: Vector2 = node.position + node_size * 0.5
-		var pct := TableLayout.px_to_pct(center)
+		var pct: Vector2 = TableLayout.px_to_pct(center)
 		# Map display category to config key
-		var config_key := _get_config_key(category)
+		var config_key: String = _get_config_key(category)
 		GameManager.update_layout_position(config_key, idx, pct.x, pct.y)
 		_update_drag_tooltip_pos(node)
 
@@ -185,7 +186,7 @@ func _hide_drag_tooltip() -> void:
 
 
 func _get_element_name(category: String, idx: int) -> String:
-	var seat_str := "玩家%d " % (idx + 1) if idx >= 0 else ""
+	var seat_str: String = "玩家%d " % (idx + 1) if idx >= 0 else ""
 	match category:
 		"seats": return seat_str + "头像"
 		"chairs": return seat_str + "椅子"
@@ -201,6 +202,7 @@ func _get_element_name(category: String, idx: int) -> String:
 		"black_stacks": return seat_str + "黑色筹码"
 		"green_stacks": return seat_str + "绿色筹码"
 		"bet_chips": return seat_str + "下注筹码"
+		"ordered_bet_chips": return seat_str + "整齐筹码"
 		"pot_chips": return "底池筹码"
 		"chip_record": return "筹码记录"
 		_: return category
@@ -210,5 +212,6 @@ func _get_config_key(category: String) -> String:
 	# Map display category to layout_config key
 	match category:
 		"bet_chips": return "bets"
+		"ordered_bet_chips": return "ordered_bet_chips"
 		"pot_chips": return "pot"
 		_: return category

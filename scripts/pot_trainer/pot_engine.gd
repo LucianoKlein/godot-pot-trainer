@@ -36,7 +36,7 @@ class PotPlayerState:
 
 # --- Init ---
 
-func create_initial_state(config: TrainingConfig) -> void:
+func create_initial_state(config: RefCounted) -> void:
 	var templates := TablePresets.assign_player_templates(
 		config.table_preset as TablePresets.PresetId, config.player_count
 	)
@@ -46,18 +46,18 @@ func create_initial_state(config: TrainingConfig) -> void:
 		players.append(PotPlayerState.new(i, templates[i]))
 
 	dealer_seat = config.dealer_seat
-	var sb_seat := (dealer_seat + 1) % config.player_count
-	var bb_seat := (dealer_seat + 2) % config.player_count
+	var sb_seat: int = (dealer_seat + 1) % config.player_count
+	var bb_seat: int = (dealer_seat + 2) % config.player_count
 
 	# Post small blind
-	var sb_amount := mini(config.small_blind, players[sb_seat].stack)
+	var sb_amount: int = mini(config.small_blind, players[sb_seat].stack)
 	players[sb_seat].round_contribution = sb_amount
 	players[sb_seat].stack -= sb_amount
 	players[sb_seat].has_acted_this_round = true
 	players[sb_seat].last_action = "blind"
 
 	# Post big blind
-	var bb_amount := mini(config.big_blind, players[bb_seat].stack)
+	var bb_amount: int = mini(config.big_blind, players[bb_seat].stack)
 	players[bb_seat].round_contribution = bb_amount
 	players[bb_seat].stack -= bb_amount
 	players[bb_seat].has_acted_this_round = true
@@ -75,9 +75,9 @@ func create_initial_state(config: TrainingConfig) -> void:
 # --- Helpers ---
 
 func _next_active_seat(from_seat: int) -> int:
-	var n := players.size()
+	var n: int = players.size()
 	for i in range(1, n + 1):
-		var idx := (from_seat + i) % n
+		var idx: int = (from_seat + i) % n
 		if players[idx].status == "active":
 			return idx
 	return from_seat
@@ -116,8 +116,8 @@ func _reset_betting_round(big_blind: int) -> void:
 
 
 func _advance_street(big_blind: int) -> void:
-	var order := ["preflop", "flop", "turn", "river"]
-	var idx := order.find(street)
+	var order: Array = ["preflop", "flop", "turn", "river"]
+	var idx: int = order.find(street)
 	if idx < 0 or idx >= order.size() - 1:
 		return
 	street = order[idx + 1]
@@ -128,10 +128,10 @@ func _advance_street(big_blind: int) -> void:
 
 # --- Training Question ---
 
-func _create_training_question(seat: int, config: TrainingConfig) -> Dictionary:
+func _create_training_question(seat: int, config: RefCounted) -> Dictionary:
 	var player: PotPlayerState = players[seat]
-	var current_bet := pot_current_bet
-	var is_bet := (current_bet == 0)
+	var current_bet: int = pot_current_bet
+	var is_bet: bool = (current_bet == 0)
 
 	var min_raise_to: int
 	var max_raise_to: int
@@ -143,8 +143,8 @@ func _create_training_question(seat: int, config: TrainingConfig) -> Dictionary:
 		min_raise_to = current_bet + pot_last_raise_size
 
 		# Calculate other players' contributions
-		var other_contributions := 0
-		var has_excluded_one := false
+		var other_contributions: int = 0
+		var has_excluded_one: bool = false
 		for p: PotPlayerState in players:
 			if p.seat == seat:
 				continue
@@ -156,24 +156,24 @@ func _create_training_question(seat: int, config: TrainingConfig) -> Dictionary:
 		max_raise_to = current_bet * 3 + pot_total + other_contributions
 
 	# All-in check
-	var player_total_chips := player.stack + player.round_contribution
-	var is_all_in := player_total_chips < max_raise_to
-	var all_in_amount := player_total_chips if is_all_in else 0
+	var player_total_chips: int = player.stack + player.round_contribution
+	var is_all_in: bool = player_total_chips < max_raise_to
+	var all_in_amount: int = player_total_chips if is_all_in else 0
 
 	# Roll whether this is an answer question
-	var is_answer := randf() * 100.0 < config.question_probability
+	var is_answer: bool = randf() * 100.0 < config.question_probability
 
 	var raise_amount := 0
 	if not is_answer:
 		if is_all_in:
 			raise_amount = all_in_amount
 		else:
-			var mn := ceili(float(min_raise_to) / 25.0) * 25
-			var mx := floori(float(max_raise_to) / 25.0) * 25
+			var mn: int = ceili(float(min_raise_to) / 25.0) * 25
+			var mx: int = floori(float(max_raise_to) / 25.0) * 25
 			if mn > mx:
 				raise_amount = mx
 			else:
-				var steps := (mx - mn) / 25
+				var steps: int = (mx - mn) / 25
 				raise_amount = mn + randi_range(0, steps) * 25
 
 	return {
@@ -189,7 +189,7 @@ func _create_training_question(seat: int, config: TrainingConfig) -> Dictionary:
 
 # --- Main Step: NPC acts ---
 
-func advance_game(config: TrainingConfig) -> void:
+func advance_game(config: RefCounted) -> void:
 	if not training_question.is_empty():
 		return
 
@@ -200,7 +200,7 @@ func advance_game(config: TrainingConfig) -> void:
 		return
 
 	# Auto-fold if no chips at all
-	var player_total_chips := player.stack + player.round_contribution
+	var player_total_chips: int = player.stack + player.round_contribution
 	if player_total_chips == 0:
 		player.status = "folded"
 		current_seat = _next_active_seat(current_seat)
@@ -208,8 +208,8 @@ func advance_game(config: TrainingConfig) -> void:
 			is_game_over = true
 		return
 
-	var current_bet := pot_current_bet
-	var need_to_call := current_bet - player.round_contribution
+	var current_bet: int = pot_current_bet
+	var need_to_call: int = current_bet - player.round_contribution
 	var template: PlayerTemplates.PlayerTemplate = player.template
 
 	var action: String
@@ -226,7 +226,7 @@ func advance_game(config: TrainingConfig) -> void:
 				action = "bet"
 	else:
 		# Under pressure: use vsAggressionBySize
-		var pot_size := pot_total
+		var pot_size: int = pot_total
 		for p: PotPlayerState in players:
 			pot_size += p.round_contribution
 		var agg_size: int = PlayerTemplates.get_aggression_size(need_to_call, pot_size)
@@ -261,7 +261,7 @@ func advance_game(config: TrainingConfig) -> void:
 			pass
 
 		"call":
-			var call_amount := mini(need_to_call, player.stack)
+			var call_amount: int = mini(need_to_call, player.stack)
 			player.round_contribution += call_amount
 			player.stack -= call_amount
 
@@ -289,12 +289,12 @@ func complete_raise(raise_amount: int) -> void:
 	var seat: int = training_question["seat"]
 	var player: PotPlayerState = players[seat]
 
-	var amount_to_add := raise_amount - player.round_contribution
-	var actual_amount := mini(amount_to_add, player.stack)
+	var amount_to_add: int = raise_amount - player.round_contribution
+	var actual_amount: int = mini(amount_to_add, player.stack)
 	player.stack -= actual_amount
 	player.round_contribution += actual_amount
 
-	var raise_increment := player.round_contribution - pot_current_bet
+	var raise_increment: int = player.round_contribution - pot_current_bet
 	pot_last_raise_size = maxi(raise_increment, pot_last_raise_size)
 	pot_current_bet = player.round_contribution
 
@@ -308,7 +308,7 @@ func complete_raise(raise_amount: int) -> void:
 
 # --- Single-step advance (for game mode: one NPC action at a time) ---
 
-func advance_one_step(config: TrainingConfig) -> Dictionary:
+func advance_one_step(config: RefCounted) -> Dictionary:
 	if is_game_over:
 		return {"done": true, "is_game_over": true, "has_question": false, "seat": -1, "action": "", "amount": 0}
 	if not training_question.is_empty():
@@ -330,9 +330,9 @@ func advance_one_step(config: TrainingConfig) -> Dictionary:
 
 # --- Run until a question appears or game ends ---
 
-func run_until_question(config: TrainingConfig) -> void:
+func run_until_question(config: RefCounted) -> void:
 	var guard := 0
-	var is_scenario := config.training_mode == "scenario"
+	var is_scenario: bool = config.training_mode == "scenario"
 
 	while guard < 500:
 		if is_game_over:

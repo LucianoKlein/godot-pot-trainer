@@ -55,6 +55,6 @@ func get_display_text() -> String:
 	return RANK_NAMES[rank] + SUIT_SYMBOLS[suit]
 
 
-func duplicate_card() -> CardData:
+func duplicate_card() -> RefCounted:
 	var c := CardData.new(suit, rank, face_up)
 	return c

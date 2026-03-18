@@ -47,7 +47,7 @@ static func _init_templates() -> void:
 
 	# T1_GTO - 均衡玩家
 	_templates[TemplateId.T1_GTO] = PlayerTemplate.new(
-		TemplateId.T1_GTO, "均衡型",
+		TemplateId.T1_GTO, "template_gto",
 		{
 			NoAggressionAction.FOLD: 0.14,
 			NoAggressionAction.CHECK: 0.46,
@@ -76,7 +76,7 @@ static func _init_templates() -> void:
 
 	# T2_CALLING_STATION - 温和跟注者
 	_templates[TemplateId.T2_CALLING_STATION] = PlayerTemplate.new(
-		TemplateId.T2_CALLING_STATION, "跟注站",
+		TemplateId.T2_CALLING_STATION, "template_calling_station",
 		{
 			NoAggressionAction.FOLD: 0.18,
 			NoAggressionAction.CHECK: 0.68,
@@ -105,7 +105,7 @@ static func _init_templates() -> void:
 
 	# T3_LAG - 积极进攻者
 	_templates[TemplateId.T3_LAG] = PlayerTemplate.new(
-		TemplateId.T3_LAG, "松凶型",
+		TemplateId.T3_LAG, "template_lag",
 		{
 			NoAggressionAction.FOLD: 0.06,
 			NoAggressionAction.CHECK: 0.14,
@@ -134,7 +134,7 @@ static func _init_templates() -> void:
 
 	# T4_TAG_MAX - 谨慎重压者
 	_templates[TemplateId.T4_TAG_MAX] = PlayerTemplate.new(
-		TemplateId.T4_TAG_MAX, "紧凶型",
+		TemplateId.T4_TAG_MAX, "template_tag_max",
 		{
 			NoAggressionAction.FOLD: 0.34,
 			NoAggressionAction.CHECK: 0.44,
@@ -163,7 +163,7 @@ static func _init_templates() -> void:
 
 	# T5_NORMAL - 普通玩家
 	_templates[TemplateId.T5_NORMAL] = PlayerTemplate.new(
-		TemplateId.T5_NORMAL, "普通型",
+		TemplateId.T5_NORMAL, "template_normal",
 		{
 			NoAggressionAction.FOLD: 0.18,
 			NoAggressionAction.CHECK: 0.5,
@@ -192,7 +192,7 @@ static func _init_templates() -> void:
 
 	# T6_TRICKY - 善于隐藏者
 	_templates[TemplateId.T6_TRICKY] = PlayerTemplate.new(
-		TemplateId.T6_TRICKY, "诡诈型",
+		TemplateId.T6_TRICKY, "template_tricky",
 		{
 			NoAggressionAction.FOLD: 0.14,
 			NoAggressionAction.CHECK: 0.4,

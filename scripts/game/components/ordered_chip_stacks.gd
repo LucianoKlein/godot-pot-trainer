@@ -118,13 +118,13 @@ func _split_into_stacks(group: Dictionary) -> Array:
 	var count: int = group.count
 
 	# purple500/green25 每堆4枚，black100 每堆5枚
-	var stack_size := 5 if color == ChipUtils.ChipColor.BLACK100 else 4
+	var stack_size: int = 5 if color == ChipUtils.ChipColor.BLACK100 else 4
 
 	var stacks: Array = []
-	var remaining := count
+	var remaining: int = count
 
 	while remaining > 0:
-		var stack_count := mini(remaining, stack_size)
+		var stack_count: int = mini(remaining, stack_size)
 		stacks.append({"color": color, "count": stack_count})
 		remaining -= stack_count
 

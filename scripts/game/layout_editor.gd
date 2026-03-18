@@ -26,15 +26,16 @@ var _purple_stacks: Array[Node2D]
 var _black_stacks: Array[Node2D]
 var _green_stacks: Array[Node2D]
 var _player_bet_chips: Array[Control]
+var _ordered_bet_chips: Array[Node2D]
 var _pot_chip_area: Control
 var _chip_record: Control
 var _action_boxes: Array[Label]
 
 # Sub-managers
-var _drag_handler: LayoutDragHandler
-var _panel_ui: LayoutPanelUI
-var _preview_manager: LayoutPreviewManager
-var _visibility_manager: LayoutVisibilityManager
+var _drag_handler: RefCounted  # LayoutDragHandler
+var _panel_ui: RefCounted  # LayoutPanelUI
+var _preview_manager: RefCounted  # LayoutPreviewManager
+var _visibility_manager: RefCounted  # LayoutVisibilityManager
 
 # Pinch-to-zoom support
 var _pinch_zoom: RefCounted  # PinchZoomDetector
@@ -46,7 +47,7 @@ var is_dragging: bool:
 	get: return _drag_handler.is_dragging if _drag_handler else false
 
 
-func _init(parent: Control, table_overlay: Control, layout_btn: Button, control_panel: PanelContainer, back_to_menu_cb: Callable, refs: Dictionary) -> void:
+func setup(parent: Control, table_overlay: Control, layout_btn: Button, control_panel: PanelContainer, back_to_menu_cb: Callable, refs: Dictionary) -> RefCounted:
 	_parent = parent
 	_table_overlay = table_overlay
 	_layout_btn = layout_btn
@@ -63,18 +64,20 @@ func _init(parent: Control, table_overlay: Control, layout_btn: Button, control_
 	_black_stacks.assign(refs.get("black_stacks", []))
 	_green_stacks.assign(refs.get("green_stacks", []))
 	_player_bet_chips.assign(refs.get("player_bet_chips", []))
+	_ordered_bet_chips.assign(refs.get("ordered_bet_chips", []))
 	_pot_chip_area = refs.get("pot_chip_area", null)
 	_chip_record = refs.get("chip_record", null)
 	_action_boxes.assign(refs.get("action_boxes", []))
+	return self
 
 
 func build() -> void:
 	# Initialize sub-managers
-	_drag_handler = LayoutDragHandler.new(_parent, _table_overlay)
+	_drag_handler = LayoutDragHandler.new().setup(_parent, _table_overlay)
 	_drag_handler.drag_ended.connect(_on_drag_ended)
-	_panel_ui = LayoutPanelUI.new(_parent)
-	_preview_manager = LayoutPreviewManager.new(_table_overlay)
-	_visibility_manager = LayoutVisibilityManager.new({
+	_panel_ui = LayoutPanelUI.new().setup(_parent)
+	_preview_manager = LayoutPreviewManager.new().setup(_table_overlay)
+	_visibility_manager = LayoutVisibilityManager.new().setup({
 		"bet_labels": _bet_labels,
 		"stack_labels": _stack_labels,
 		"dealer_button": _dealer_button,
@@ -84,6 +87,7 @@ func build() -> void:
 		"black_stacks": _black_stacks,
 		"green_stacks": _green_stacks,
 		"player_bet_chips": _player_bet_chips,
+		"ordered_bet_chips": _ordered_bet_chips,
 		"pot_chip_area": _pot_chip_area,
 		"chip_record": _chip_record,
 		"action_boxes": _action_boxes,
@@ -100,7 +104,7 @@ func build() -> void:
 	_panel_ui.display_mode_changed.connect(_on_display_mode_changed)
 
 	# Build panel content
-	var content := _panel_ui.get_content_container()
+	var content: VBoxContainer = _panel_ui.get_content_container()
 	_visibility_manager.build_select_all_checkbox(content)
 	_panel_ui.build_sliders(_visibility_manager)
 	_panel_ui.build_action_buttons()
@@ -118,7 +122,7 @@ func build() -> void:
 
 func toggle() -> void:
 	GameManager.toggle_layout_mode()
-	var active := GameManager.layout_mode
+	var active: bool = GameManager.layout_mode
 	_panel_ui.set_visible(active)
 	_layout_back_btn.visible = active
 	_control_panel.visible = not active
@@ -213,7 +217,7 @@ func apply_all_visibility() -> void:
 func _enable_drag() -> void:
 	_drag_handler.disable_drag()
 
-	var nodes := {}
+	var nodes: Dictionary = {}
 	# Seats (avatars) and chairs are always draggable in layout mode
 	nodes["seats"] = _avatars
 	nodes["chairs"] = _chairs
@@ -227,6 +231,8 @@ func _enable_drag() -> void:
 		nodes["green_stacks"] = _green_stacks
 	if _visibility_manager.is_element_visible("bet_chips"):
 		nodes["bet_chips"] = _player_bet_chips
+	if _visibility_manager.is_element_visible("ordered_bet_chips"):
+		nodes["ordered_bet_chips"] = _ordered_bet_chips
 	if _visibility_manager.is_element_visible("pot_display"):
 		nodes["pot"] = _pot_display
 	if _visibility_manager.is_element_visible("pot_chips") and _pot_chip_area:
@@ -246,7 +252,7 @@ func _disable_drag() -> void:
 
 
 func _on_save() -> void:
-	var success := GameManager.save_layout_to_file()
+	var success: bool = GameManager.save_layout_to_file()
 	if success:
 		_show_save_dialog("布局已保存")
 	else:
@@ -326,6 +332,8 @@ func _enable_drag_for_element(element_key: String) -> void:
 			_drag_handler.enable_drag_for_element("green_stacks", _green_stacks)
 		"bet_chips":
 			_drag_handler.enable_drag_for_element("bet_chips", _player_bet_chips)
+		"ordered_bet_chips":
+			_drag_handler.enable_drag_for_element("ordered_bet_chips", _ordered_bet_chips)
 		"pot_display":
 			_drag_handler.enable_drag_for_element("pot", _pot_display)
 		"pot_chips":
@@ -361,6 +369,9 @@ func _disable_drag_for_element(element_key: String) -> void:
 		"bet_chips":
 			for b in _player_bet_chips:
 				nodes_to_remove.append(b)
+		"ordered_bet_chips":
+			for obc in _ordered_bet_chips:
+				nodes_to_remove.append(obc)
 		"pot_display":
 			nodes_to_remove.append(_pot_display)
 		"pot_chips":
@@ -381,18 +392,18 @@ func _disable_drag_for_element(element_key: String) -> void:
 func _on_parent_input(event: InputEvent) -> void:
 	if _pinch_zoom.process_input(event):
 		# Pinch gesture detected, adjust active chip slider
-		var active_slider := _panel_ui.get_active_chip_slider()
+		var active_slider: HSlider = _panel_ui.get_active_chip_slider()
 		if active_slider:
 			pass  # Slider will be adjusted in _on_pinch_zoom
 
 
 func _on_pinch_zoom(zoom_factor: float) -> void:
-	var active_slider := _panel_ui.get_active_chip_slider()
+	var active_slider: HSlider = _panel_ui.get_active_chip_slider()
 	if not active_slider:
 		return
 
-	var current_value := active_slider.value
-	var new_value := clampf(current_value * zoom_factor, active_slider.min_value, active_slider.max_value)
+	var current_value: float = active_slider.value
+	var new_value: float = clampf(current_value * zoom_factor, active_slider.min_value, active_slider.max_value)
 
 	if abs(new_value - current_value) > 0.01:
 		active_slider.value = new_value

@@ -54,7 +54,7 @@ func _rebuild() -> void:
 	if not preset_chips.is_empty():
 		chips = preset_chips
 	else:
-		var amount := pot_total if not is_editing else 7500
+		var amount: int = pot_total if not is_editing else 7500
 		if amount <= 0:
 			return
 		chips = ChipUtils.amount_to_chips(amount)
@@ -62,7 +62,7 @@ func _rebuild() -> void:
 	if chips.is_empty():
 		return
 
-	var n := chips.size()
+	var n: int = chips.size()
 	var area_w := area_width
 	var area_h := area_height
 	var cx := area_w / 2.0
@@ -96,29 +96,29 @@ func _rebuild() -> void:
 
 	# 收集三角形内的所有格子坐标
 	var slots: Array = []
-	var col_count := ceili(tri_w / step_x) + 2
-	var row_count := ceili(tri_h / step_y) + 2
+	var col_count: int = ceili(tri_w / step_x) + 2
+	var row_count: int = ceili(tri_h / step_y) + 2
 
 	for row in range(row_count):
 		for col in range(col_count):
-			var left := tri_left + col * step_x
-			var bottom := tri_bottom + row * step_y
-			var center_x := left + step_x / 2.0
-			var center_y := bottom + step_y / 2.0
+			var left: float = tri_left + col * step_x
+			var bottom: float = tri_bottom + row * step_y
+			var center_x: float = left + step_x / 2.0
+			var center_y: float = bottom + step_y / 2.0
 
 			# v: 0=底边，1=尖角
-			var v := (center_y - tri_bottom) / tri_h
+			var v: float = (center_y - tri_bottom) / tri_h
 			if v < 0 or v > 1:
 				continue
 
 			# 三角形内水平范围：越靠近尖角越窄
-			var half_w := (tri_w / 2.0) * (1.0 - v)
+			var half_w: float = (tri_w / 2.0) * (1.0 - v)
 			if center_x < cx - half_w or center_x > cx + half_w:
 				continue
 
-			var dx := center_x - cx
-			var dy := center_y - cy
-			var dist := sqrt(dx * dx + dy * dy)
+			var dx: float = center_x - cx
+			var dy: float = center_y - cy
+			var dist: float = sqrt(dx * dx + dy * dy)
 			slots.append({"left": left, "bottom": bottom, "dist": dist})
 
 	# 按距中心由近到远排序

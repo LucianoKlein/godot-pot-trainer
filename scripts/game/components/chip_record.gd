@@ -55,7 +55,7 @@ func _build_ui() -> void:
 
 	# Title
 	_title_label = Label.new()
-	_title_label.text = "筹码记录"
+	_title_label.text = Locale.tr_key("chip_record_label")
 	_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_title_label.add_theme_font_size_override("font_size", 22)
 	_title_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.5))
@@ -124,13 +124,13 @@ func _rebuild_chips() -> void:
 		for child in col.get_children():
 			child.queue_free()
 
-	var amount := _current_amount
-	var wan := (amount / 10000) % 10
-	var qian := (amount / 1000) % 10
-	var bai := (amount / 100) % 10
-	var low := (amount % 100) / 25
+	var amount: int = _current_amount
+	var wan: int = (amount / 10000) % 10
+	var qian: int = (amount / 1000) % 10
+	var bai: int = (amount / 100) % 10
+	var low: int = (amount % 100) / 25
 
-	var digits := [wan, qian, bai, 0]  # top/bottom for first 3 cols, col 4 is low-only
+	var digits: Array = [wan, qian, bai, 0]  # top/bottom for first 3 cols, col 4 is low-only
 
 	# Place chips for each digit column
 	for i in range(4):

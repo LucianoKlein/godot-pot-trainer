@@ -9,7 +9,7 @@ const SUIT_FOLDERS := {
 }
 
 
-static func get_texture(card: CardData) -> Texture2D:
+static func get_texture(card: RefCounted) -> Texture2D:
 	var folder: String = SUIT_FOLDERS[card.suit]
 	var num: int = CardData.RANK_TO_SVG[card.rank]
 	var path := "res://assets/cards/%s/%d.svg" % [folder, num]

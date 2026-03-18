@@ -53,7 +53,7 @@ func set_area_size(width: float, height: float) -> void:
 
 
 func _rebuild() -> void:
-	var should_scatter := _chips.size() < THRESHOLD
+	var should_scatter: bool = _chips.size() < THRESHOLD
 
 	# 模式切换时销毁旧组件
 	if _current_child != null and should_scatter != _is_scattered:

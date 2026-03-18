@@ -16,6 +16,7 @@ var _element_visibility: Dictionary = {
 	"action_boxes": true,
 	"player_chips": true,
 	"bet_chips": true,
+	"ordered_bet_chips": true,
 	"pot_chips": true,
 	"chip_record": true,
 }
@@ -33,6 +34,7 @@ var _purple_stacks: Array[Node2D]
 var _black_stacks: Array[Node2D]
 var _green_stacks: Array[Node2D]
 var _player_bet_chips: Array[Control]
+var _ordered_bet_chips: Array[Node2D]
 var _pot_chip_area: Control
 var _chip_record: Control
 var _action_boxes: Array[Label]
@@ -44,7 +46,7 @@ var _preview_dealer_buttons: Array[Control] = []
 var _preview_answer_boxes: Array[Control] = []
 
 
-func _init(refs: Dictionary) -> void:
+func setup(refs: Dictionary) -> RefCounted:
 	_bet_labels = refs.get("bet_labels", [])
 	_stack_labels = refs.get("stack_labels", [])
 	_dealer_button = refs.get("dealer_button", null)
@@ -54,9 +56,11 @@ func _init(refs: Dictionary) -> void:
 	_black_stacks = refs.get("black_stacks", [])
 	_green_stacks = refs.get("green_stacks", [])
 	_player_bet_chips = refs.get("player_bet_chips", [])
+	_ordered_bet_chips = refs.get("ordered_bet_chips", [])
 	_pot_chip_area = refs.get("pot_chip_area", null)
 	_chip_record = refs.get("chip_record", null)
 	_action_boxes.assign(refs.get("action_boxes", []))
+	return self
 
 
 func set_preview_references(preview_refs: Dictionary) -> void:
@@ -78,7 +82,7 @@ func build_select_all_checkbox(parent: VBoxContainer) -> void:
 	select_all_row.add_child(_select_all_checkbox)
 
 	var select_all_lbl := Label.new()
-	select_all_lbl.text = "全选/取消全选"
+	select_all_lbl.text = Locale.tr_key("select_all")
 	select_all_lbl.add_theme_font_size_override("font_size", 28)
 	select_all_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 	select_all_lbl.custom_minimum_size.x = 140
@@ -153,6 +157,10 @@ func update_element_visibility(element_key: String, visible: bool) -> void:
 			for bet_chip in _player_bet_chips:
 				if is_instance_valid(bet_chip):
 					bet_chip.visible = visible
+		"ordered_bet_chips":
+			for obc in _ordered_bet_chips:
+				if is_instance_valid(obc):
+					obc.visible = visible
 		"pot_chips":
 			if _pot_chip_area and is_instance_valid(_pot_chip_area):
 				_pot_chip_area.visible = visible
@@ -180,7 +188,7 @@ func select_all() -> void:
 
 func restore_all_visibility() -> void:
 	# When returning to game mode, respect display_mode setting
-	var is_numbers := GameManager.display_mode == "numbers"
+	var is_numbers: bool = GameManager.display_mode == "numbers"
 
 	for label in _bet_labels:
 		label.visible = is_numbers
@@ -198,6 +206,9 @@ func restore_all_visibility() -> void:
 	for bet_chip in _player_bet_chips:
 		if is_instance_valid(bet_chip):
 			bet_chip.visible = not is_numbers
+	for obc in _ordered_bet_chips:
+		if is_instance_valid(obc):
+			obc.visible = false  # Never show in game mode
 	if _pot_chip_area and is_instance_valid(_pot_chip_area):
 		_pot_chip_area.visible = not is_numbers
 	if _chip_record and is_instance_valid(_chip_record):
@@ -220,8 +231,8 @@ func is_element_visible(element_key: String) -> bool:
 
 ## Apply display mode: "numbers" hides chips, "chips" hides labels
 func apply_display_mode(mode: String) -> void:
-	var numbers_keys := ["bet_labels", "stack_labels", "pot_display"]
-	var chips_keys := ["player_chips", "bet_chips", "pot_chips", "chip_record"]
+	var numbers_keys: Array = ["bet_labels", "stack_labels", "pot_display"]
+	var chips_keys: Array = ["player_chips", "bet_chips", "ordered_bet_chips", "pot_chips", "chip_record"]
 
 	if mode == "numbers":
 		for key in numbers_keys:
@@ -263,7 +274,7 @@ func _on_select_all_toggled(pressed: bool) -> void:
 func _update_select_all_checkbox() -> void:
 	if not _select_all_checkbox:
 		return
-	var all_checked := true
+	var all_checked: bool = true
 	for key in _element_visibility.keys():
 		if not _element_visibility[key]:
 			all_checked = false

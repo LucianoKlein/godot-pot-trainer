@@ -60,7 +60,7 @@ func _rebuild() -> void:
 	if _chips.is_empty():
 		return
 
-	var n := _chips.size()
+	var n: int = _chips.size()
 	var chip_size := CHIP_SIZE_BASE * chip_scale
 	var chip_w := chip_size
 	var ellipse_h := chip_w / CHIP_ASPECT

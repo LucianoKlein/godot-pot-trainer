@@ -31,8 +31,9 @@ static func is_pc() -> bool:
 	return OS.get_name() in ["Windows", "macOS", "Linux"]
 
 
-func _init(parent: Control) -> void:
+func setup(parent: Control) -> RefCounted:
 	_parent = parent
+	return self
 
 
 func build() -> PanelContainer:
@@ -96,7 +97,7 @@ func _build_title_bar(parent_vbox: VBoxContainer) -> void:
 
 func _on_title_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
+		var mb: InputEventMouseButton = event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
 				_dragging = true
@@ -122,14 +123,14 @@ func build_sliders() -> void:
 
 	# Avatar per-seat scale
 	var per_seat_arr: Array = GameManager.layout_config.get("avatar_per_seat_scale", [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
-	var per_seat_result := _make_per_seat_scale_row(_content, "单个玩家大小", "avatar_per_seat_scale", per_seat_arr,
+	var per_seat_result: Dictionary = _make_per_seat_scale_row(_content, "单个玩家大小", "avatar_per_seat_scale", per_seat_arr,
 		func(seat: int, scale: float) -> void: GameManager.set_avatar_per_seat_scale(seat, scale))
 	_avatar_per_seat_scale_slider = per_seat_result["slider"]
 	_avatar_per_seat_scale_selector = per_seat_result["selector"]
 
 	# Avatar rotation (per-seat)
 	var avatar_rot_arr: Array = GameManager.layout_config.get("avatar_rotation", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-	var avatar_rot_result := _make_per_seat_rotation_row(_content, "玩家旋转", "avatar_rotation", avatar_rot_arr,
+	var avatar_rot_result: Dictionary = _make_per_seat_rotation_row(_content, "玩家旋转", "avatar_rotation", avatar_rot_arr,
 		func(seat: int, deg: float) -> void: GameManager.set_avatar_rotation(seat, deg))
 	_avatar_rotation_slider = avatar_rot_result["slider"]
 	_avatar_seat_selector = avatar_rot_result["selector"]
@@ -141,14 +142,14 @@ func build_sliders() -> void:
 
 	# Chair rotation (per-seat)
 	var chair_rot_arr: Array = GameManager.layout_config.get("chair_rotation", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-	var chair_rot_result := _make_per_seat_rotation_row(_content, "椅子旋转", "chair_rotation", chair_rot_arr,
+	var chair_rot_result: Dictionary = _make_per_seat_rotation_row(_content, "椅子旋转", "chair_rotation", chair_rot_arr,
 		func(seat: int, deg: float) -> void: GameManager.set_chair_rotation(seat, deg))
 	_chair_rotation_slider = chair_rot_result["slider"]
 	_chair_seat_selector = chair_rot_result["selector"]
 
 	# Hole card rotation (per-seat)
 	var hole_rot_arr: Array = GameManager.layout_config.get("hole_card_rotation", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-	var hole_rot_result := _make_per_seat_rotation_row(_content, "手牌旋转", "hole_card_rotation", hole_rot_arr,
+	var hole_rot_result: Dictionary = _make_per_seat_rotation_row(_content, "手牌旋转", "hole_card_rotation", hole_rot_arr,
 		func(seat: int, deg: float) -> void: GameManager.set_hole_card_rotation(seat, deg))
 	_hole_card_rotation_slider = hole_rot_result["slider"]
 	_hole_card_rotation_seat_selector = hole_rot_result["selector"]

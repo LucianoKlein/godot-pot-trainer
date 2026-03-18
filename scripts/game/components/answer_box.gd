@@ -1,6 +1,7 @@
 extends PanelContainer
 ## Answer Box Component — 答题框组件
 ## 支持游戏模式（交互）和布局预览模式（静态）
+## 包含悬浮数字小键盘，禁止系统键盘呼出
 
 signal submit_pressed(answer: int)
 
@@ -11,7 +12,7 @@ var _player_label: Label
 var _question_label: Label
 var _result_label: Label
 var _answer_input: LineEdit
-var _submit_btn: Button
+var _numpad_panel: PanelContainer
 
 
 func _ready() -> void:
@@ -63,7 +64,7 @@ func _build_ui() -> void:
 
 	# --- Question label ---
 	_question_label = Label.new()
-	_question_label.text = "底池限注最大加注是多少？"
+	_question_label.text = Locale.tr_key("question_text")
 	_question_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_question_label.add_theme_font_size_override("font_size", int(24 * scale_factor))
 	_question_label.add_theme_color_override("font_color", Color(0.92, 0.78, 0.32))
@@ -78,20 +79,21 @@ func _build_ui() -> void:
 	_result_label.visible = false
 	vbox.add_child(_result_label)
 
-	# --- Input row ---
+	# --- Input row (input only, no submit button — numpad handles it) ---
 	var input_hbox := HBoxContainer.new()
 	input_hbox.add_theme_constant_override("separation", int(8 * scale_factor))
 	input_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_child(input_hbox)
 
-	# Input field
+	# Input field — disable virtual keyboard
 	_answer_input = LineEdit.new()
-	_answer_input.placeholder_text = "输入金额..."
-	_answer_input.custom_minimum_size = Vector2(200, 48) * scale_factor
+	_answer_input.placeholder_text = Locale.tr_key("amount_placeholder")
+	_answer_input.custom_minimum_size = Vector2(300, 48) * scale_factor
 	_answer_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_answer_input.add_theme_font_size_override("font_size", int(24 * scale_factor))
 	_answer_input.add_theme_color_override("font_color", Color.WHITE)
 	_answer_input.add_theme_color_override("font_placeholder_color", Color(0.50, 0.40, 0.30))
+	_answer_input.virtual_keyboard_enabled = false
 	var input_bg := StyleBoxFlat.new()
 	input_bg.bg_color = Color(0.08, 0.08, 0.10, 0.9)
 	input_bg.border_color = Color(0.50, 0.40, 0.16, 0.6)
@@ -108,47 +110,8 @@ func _build_ui() -> void:
 	_answer_input.add_theme_stylebox_override("focus", input_focus)
 	input_hbox.add_child(_answer_input)
 
-	# Submit button
-	_submit_btn = Button.new()
-	_submit_btn.text = "确认"
-	_submit_btn.custom_minimum_size = Vector2(88, 48) * scale_factor
-	_submit_btn.add_theme_font_size_override("font_size", int(22 * scale_factor))
-	_submit_btn.add_theme_color_override("font_color", Color(0.90, 0.80, 0.55))
-	var btn_style := StyleBoxFlat.new()
-	btn_style.bg_color = Color(0.08, 0.08, 0.10, 0.82)
-	btn_style.border_color = Color(0.50, 0.40, 0.16)
-	btn_style.set_border_width_all(1)
-	btn_style.set_corner_radius_all(6)
-	btn_style.content_margin_left = int(10 * scale_factor)
-	btn_style.content_margin_right = int(10 * scale_factor)
-	btn_style.content_margin_top = int(4 * scale_factor)
-	btn_style.content_margin_bottom = int(4 * scale_factor)
-	_submit_btn.add_theme_stylebox_override("normal", btn_style)
-	var btn_hover := StyleBoxFlat.new()
-	btn_hover.bg_color = Color(0.14, 0.13, 0.10, 0.85)
-	btn_hover.border_color = Color(0.72, 0.58, 0.24)
-	btn_hover.set_border_width_all(1)
-	btn_hover.set_corner_radius_all(6)
-	btn_hover.content_margin_left = int(10 * scale_factor)
-	btn_hover.content_margin_right = int(10 * scale_factor)
-	btn_hover.content_margin_top = int(4 * scale_factor)
-	btn_hover.content_margin_bottom = int(4 * scale_factor)
-	_submit_btn.add_theme_stylebox_override("hover", btn_hover)
-	var btn_pressed := StyleBoxFlat.new()
-	btn_pressed.bg_color = Color(0.08, 0.08, 0.10, 0.82)
-	btn_pressed.border_color = Color(0.72, 0.58, 0.24)
-	btn_pressed.set_border_width_all(1)
-	btn_pressed.set_corner_radius_all(6)
-	btn_pressed.content_margin_left = int(10 * scale_factor)
-	btn_pressed.content_margin_right = int(10 * scale_factor)
-	btn_pressed.content_margin_top = int(4 * scale_factor)
-	btn_pressed.content_margin_bottom = int(4 * scale_factor)
-	_submit_btn.add_theme_stylebox_override("pressed", btn_pressed)
-	input_hbox.add_child(_submit_btn)
-
 	# Connect signals (only in game mode)
 	if not preview_mode:
-		_submit_btn.pressed.connect(_on_submit_pressed)
 		_answer_input.text_submitted.connect(_on_answer_submitted)
 
 
@@ -175,15 +138,14 @@ func _rebuild_ui() -> void:
 func _disable_interaction() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_answer_input.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_submit_btn.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 func set_player_label(seat: int, template_name: String) -> void:
 	if _player_label:
 		if template_name.is_empty():
-			_player_label.text = "座位 %d" % (seat + 1)
+			_player_label.text = Locale.tr_key("seat_label") % (seat + 1)
 		else:
-			_player_label.text = "座位 %d · %s" % [seat + 1, template_name]
+			_player_label.text = Locale.tr_key("seat_label_template") % [seat + 1, template_name]
 
 
 func set_question_text(text: String) -> void:
@@ -214,8 +176,29 @@ func grab_input_focus() -> void:
 		_answer_input.grab_focus()
 
 
-func _on_submit_pressed() -> void:
-	_try_submit()
+# =============================================================================
+# NUMPAD — built as sibling by game_table, controlled here
+# =============================================================================
+
+func set_numpad(panel: PanelContainer) -> void:
+	_numpad_panel = panel
+
+
+func get_numpad() -> PanelContainer:
+	return _numpad_panel
+
+
+func numpad_key_pressed(key: String) -> void:
+	match key:
+		"confirm":
+			_try_submit()
+		"cancel":
+			clear_input()
+			clear_result()
+		_:
+			# Digit key — append to input
+			_answer_input.text += key
+			_answer_input.caret_column = _answer_input.text.length()
 
 
 func _on_answer_submitted(_text: String) -> void:
@@ -227,7 +210,7 @@ func _try_submit() -> void:
 	if text.is_empty():
 		return
 	if not text.is_valid_int():
-		set_result_text("请输入有效数字", Color(0.85, 0.30, 0.30))
+		set_result_text(Locale.tr_key("err_invalid_number"), Color(0.85, 0.30, 0.30))
 		clear_input()
 		return
 	var val := text.to_int()

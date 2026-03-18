@@ -34,8 +34,9 @@ var _toggle_btn: Button
 var _expanded: bool = false
 
 
-func _init(p: Control) -> void:
+func setup(p: Control) -> RefCounted:
 	parent = p
+	return self
 
 
 func build(back_to_menu_callback: Callable) -> void:
@@ -89,7 +90,7 @@ func build(back_to_menu_callback: Callable) -> void:
 
 func _build_config_row() -> void:
 	# 人数
-	var pc_group := _make_option_group("人数:")
+	var pc_group := _make_option_group(Locale.tr_key("player_count"))
 	player_count_option = _make_styled_option()
 	for n in range(2, 10):
 		player_count_option.add_item("%d" % n, n)
@@ -102,7 +103,7 @@ func _build_config_row() -> void:
 	_config_row.add_child(pc_group)
 
 	# 盲注
-	var bl_group := _make_option_group("盲注:")
+	var bl_group := _make_option_group(Locale.tr_key("blinds"))
 	blinds_option = _make_styled_option()
 	for pair in GameManager.POT_BLINDS:
 		blinds_option.add_item("%d/%d" % [pair[0], pair[1]])
@@ -115,10 +116,11 @@ func _build_config_row() -> void:
 	_config_row.add_child(bl_group)
 
 	# 牌桌
-	var tp_group := _make_option_group("牌桌:")
+	var tp_group := _make_option_group(Locale.tr_key("table_preset"))
 	preset_option = _make_styled_option()
-	for key in TablePresets.PRESET_NAMES:
-		preset_option.add_item(TablePresets.PRESET_NAMES[key], key)
+	var preset_names := TablePresets.get_preset_names()
+	for key in preset_names:
+		preset_option.add_item(preset_names[key], key)
 	preset_option.selected = 0
 	preset_option.item_selected.connect(func(index: int) -> void:
 		preset_changed.emit(index)
@@ -127,20 +129,20 @@ func _build_config_row() -> void:
 	_config_row.add_child(tp_group)
 
 	# 模式
-	var mo_group := _make_option_group("模式:")
+	var mo_group := _make_option_group(Locale.tr_key("mode_label"))
 	mode_option = _make_styled_option()
-	mode_option.add_item("场景模式")
-	mode_option.add_item("游戏模式")
+	mode_option.add_item(Locale.tr_key("scenario_mode"))
+	mode_option.add_item(Locale.tr_key("game_mode"))
 	mode_option.selected = 0
 	mode_option.item_selected.connect(func(index: int) -> void:
-		var mode := "scenario" if index == 0 else "game"
+		var mode: String = "scenario" if index == 0 else "game"
 		mode_changed.emit(mode)
 	)
 	mo_group.add_child(mode_option)
 	_config_row.add_child(mo_group)
 
 	# 庄家
-	var dl_group := _make_option_group("庄家:")
+	var dl_group := _make_option_group(Locale.tr_key("dealer_label"))
 	dealer_option = _make_styled_option()
 	_rebuild_dealer_options()
 	dealer_option.item_selected.connect(func(index: int) -> void:
@@ -150,13 +152,13 @@ func _build_config_row() -> void:
 	_config_row.add_child(dl_group)
 
 	# 展示模式
-	var dm_group := _make_option_group("展示模式:")
+	var dm_group := _make_option_group(Locale.tr_key("display_mode_label"))
 	_display_mode_option = _make_styled_option()
-	_display_mode_option.add_item("筹码", 0)
-	_display_mode_option.add_item("数字", 1)
+	_display_mode_option.add_item(Locale.tr_key("chips_mode"), 0)
+	_display_mode_option.add_item(Locale.tr_key("numbers_mode"), 1)
 	_display_mode_option.selected = 0 if GameManager.display_mode == "chips" else 1
 	_display_mode_option.item_selected.connect(func(index: int) -> void:
-		var mode := "chips" if index == 0 else "numbers"
+		var mode: String = "chips" if index == 0 else "numbers"
 		_set_display_mode(mode)
 	)
 	dm_group.add_child(_display_mode_option)
@@ -170,7 +172,7 @@ func _build_config_row() -> void:
 func _build_main_row(row: HBoxContainer, back_cb: Callable) -> void:
 	# 齿轮展开按钮
 	_toggle_btn = Button.new()
-	_toggle_btn.text = "⚙ 配置 ▲"
+	_toggle_btn.text = Locale.tr_key("config_expand")
 	_toggle_btn.custom_minimum_size = Vector2(110, 44)
 	_toggle_btn.add_theme_font_size_override("font_size", 20)
 	var tg_s := StyleBoxFlat.new()
@@ -194,27 +196,27 @@ func _build_main_row(row: HBoxContainer, back_cb: Callable) -> void:
 	row.add_child(VSeparator.new())
 
 	# 操作按钮
-	start_btn = _make_action_btn("开始", Color(0.08, 0.08, 0.10, 0.82), Color(0.25, 0.55, 0.30))
+	start_btn = _make_action_btn(Locale.tr_key("start"), Color(0.08, 0.08, 0.10, 0.82), Color(0.25, 0.55, 0.30))
 	row.add_child(start_btn)
 	start_btn.pressed.connect(func() -> void: start_pressed.emit())
 
-	pause_btn = _make_action_btn("暂停", Color(0.08, 0.08, 0.10, 0.82), Color(0.50, 0.40, 0.16))
+	pause_btn = _make_action_btn(Locale.tr_key("pause"), Color(0.08, 0.08, 0.10, 0.82), Color(0.50, 0.40, 0.16))
 	row.add_child(pause_btn)
 	pause_btn.pressed.connect(func() -> void: pause_pressed.emit())
 
-	reset_btn = _make_action_btn("重置", Color(0.08, 0.08, 0.10, 0.82), Color(0.50, 0.40, 0.16))
+	reset_btn = _make_action_btn(Locale.tr_key("reset"), Color(0.08, 0.08, 0.10, 0.82), Color(0.50, 0.40, 0.16))
 	row.add_child(reset_btn)
 	reset_btn.pressed.connect(func() -> void: reset_pressed.emit())
 
 	row.add_child(VSeparator.new())
 
 	# 布局（隐藏）
-	layout_btn = _make_action_btn("布局", Color(0.08, 0.08, 0.10, 0.82), Color(0.50, 0.40, 0.16))
+	layout_btn = _make_action_btn(Locale.tr_key("layout"), Color(0.08, 0.08, 0.10, 0.82), Color(0.50, 0.40, 0.16))
 	layout_btn.visible = false
 	row.add_child(layout_btn)
 
 	# 返回主菜单
-	var back_btn := _make_action_btn("返回主菜单", Color(0.08, 0.08, 0.10, 0.82), Color(0.55, 0.25, 0.15))
+	var back_btn := _make_action_btn(Locale.tr_key("back_to_menu"), Color(0.08, 0.08, 0.10, 0.82), Color(0.55, 0.25, 0.15))
 	back_btn.custom_minimum_size = Vector2(140, 44)
 	row.add_child(back_btn)
 	back_btn.pressed.connect(back_cb)
@@ -227,7 +229,7 @@ func _build_main_row(row: HBoxContainer, back_cb: Callable) -> void:
 func _on_toggle() -> void:
 	_expanded = not _expanded
 	_config_row.visible = _expanded
-	_toggle_btn.text = "⚙ 配置 ▼" if _expanded else "⚙ 配置 ▲"
+	_toggle_btn.text = Locale.tr_key("config_collapse") if _expanded else Locale.tr_key("config_expand")
 
 
 # ============================================================================
@@ -261,7 +263,7 @@ func _rebuild_dealer_options() -> void:
 	var count: int = GameManager.config.player_count
 	for i in range(count):
 		var physical_seat: int = GameManager.get_physical_seat(i)
-		dealer_option.add_item("座位 %d" % (physical_seat + 1), i)
+		dealer_option.add_item(Locale.tr_key("seat_option") % (physical_seat + 1), i)
 	# Restore selection if still valid
 	if prev_selected >= 0 and prev_selected < count:
 		dealer_option.selected = prev_selected

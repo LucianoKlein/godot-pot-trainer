@@ -5,11 +5,11 @@ enum State { MENU, PLAYING, PAUSED }
 enum Street { PREFLOP, FLOP, TURN, RIVER, SHOWDOWN }
 
 const STREET_NAMES := {
-	Street.PREFLOP: "翻牌前",
-	Street.FLOP: "翻牌",
-	Street.TURN: "转牌",
-	Street.RIVER: "河牌",
-	Street.SHOWDOWN: "摊牌",
+	Street.PREFLOP: "preflop",
+	Street.FLOP: "flop",
+	Street.TURN: "turn",
+	Street.RIVER: "river",
+	Street.SHOWDOWN: "showdown",
 }
 
 const POT_BLINDS := [
@@ -39,9 +39,9 @@ signal hole_cards_changed()
 # --- State ---
 var current_state: State = State.MENU
 
-var players: Array[PlayerData] = []
-var community_cards: Array[CardData] = []
-var deck: Array[CardData] = []
+var players: Array = []
+var community_cards: Array = []
+var deck: Array = []
 var pot: int = 0
 var current_player_index: int = -1
 var dealer_index: int = 0
@@ -52,15 +52,17 @@ var is_hand_in_progress: bool = false
 var last_action: String = ""
 
 # Pot Trainer engine
-var engine: PotEngine = PotEngine.new()
-var config: TrainingConfig = TrainingConfig.new()
+var engine: RefCounted = PotEngine.new()
+var config: RefCounted = TrainingConfig.new()
 var is_game_running: bool = false
 var is_game_started: bool = false
 var board_cards: Array[String] = []  # display-only card strings
 
 # Layout
 var layout_mode: bool = false
-var layout_config: Dictionary = {}
+var layout_config: Dictionary:
+	get: return _layout_mgr.config
+var _layout_mgr: RefCounted  # LayoutConfigManager
 var pending_layout_mode: bool = false
 var display_mode: String = "chips"  # "numbers" or "chips"
 
@@ -70,7 +72,7 @@ var seat_map: Array[int] = []
 
 
 func _ready() -> void:
-	_reset_layout_config()
+	_layout_mgr = LayoutConfigManager.new().setup(layout_changed.emit)
 
 
 func change_state(new_state: State) -> void:
@@ -80,19 +82,19 @@ func change_state(new_state: State) -> void:
 
 # --- Deck (for board card display) ---
 
-func _build_deck() -> Array[CardData]:
-	var d: Array[CardData] = []
+func _build_deck() -> Array:
+	var d: Array = []
 	for s in [CardData.Suit.HEARTS, CardData.Suit.DIAMONDS, CardData.Suit.CLUBS, CardData.Suit.SPADES]:
 		for r in range(CardData.Rank.TWO, CardData.Rank.ACE + 1):
 			d.append(CardData.new(s, r))
 	return d
 
 
-func _shuffle_deck(d: Array[CardData]) -> Array[CardData]:
+func _shuffle_deck(d: Array) -> Array:
 	var shuffled := d.duplicate()
 	for i in range(shuffled.size() - 1, 0, -1):
 		var j := randi_range(0, i)
-		var tmp: CardData = shuffled[i]
+		var tmp: RefCounted = shuffled[i]
 		shuffled[i] = shuffled[j]
 		shuffled[j] = tmp
 	return shuffled
@@ -116,7 +118,7 @@ func _generate_board_cards() -> void:
 	while community_cards.size() < card_count:
 		if deck.is_empty():
 			break
-		var c: CardData = deck.pop_back()
+		var c: RefCounted = deck.pop_back()
 		c.face_up = true
 		community_cards.append(c)
 
@@ -130,7 +132,7 @@ func init_game() -> void:
 	_generate_seat_map()
 	for i in range(config.player_count):
 		var physical_seat: int = seat_map[i]
-		players.append(PlayerData.new(physical_seat + 1, "玩家 %d" % (physical_seat + 1)))
+		players.append(PlayerData.new(physical_seat + 1, Locale.tr_key("player_n") % (physical_seat + 1)))
 	community_cards.clear()
 	pot = 0
 	current_player_index = -1
@@ -161,6 +163,23 @@ func reset_game() -> void:
 	game_reset.emit()
 
 
+func _restart_paused() -> void:
+	# Config changed mid-game: reset, deal a new hand, but pause — wait for user to press Start
+	is_game_running = false
+	layout_mode = false
+	init_game()
+	engine = PotEngine.new()
+	engine.create_initial_state(config)
+	_sync_from_engine()
+	deck = _shuffle_deck(_build_deck())
+	_deal_hole_cards()
+	is_hand_in_progress = false
+	is_game_started = false
+	game_reset.emit()
+	hand_started.emit()
+	hole_cards_changed.emit()
+
+
 func _start_new_hand() -> void:
 	engine = PotEngine.new()
 	engine.create_initial_state(config)
@@ -181,7 +200,7 @@ func _deal_hole_cards() -> void:
 		for _j in range(2):
 			if deck.is_empty():
 				break
-			var c: CardData = deck.pop_back()
+			var c: RefCounted = deck.pop_back()
 			c.face_up = false
 			players[i].hole_cards.append(c)
 
@@ -190,7 +209,7 @@ func _sync_from_engine() -> void:
 	# Sync engine state to GameManager display state
 	for i in range(engine.players.size()):
 		if i < players.size():
-			var ep: PotEngine.PotPlayerState = engine.players[i]
+			var ep = engine.players[i]
 			players[i].chips = ep.stack
 			players[i].round_contribution = ep.round_contribution
 			players[i].status = ep.status
@@ -228,7 +247,7 @@ func _run_step_by_step() -> void:
 	if not is_game_running:
 		return
 
-	var result := engine.advance_one_step(config)
+	var result: Dictionary = engine.advance_one_step(config)
 	_sync_from_engine()
 	_generate_board_cards()
 
@@ -265,22 +284,34 @@ func _run_until_question() -> void:
 
 
 func _handle_training_question() -> void:
-	if engine.training_question["is_answer"]:
-		last_action = "座位 %d 加注 — 底池限注最大是多少？" % (get_physical_seat(engine.training_question["seat"]) + 1)
+	var q: Dictionary = engine.training_question
+	if q["is_answer"]:
+		# Skip question if max raise exceeds 7500 or player is all-in
+		if q["max_raise_to"] > PotEngine.INITIAL_STACK or q["is_all_in"]:
+			var amount: int = q["all_in_amount"] if q["is_all_in"] else q["max_raise_to"]
+			last_action = Locale.tr_key("seat_raise_to") % [get_physical_seat(q["seat"]) + 1, amount]
+			last_action_changed.emit(last_action)
+			npc_acted.emit(q["seat"], "raise", amount)
+			engine.complete_raise(amount)
+			_sync_from_engine()
+			get_tree().create_timer(0.3).timeout.connect(_run_game_loop)
+			return
+		last_action = Locale.tr_key("seat_raise_question") % (get_physical_seat(q["seat"]) + 1)
 		last_action_changed.emit(last_action)
-		training_question_appeared.emit(engine.training_question)
+		training_question_appeared.emit(q)
 	else:
 		# Non-answer question: auto-complete after brief delay
-		last_action = "座位 %d 加注到 %d" % [get_physical_seat(engine.training_question["seat"]) + 1, engine.training_question["raise_amount"]]
+		last_action = Locale.tr_key("seat_raise_to") % [get_physical_seat(q["seat"]) + 1, q["raise_amount"]]
 		last_action_changed.emit(last_action)
-		engine.complete_raise(engine.training_question["raise_amount"])
+		npc_acted.emit(q["seat"], "raise", q["raise_amount"])
+		engine.complete_raise(q["raise_amount"])
 		_sync_from_engine()
 		get_tree().create_timer(0.3).timeout.connect(_run_game_loop)
 
 
 func _handle_game_over() -> void:
 	is_hand_in_progress = false
-	last_action = "本手结束。"
+	last_action = Locale.tr_key("hand_over")
 	last_action_changed.emit(last_action)
 	game_over.emit()
 
@@ -325,19 +356,24 @@ func set_blinds(sb: int, bb: int) -> void:
 	config.small_blind = sb
 	config.big_blind = bb
 	blinds_changed.emit()
+	if is_game_started:
+		_restart_paused()
 
 
 func set_player_count(count: int) -> void:
+	var was_started: bool = is_game_started
 	config.player_count = clampi(count, 2, 9)
-	reset_game()
-	init_game()
+	if was_started:
+		_restart_paused()
+	else:
+		reset_game()
+		init_game()
 
 
 func set_table_preset(preset: int) -> void:
 	config.table_preset = preset
 	if is_game_started:
-		reset_game()
-		init_game()
+		_restart_paused()
 
 
 func set_question_probability(prob: int) -> void:
@@ -346,11 +382,13 @@ func set_question_probability(prob: int) -> void:
 
 func set_training_mode(mode: String) -> void:
 	config.training_mode = mode
+	if is_game_started:
+		_restart_paused()
 
 
 func set_display_mode(mode: String) -> void:
 	display_mode = mode
-	layout_config["display_mode"] = mode
+	_layout_mgr.config["display_mode"] = mode
 	display_mode_changed.emit(mode)
 
 
@@ -364,11 +402,13 @@ func set_dealer_index(index: int) -> void:
 	dealer_index = clampi(index, 0, players.size() - 1)
 	config.dealer_seat = dealer_index
 	dealer_moved.emit(dealer_index)
+	if is_game_started:
+		_restart_paused()
 
 
 func next_active_index(from_index: int) -> int:
-	var idx := (from_index + 1) % players.size()
-	var count := 0
+	var idx: int = (from_index + 1) % players.size()
+	var count: int = 0
 	while players[idx].folded and count < players.size():
 		idx = (idx + 1) % players.size()
 		count += 1
@@ -377,15 +417,15 @@ func next_active_index(from_index: int) -> int:
 
 # --- Computed helpers ---
 
-func get_active_players() -> Array[PlayerData]:
-	var result: Array[PlayerData] = []
+func get_active_players() -> Array:
+	var result: Array = []
 	for p in players:
 		if not p.folded:
 			result.append(p)
 	return result
 
 
-func get_current_player() -> PlayerData:
+func get_current_player() -> RefCounted:
 	if current_player_index >= 0 and current_player_index < players.size():
 		return players[current_player_index]
 	return null
@@ -419,254 +459,83 @@ func get_training_question() -> Dictionary:
 	return engine.training_question
 
 
-# --- Layout ---
-
-func _reset_layout_config() -> void:
-	layout_config = {
-		"seats": TableLayout.DEFAULT_SEATS_PCT.duplicate(),
-		"chairs": TableLayout.DEFAULT_CHAIRS_PCT.duplicate(),
-		"cards": TableLayout.DEFAULT_CARDS_PCT.duplicate(),
-		"stacks": TableLayout.DEFAULT_STACKS_PCT.duplicate(),
-		"bets": TableLayout.DEFAULT_BETS_PCT.duplicate(),
-		"dealer_buttons": TableLayout.DEFAULT_DEALER_BUTTONS_PCT.duplicate(),
-		"pot": TableLayout.DEFAULT_POT_PCT,
-		"muck": TableLayout.DEFAULT_MUCK_PCT,
-		"community_cards": TableLayout.DEFAULT_COMMUNITY_CARDS_PCT,
-		"avatar_scale": 2.4,
-		"avatar_per_seat_scale": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-		"avatar_rotation": [180.0, 0.0, -37.0, 0.0, 0.0, -125.0, 76.0, 120.0, 126.0],
-		"chair_scale": 0.95,
-		"chair_rotation": [177.0, -133.0, -39.0, 0.0, 0.0, 0.0, 23.0, 136.0, 177.0],
-		"dealer_button_scale": 1.0,
-		"hole_card_scale": 0.55,
-		"hole_card_gap": 0.6,
-		"community_card_scale": 1.0,
-		"muck_card_scale": 1.0,
-		"bet_label_scale": 1.0,
-		"stack_label_scale": 1.0,
-		"pitch_hand": TableLayout.DEFAULT_PITCH_HAND_PCT,
-		"pitch_hand_scale": 1.0,
-		"pitch_hand_rotation": 0.0,
-		"hole_card_rotation": TableLayout.DEFAULT_HOLE_CARD_ROTATION.duplicate(),
-		"action_boxes": TableLayout.DEFAULT_ACTION_BOXES_PCT.duplicate(),
-		"action_box_scale": 1.0,
-		"answer_boxes": TableLayout.DEFAULT_ANSWER_BOXES_PCT.duplicate(),
-		"answer_box_scale": 1.0,
-		"player_chip_scale": 1.0,
-		"bet_chip_scale": 1.0,
-		"bet_chip_spread": 1.0,
-		"pot_chip_scale": 1.0,
-		"chip_record": TableLayout.DEFAULT_CHIP_RECORD_PCT,
-		"chip_record_scale": 1.0,
-		"purple_stacks": TableLayout._make_color_stack_defaults(0),
-		"black_stacks": TableLayout._make_color_stack_defaults(1),
-		"green_stacks": TableLayout._make_color_stack_defaults(2),
-		"display_mode": "chips",
-	}
-
+# --- Layout (delegated to LayoutConfigManager) ---
 
 func toggle_layout_mode() -> void:
 	layout_mode = not layout_mode
 	layout_changed.emit()
 
-
 func update_layout_position(category: String, index: int, x: float, y: float) -> void:
-	if index >= 0:
-		var arr: Array = layout_config[category]
-		if arr and index < arr.size():
-			arr[index] = Vector2(x, y)
-	else:
-		layout_config[category] = Vector2(x, y)
-	layout_changed.emit()
-
+	_layout_mgr.update_position(category, index, x, y)
 
 func export_layout() -> String:
-	var out := {}
-	for key in layout_config:
-		var val = layout_config[key]
-		if val is Array:
-			var arr := []
-			for v in val:
-				if v is Vector2:
-					arr.append({"x": snapped(v.x, 0.01), "y": snapped(v.y, 0.01)})
-				else:
-					arr.append(v)
-			out[key] = arr
-		elif val is Vector2:
-			out[key] = {"x": snapped(val.x, 0.01), "y": snapped(val.y, 0.01)}
-		else:
-			out[key] = val
-	return JSON.stringify(out, "\t")
-
+	return _layout_mgr.export_layout()
 
 func import_layout(json_str: String) -> void:
-	var parsed = JSON.parse_string(json_str)
-	if not parsed is Dictionary:
-		return
-	var d: Dictionary = parsed
-	for key in d:
-		var val = d[key]
-		if val is Array:
-			var arr: Array = []
-			for item in val:
-				if item is Dictionary and item.has("x") and item.has("y"):
-					arr.append(Vector2(item["x"], item["y"]))
-				else:
-					arr.append(item)
-			layout_config[key] = arr
-		elif val is Dictionary and val.has("x") and val.has("y"):
-			layout_config[key] = Vector2(val["x"], val["y"])
-		else:
-			# Backward compat: convert old single-float rotation to per-seat array
-			if key in ["hole_card_rotation", "avatar_rotation", "chair_rotation"] and (val is float or val is int):
-				var arr: Array = []
-				for _i in range(9):
-					arr.append(val)
-				layout_config[key] = arr
-			else:
-				layout_config[key] = val
-	layout_changed.emit()
-
+	_layout_mgr.import_layout(json_str)
 
 func reset_layout() -> void:
-	_reset_layout_config()
-	# Load built-in default on top of hardcoded fallback
-	_load_default_layout()
-	# Remove user custom layout file
-	if FileAccess.file_exists(USER_LAYOUT_PATH):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(USER_LAYOUT_PATH))
-	layout_changed.emit()
-
-
-func set_dealer_button_scale(scale: float) -> void:
-	layout_config["dealer_button_scale"] = scale
-	layout_changed.emit()
-
-
-func set_hole_card_scale(scale: float) -> void:
-	layout_config["hole_card_scale"] = scale
-	layout_changed.emit()
-
-
-func set_hole_card_gap(gap: float) -> void:
-	layout_config["hole_card_gap"] = gap
-	layout_changed.emit()
-
-
-func set_community_card_scale(scale: float) -> void:
-	layout_config["community_card_scale"] = scale
-	layout_changed.emit()
-
-
-func set_muck_card_scale(scale: float) -> void:
-	layout_config["muck_card_scale"] = scale
-	layout_changed.emit()
-
-
-func set_bet_label_scale(scale: float) -> void:
-	layout_config["bet_label_scale"] = scale
-	layout_changed.emit()
-
-
-func set_stack_label_scale(scale: float) -> void:
-	layout_config["stack_label_scale"] = scale
-	layout_changed.emit()
-
-
-func set_pitch_hand_scale(scale: float) -> void:
-	layout_config["pitch_hand_scale"] = scale
-	layout_changed.emit()
-
-
-func set_pitch_hand_rotation(deg: float) -> void:
-	layout_config["pitch_hand_rotation"] = deg
-	layout_changed.emit()
-
-
-func set_action_box_scale(scale: float) -> void:
-	layout_config["action_box_scale"] = scale
-	layout_changed.emit()
-
-
-func set_answer_box_scale(scale: float) -> void:
-	layout_config["answer_box_scale"] = scale
-	layout_changed.emit()
-
-
-func set_player_chip_scale(scale: float) -> void:
-	layout_config["player_chip_scale"] = scale
-	layout_changed.emit()
-
-
-func set_bet_chip_scale(scale: float) -> void:
-	layout_config["bet_chip_scale"] = scale
-	layout_changed.emit()
-
-
-func set_bet_chip_spread(spread: float) -> void:
-	layout_config["bet_chip_spread"] = spread
-	layout_changed.emit()
-
-
-func set_pot_chip_scale(scale: float) -> void:
-	layout_config["pot_chip_scale"] = scale
-	layout_changed.emit()
-
-
-func set_chip_record_scale(scale: float) -> void:
-	layout_config["chip_record_scale"] = scale
-	layout_changed.emit()
-
-
-const DEFAULT_LAYOUT_PATH := "res://data/default_layout.json"
-const USER_LAYOUT_PATH := "user://layout.json"
-
+	_layout_mgr.reset_layout()
 
 func save_layout_to_file() -> bool:
-	var json := export_layout()
-	var file := FileAccess.open(USER_LAYOUT_PATH, FileAccess.WRITE)
-	if file:
-		file.store_string(json)
-		file.close()
-		return true
-	return false
-
+	return _layout_mgr.save_to_file()
 
 func load_layout_from_file() -> bool:
-	# Priority: user file > built-in default
-	var loaded := false
-	if FileAccess.file_exists(USER_LAYOUT_PATH):
-		var file := FileAccess.open(USER_LAYOUT_PATH, FileAccess.READ)
-		if file:
-			var json := file.get_as_text()
-			file.close()
-			import_layout(json)
-			loaded = true
-	if not loaded:
-		loaded = _load_default_layout()
-	# Apply persisted display_mode
-	var saved_mode: String = layout_config.get("display_mode", "chips")
+	var loaded: bool = _layout_mgr.load_from_file()
+	var saved_mode: String = _layout_mgr.config.get("display_mode", "chips")
 	display_mode = saved_mode
 	return loaded
 
-
-func _load_default_layout() -> bool:
-	if not FileAccess.file_exists(DEFAULT_LAYOUT_PATH):
-		return false
-	var file := FileAccess.open(DEFAULT_LAYOUT_PATH, FileAccess.READ)
-	if file:
-		var json := file.get_as_text()
-		file.close()
-		import_layout(json)
-		return true
-	return false
-
-
 func get_layout_position_px(category: String, index: int = -1) -> Vector2:
-	var pct: Vector2
-	if index >= 0:
-		var arr: Array = layout_config[category]
-		pct = arr[index]
-	else:
-		pct = layout_config[category]
-	return TableLayout.pct_to_px(pct)
+	return _layout_mgr.get_position_px(category, index)
+
+func set_dealer_button_scale(scale: float) -> void:
+	_layout_mgr.set_scale("dealer_button_scale", scale)
+
+func set_hole_card_scale(scale: float) -> void:
+	_layout_mgr.set_scale("hole_card_scale", scale)
+
+func set_hole_card_gap(gap: float) -> void:
+	_layout_mgr.set_scale("hole_card_gap", gap)
+
+func set_community_card_scale(scale: float) -> void:
+	_layout_mgr.set_scale("community_card_scale", scale)
+
+func set_muck_card_scale(scale: float) -> void:
+	_layout_mgr.set_scale("muck_card_scale", scale)
+
+func set_bet_label_scale(scale: float) -> void:
+	_layout_mgr.set_scale("bet_label_scale", scale)
+
+func set_stack_label_scale(scale: float) -> void:
+	_layout_mgr.set_scale("stack_label_scale", scale)
+
+func set_pitch_hand_scale(scale: float) -> void:
+	_layout_mgr.set_scale("pitch_hand_scale", scale)
+
+func set_pitch_hand_rotation(deg: float) -> void:
+	_layout_mgr.set_scale("pitch_hand_rotation", deg)
+
+func set_action_box_scale(scale: float) -> void:
+	_layout_mgr.set_scale("action_box_scale", scale)
+
+func set_answer_box_scale(scale: float) -> void:
+	_layout_mgr.set_scale("answer_box_scale", scale)
+
+func set_player_chip_scale(scale: float) -> void:
+	_layout_mgr.set_scale("player_chip_scale", scale)
+
+func set_bet_chip_scale(scale: float) -> void:
+	_layout_mgr.set_scale("bet_chip_scale", scale)
+
+func set_bet_chip_spread(spread: float) -> void:
+	_layout_mgr.set_scale("bet_chip_spread", spread)
+
+func set_pot_chip_scale(scale: float) -> void:
+	_layout_mgr.set_scale("pot_chip_scale", scale)
+
+func set_chip_record_scale(scale: float) -> void:
+	_layout_mgr.set_scale("chip_record_scale", scale)
+
+func set_ordered_bet_chip_scale(scale: float) -> void:
+	_layout_mgr.set_scale("ordered_bet_chip_scale", scale)
