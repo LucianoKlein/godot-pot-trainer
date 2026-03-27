@@ -1,97 +1,50 @@
 class_name LayoutVisibilityManager
 extends RefCounted
 ## LayoutVisibilityManager — 布局编辑器可见性管理
-## 管理元素可见性状态、复选框逻辑、显示/隐藏控制
 
 signal visibility_changed(element_key: String, visible: bool)
 
 var _element_visibility: Dictionary = {
-	"hole_cards": true,
-	"community_cards": true,
-	"dealer_buttons": true,
-	"bet_labels": true,
-	"stack_labels": true,
-	"pot_display": true,
-	"answer_boxes": true,
-	"action_boxes": true,
-	"player_chips": true,
-	"bet_chips": true,
-	"ordered_bet_chips": true,
-	"pot_chips": true,
-	"chip_record": true,
+	"hole_cards": true, "community_cards": true, "dealer_buttons": true,
+	"bet_labels": true, "stack_labels": true, "pot_display": true,
+	"street_badge": true, "answer_boxes": true, "action_boxes": true,
+	"player_chips": true, "bet_chips": true, "ordered_bet_chips": true,
+	"pot_chips": true, "chip_record": true,
 }
 
-var _element_checkboxes: Dictionary = {}  # key: element_name, value: CheckBox
+var _element_checkboxes: Dictionary = {}
 var _select_all_checkbox: CheckBox = null
 
-# References to actual game UI elements
-var _bet_labels: Array[Label]
-var _stack_labels: Array[Label]
-var _dealer_button: Control
-var _pot_display: VBoxContainer
-var _community_cards_container: HBoxContainer
-var _purple_stacks: Array[Node2D]
-var _black_stacks: Array[Node2D]
-var _green_stacks: Array[Node2D]
-var _player_bet_chips: Array[Control]
-var _ordered_bet_chips: Array[Node2D]
-var _pot_chip_area: Control
-var _chip_record: Control
-var _action_boxes: Array[Label]
-
-# Preview elements (managed externally, but we control visibility)
-var _preview_hole_card_containers: Array = []
-var _preview_comm_cards: Array = []
-var _preview_dealer_buttons: Array[Control] = []
-var _preview_answer_boxes: Array[Control] = []
+# All refs stored in a single dict for cleaner access
+var _refs: Dictionary = {}
+var _preview_refs: Dictionary = {}
 
 
 func setup(refs: Dictionary) -> RefCounted:
-	_bet_labels = refs.get("bet_labels", [])
-	_stack_labels = refs.get("stack_labels", [])
-	_dealer_button = refs.get("dealer_button", null)
-	_pot_display = refs.get("pot_display", null)
-	_community_cards_container = refs.get("community_cards_container", null)
-	_purple_stacks = refs.get("purple_stacks", [])
-	_black_stacks = refs.get("black_stacks", [])
-	_green_stacks = refs.get("green_stacks", [])
-	_player_bet_chips = refs.get("player_bet_chips", [])
-	_ordered_bet_chips = refs.get("ordered_bet_chips", [])
-	_pot_chip_area = refs.get("pot_chip_area", null)
-	_chip_record = refs.get("chip_record", null)
-	_action_boxes.assign(refs.get("action_boxes", []))
+	_refs = refs
 	return self
 
 
 func set_preview_references(preview_refs: Dictionary) -> void:
-	_preview_hole_card_containers = preview_refs.get("hole_card_containers", [])
-	_preview_comm_cards = preview_refs.get("comm_cards", [])
-	_preview_dealer_buttons = preview_refs.get("dealer_buttons", [])
-	_preview_answer_boxes = preview_refs.get("answer_boxes", [])
+	_preview_refs = preview_refs
 
 
 func build_select_all_checkbox(parent: VBoxContainer) -> void:
-	var select_all_row := HBoxContainer.new()
-	select_all_row.add_theme_constant_override("separation", 10)
-	parent.add_child(select_all_row)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	parent.add_child(row)
 
 	_select_all_checkbox = CheckBox.new()
 	_select_all_checkbox.button_pressed = true
 	_select_all_checkbox.custom_minimum_size = Vector2(32, 32)
 	_select_all_checkbox.toggled.connect(_on_select_all_toggled)
-	select_all_row.add_child(_select_all_checkbox)
+	row.add_child(_select_all_checkbox)
 
-	var select_all_lbl := Label.new()
-	select_all_lbl.text = Locale.tr_key("select_all")
-	select_all_lbl.add_theme_font_size_override("font_size", 28)
-	select_all_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
-	select_all_lbl.custom_minimum_size.x = 140
-	select_all_row.add_child(select_all_lbl)
+	row.add_child(UiFactory.make_label(Locale.tr_key("select_all"), 28, UiFactory.LAYOUT_LABEL))
 
-	# Separator line
-	var separator := HSeparator.new()
-	separator.add_theme_constant_override("separation", 8)
-	parent.add_child(separator)
+	var sep := HSeparator.new()
+	sep.add_theme_constant_override("separation", 8)
+	parent.add_child(sep)
 
 
 func create_element_checkbox(element_key: String) -> CheckBox:
@@ -111,62 +64,51 @@ func create_element_checkbox(element_key: String) -> CheckBox:
 func update_element_visibility(element_key: String, visible: bool) -> void:
 	match element_key:
 		"hole_cards":
-			for container in _preview_hole_card_containers:
-				if is_instance_valid(container):
-					container.visible = visible
+			_set_array_visible(_preview_refs.get("hole_card_containers", []), visible)
 		"community_cards":
-			if _community_cards_container:
-				_community_cards_container.visible = visible
-			for card in _preview_comm_cards:
+			_set_single_visible(_refs.get("community_cards_container"), visible)
+			for card in _preview_refs.get("comm_cards", []):
 				if is_instance_valid(card) and card.get_parent():
 					card.get_parent().visible = visible
 		"dealer_buttons":
-			if _dealer_button:
-				_dealer_button.visible = visible
-			for btn in _preview_dealer_buttons:
-				if is_instance_valid(btn):
-					btn.visible = visible
+			_set_single_visible(_refs.get("dealer_button"), visible)
+			_set_array_visible(_preview_refs.get("dealer_buttons", []), visible)
 		"bet_labels":
-			for label in _bet_labels:
-				label.visible = visible
+			_set_array_visible(_refs.get("bet_labels", []), visible)
 		"stack_labels":
-			for label in _stack_labels:
-				label.visible = visible
+			_set_array_visible(_refs.get("stack_labels", []), visible)
 		"pot_display":
-			if _pot_display:
-				_pot_display.visible = visible
+			_set_single_visible(_refs.get("pot_display"), visible)
+		"street_badge":
+			_set_single_visible(_refs.get("street_badge"), visible)
 		"answer_boxes":
-			for box in _preview_answer_boxes:
-				if is_instance_valid(box):
-					box.visible = visible
+			_set_array_visible(_preview_refs.get("answer_boxes", []), visible)
 		"action_boxes":
-			for ab in _action_boxes:
-				if is_instance_valid(ab):
-					ab.visible = visible
+			_set_array_visible(_refs.get("action_boxes", []), visible)
 		"player_chips":
-			for stack in _purple_stacks:
-				if is_instance_valid(stack):
-					stack.visible = visible
-			for stack in _black_stacks:
-				if is_instance_valid(stack):
-					stack.visible = visible
-			for stack in _green_stacks:
-				if is_instance_valid(stack):
-					stack.visible = visible
+			_update_player_chips_visibility(visible)
 		"bet_chips":
-			for bet_chip in _player_bet_chips:
-				if is_instance_valid(bet_chip):
-					bet_chip.visible = visible
+			_set_array_visible(_refs.get("player_bet_chips", []), visible)
 		"ordered_bet_chips":
-			for obc in _ordered_bet_chips:
-				if is_instance_valid(obc):
-					obc.visible = visible
+			_set_array_visible(_refs.get("ordered_bet_chips", []), visible)
 		"pot_chips":
-			if _pot_chip_area and is_instance_valid(_pot_chip_area):
-				_pot_chip_area.visible = visible
+			_set_single_visible(_refs.get("pot_chip_area"), visible)
 		"chip_record":
-			if _chip_record and is_instance_valid(_chip_record):
-				_chip_record.visible = visible
+			_set_single_visible(_refs.get("chip_record"), visible)
+
+
+func _update_player_chips_visibility(visible: bool) -> void:
+	var bm: String = GameManager.blinds_mode
+	var is_small: bool = (bm == "5/10")
+	var is_12: bool = (bm == "1/2" or bm == "1/2/5")
+	var use_red: bool = is_small or is_12
+	_set_array_visible(_refs.get("purple_stacks", []), visible and not is_small and not is_12)
+	_set_array_visible(_refs.get("black_stacks", []), visible and not is_12)
+	_set_array_visible(_refs.get("green_stacks", []), visible)
+	_set_array_visible(_refs.get("red_stacks_1", []), visible and use_red)
+	_set_array_visible(_refs.get("red_stacks_2", []), visible and use_red)
+	_set_array_visible(_refs.get("red_stacks_3", []), visible and use_red)
+	_set_array_visible(_refs.get("white_stacks", []), visible and is_12)
 
 
 func apply_all_visibility() -> void:
@@ -174,7 +116,6 @@ func apply_all_visibility() -> void:
 		update_element_visibility(key, _element_visibility[key])
 
 
-## Force all elements visible and sync checkboxes (used when entering layout mode)
 func select_all() -> void:
 	for key in _element_visibility.keys():
 		_element_visibility[key] = true
@@ -187,86 +128,79 @@ func select_all() -> void:
 
 
 func restore_all_visibility() -> void:
-	# When returning to game mode, respect display_mode setting
 	var is_numbers: bool = GameManager.display_mode == "numbers"
+	var bm: String = GameManager.blinds_mode
+	var is_small: bool = (bm == "5/10")
+	var is_12: bool = (bm == "1/2" or bm == "1/2/5")
+	var use_red: bool = is_small or is_12
 
-	for label in _bet_labels:
-		label.visible = is_numbers
-	for label in _stack_labels:
-		label.visible = is_numbers
-	for stack in _purple_stacks:
-		if is_instance_valid(stack):
-			stack.visible = not is_numbers
-	for stack in _black_stacks:
-		if is_instance_valid(stack):
-			stack.visible = not is_numbers
-	for stack in _green_stacks:
-		if is_instance_valid(stack):
-			stack.visible = not is_numbers
-	for bet_chip in _player_bet_chips:
-		if is_instance_valid(bet_chip):
-			bet_chip.visible = not is_numbers
-	for obc in _ordered_bet_chips:
-		if is_instance_valid(obc):
-			obc.visible = false  # Never show in game mode
-	if _pot_chip_area and is_instance_valid(_pot_chip_area):
-		_pot_chip_area.visible = not is_numbers
-	if _chip_record and is_instance_valid(_chip_record):
-		_chip_record.visible = not is_numbers
-	if _pot_display:
-		_pot_display.visible = is_numbers
-	if _community_cards_container:
-		_community_cards_container.visible = true
-	if _dealer_button:
-		_dealer_button.visible = true
-	# Action boxes: hidden by default in game mode (shown dynamically per action)
-	for ab in _action_boxes:
-		if is_instance_valid(ab):
-			ab.visible = false
+	_set_array_visible(_refs.get("bet_labels", []), is_numbers)
+	_set_array_visible(_refs.get("stack_labels", []), is_numbers)
+	_set_array_visible(_refs.get("black_stacks", []), not is_numbers and not is_12)
+	_set_array_visible(_refs.get("green_stacks", []), not is_numbers)
+	_set_array_visible(_refs.get("red_stacks_1", []), not is_numbers and use_red)
+	_set_array_visible(_refs.get("red_stacks_2", []), not is_numbers and use_red)
+	_set_array_visible(_refs.get("red_stacks_3", []), not is_numbers and use_red)
+	_set_array_visible(_refs.get("white_stacks", []), not is_numbers and is_12)
+	_set_array_visible(_refs.get("purple_stacks", []), not is_numbers and not is_small and not is_12)
+	_set_array_visible(_refs.get("player_bet_chips", []), not is_numbers)
+	_set_array_visible(_refs.get("ordered_bet_chips", []), false)
+	_set_single_visible(_refs.get("pot_chip_area"), not is_numbers)
+	_set_single_visible(_refs.get("chip_record"), not is_numbers)
+	_set_single_visible(_refs.get("pot_display"), is_numbers)
+	_set_single_visible(_refs.get("community_cards_container"), true)
+	_set_single_visible(_refs.get("dealer_button"), true)
+	_set_single_visible(_refs.get("street_badge"), true)
+	# Action boxes: hidden by default in game mode
+	_set_array_visible(_refs.get("action_boxes", []), false)
 
 
 func is_element_visible(element_key: String) -> bool:
 	return _element_visibility.get(element_key, true)
 
 
-## Apply display mode: "numbers" hides chips, "chips" hides labels
 func apply_display_mode(mode: String) -> void:
 	var numbers_keys: Array = ["bet_labels", "stack_labels", "pot_display"]
 	var chips_keys: Array = ["player_chips", "bet_chips", "ordered_bet_chips", "pot_chips", "chip_record"]
+	var on_keys: Array = numbers_keys if mode == "numbers" else chips_keys
+	var off_keys: Array = chips_keys if mode == "numbers" else numbers_keys
 
-	if mode == "numbers":
-		for key in numbers_keys:
-			_element_visibility[key] = true
-			update_element_visibility(key, true)
-			if _element_checkboxes.has(key):
-				(_element_checkboxes[key] as CheckBox).set_pressed_no_signal(true)
-		for key in chips_keys:
-			_element_visibility[key] = false
-			update_element_visibility(key, false)
-			if _element_checkboxes.has(key):
-				(_element_checkboxes[key] as CheckBox).set_pressed_no_signal(false)
-	else:
-		for key in chips_keys:
-			_element_visibility[key] = true
-			update_element_visibility(key, true)
-			if _element_checkboxes.has(key):
-				(_element_checkboxes[key] as CheckBox).set_pressed_no_signal(true)
-		for key in numbers_keys:
-			_element_visibility[key] = false
-			update_element_visibility(key, false)
-			if _element_checkboxes.has(key):
-				(_element_checkboxes[key] as CheckBox).set_pressed_no_signal(false)
+	for key in on_keys:
+		_set_visibility_and_checkbox(key, true)
+	for key in off_keys:
+		_set_visibility_and_checkbox(key, false)
 
 	_update_select_all_checkbox()
 	visibility_changed.emit("all", true)
+
+
+# =============================================================================
+# Helpers
+# =============================================================================
+
+func _set_array_visible(arr: Array, visible: bool) -> void:
+	for node in arr:
+		if is_instance_valid(node):
+			node.visible = visible
+
+
+func _set_single_visible(node: Variant, visible: bool) -> void:
+	if node and is_instance_valid(node):
+		node.visible = visible
+
+
+func _set_visibility_and_checkbox(key: String, visible: bool) -> void:
+	_element_visibility[key] = visible
+	update_element_visibility(key, visible)
+	if _element_checkboxes.has(key):
+		(_element_checkboxes[key] as CheckBox).set_pressed_no_signal(visible)
 
 
 func _on_select_all_toggled(pressed: bool) -> void:
 	for key in _element_visibility.keys():
 		_element_visibility[key] = pressed
 		if _element_checkboxes.has(key):
-			var cb: CheckBox = _element_checkboxes[key]
-			cb.set_pressed_no_signal(pressed)
+			(_element_checkboxes[key] as CheckBox).set_pressed_no_signal(pressed)
 		update_element_visibility(key, pressed)
 	visibility_changed.emit("all", pressed)
 

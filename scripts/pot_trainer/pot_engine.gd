@@ -2,7 +2,7 @@ class_name PotEngine
 extends RefCounted
 
 # --- Constants ---
-const INITIAL_STACK := 7500  # 紫500x10 + 黑100x20 + 绿25x20
+const INITIAL_STACK := 7500  # 默认值，实际由 config.initial_stack 决定
 
 # --- Game State ---
 
@@ -15,6 +15,7 @@ var pot_current_bet: int = 0
 var pot_last_raise_size: int = 0
 var training_question: Dictionary = {}  # empty = no question
 var is_game_over: bool = false
+var _big_blind: int = 50  # cached for _advance_street in complete_raise
 
 
 # --- Player State (inner class) ---
@@ -28,22 +29,23 @@ class PotPlayerState:
 	var has_acted_this_round: bool = false
 	var last_action: String = ""  # "" / "blind" / "fold" / "check" / "call" / "bet" / "raise"
 
-	func _init(p_seat: int = 0, p_template: PlayerTemplates.PlayerTemplate = null) -> void:
+	func _init(p_seat: int = 0, p_template: PlayerTemplates.PlayerTemplate = null, p_stack: int = INITIAL_STACK) -> void:
 		seat = p_seat
 		template = p_template
-		stack = PotEngine.INITIAL_STACK
+		stack = p_stack
 
 
 # --- Init ---
 
 func create_initial_state(config: RefCounted) -> void:
+	_big_blind = config.big_blind
 	var templates := TablePresets.assign_player_templates(
 		config.table_preset as TablePresets.PresetId, config.player_count
 	)
 
 	players.clear()
 	for i in range(config.player_count):
-		players.append(PotPlayerState.new(i, templates[i]))
+		players.append(PotPlayerState.new(i, templates[i], config.initial_stack))
 
 	dealer_seat = config.dealer_seat
 	var sb_seat: int = (dealer_seat + 1) % config.player_count
@@ -63,16 +65,35 @@ func create_initial_state(config: RefCounted) -> void:
 	players[bb_seat].has_acted_this_round = true
 	players[bb_seat].last_action = "blind"
 
+	# Post Big Big Blind (1/2/5 WSOP)
+	var last_blind_seat: int = bb_seat
+	if config.has_bbb:
+		var bbb_seat: int = (dealer_seat + 3) % config.player_count
+		var bbb_amt: int = mini(config.bbb_amount, players[bbb_seat].stack)
+		players[bbb_seat].round_contribution = bbb_amt
+		players[bbb_seat].stack -= bbb_amt
+		players[bbb_seat].has_acted_this_round = true
+		players[bbb_seat].last_action = "blind"
+		last_blind_seat = bbb_seat
+
+	# 1/2 和 1/2/5 模式：preflop 最小 call/open 为 5
+	var is_12_mode: bool = (config.small_blind == 1)
+	var effective_open: int = 5 if is_12_mode else bb_amount
+
 	street = "preflop"
-	current_seat = (bb_seat + 1) % config.player_count
+	current_seat = (last_blind_seat + 1) % config.player_count
 	pot_total = 0
-	pot_current_bet = bb_amount
-	pot_last_raise_size = bb_amount
+	pot_current_bet = effective_open
+	pot_last_raise_size = effective_open
 	training_question = {}
 	is_game_over = false
 
 
 # --- Helpers ---
+
+static func _ceil5(n: int) -> int:
+	return ceili(float(n) / 5.0) * 5
+
 
 func _next_active_seat(from_seat: int) -> int:
 	var n: int = players.size()
@@ -136,24 +157,76 @@ func _create_training_question(seat: int, config: RefCounted) -> Dictionary:
 	var min_raise_to: int
 	var max_raise_to: int
 
+	var is_12_mode: bool = (config.small_blind == 1)
+
 	if is_bet:
 		min_raise_to = config.big_blind
 		max_raise_to = pot_total
+		# 1/2 和 1/2/5 模式：bet ceil5, min=5
+		if is_12_mode:
+			max_raise_to = _ceil5(max_raise_to)
+			min_raise_to = 5
 	else:
 		min_raise_to = current_bet + pot_last_raise_size
 
-		# Calculate other players' contributions
-		var other_contributions: int = 0
-		var has_excluded_one: bool = false
-		for p: PotPlayerState in players:
-			if p.seat == seat:
-				continue
-			if p.round_contribution == current_bet and not has_excluded_one:
-				has_excluded_one = true
-				continue
-			other_contributions += p.round_contribution
+		if config.blinds_mode == "1/2/5":
+			# 1/2/5 WSOP: ceil5(currentBet)*3 + Σceil5(others) + ceil5(pot)
+			var other_cont: int = 0
+			var excluded: bool = false
+			for p: PotPlayerState in players:
+				if p.seat == seat:
+					continue
+				if p.round_contribution == current_bet and not excluded:
+					excluded = true
+					continue
+				other_cont += _ceil5(p.round_contribution)
+			max_raise_to = _ceil5(current_bet) * 3 + other_cont + _ceil5(pot_total)
 
-		max_raise_to = current_bet * 3 + pot_total + other_contributions
+		elif config.blinds_mode == "1/2":
+			# 1/2: ceil5(前一个玩家)*3 + ceil5(其他总和) + ceil5(pot)
+			var last_better_cont: int = 0
+			var has_last_better: bool = false
+			for p: PotPlayerState in players:
+				if p.seat == seat:
+					continue
+				if p.round_contribution == current_bet:
+					last_better_cont = p.round_contribution
+					has_last_better = true
+					break
+
+			var others_total: int = 0
+			if has_last_better:
+				var excluded2: bool = false
+				for p: PotPlayerState in players:
+					if p.seat == seat:
+						continue
+					if p.round_contribution == current_bet and not excluded2:
+						excluded2 = true
+						continue
+					others_total += p.round_contribution
+			else:
+				# preflop 特殊：SB+BB 合并为"前一个玩家"
+				var blinds_total: int = 0
+				for p: PotPlayerState in players:
+					if p.seat == seat:
+						continue
+					blinds_total += p.round_contribution
+				last_better_cont = blinds_total
+				others_total = 0
+			max_raise_to = _ceil5(last_better_cont) * 3 + _ceil5(others_total) + _ceil5(pot_total)
+
+		else:
+			# 标准模式（5/10, 25/50）
+			var other_contributions: int = 0
+			var has_excluded_one: bool = false
+			for p: PotPlayerState in players:
+				if p.seat == seat:
+					continue
+				if p.round_contribution == current_bet and not has_excluded_one:
+					has_excluded_one = true
+					continue
+				other_contributions += p.round_contribution
+			max_raise_to = current_bet * 3 + pot_total + other_contributions
 
 	# All-in check
 	var player_total_chips: int = player.stack + player.round_contribution
@@ -168,13 +241,14 @@ func _create_training_question(seat: int, config: RefCounted) -> Dictionary:
 		if is_all_in:
 			raise_amount = all_in_amount
 		else:
-			var mn: int = ceili(float(min_raise_to) / 25.0) * 25
-			var mx: int = floori(float(max_raise_to) / 25.0) * 25
+			var unit: int = config.round_unit
+			var mn: int = ceili(float(min_raise_to) / float(unit)) * unit
+			var mx: int = floori(float(max_raise_to) / float(unit)) * unit
 			if mn > mx:
 				raise_amount = mx
 			else:
-				var steps: int = (mx - mn) / 25
-				raise_amount = mn + randi_range(0, steps) * 25
+				var steps: int = (mx - mn) / unit
+				raise_amount = mn + randi_range(0, steps) * unit
 
 	return {
 		"seat": seat,
@@ -301,7 +375,7 @@ func complete_raise(raise_amount: int) -> void:
 	training_question = {}
 
 	if _is_betting_round_closed():
-		_advance_street(pot_last_raise_size)  # Will be overridden in reset
+		_advance_street(_big_blind)
 	else:
 		current_seat = _next_active_seat(current_seat)
 
@@ -348,8 +422,8 @@ func run_until_question(config: RefCounted) -> void:
 				complete_raise(training_question["all_in_amount"])
 				guard += 1
 				continue
-			# Skip question if max raise exceeds 7500
-			if training_question["is_answer"] and training_question["max_raise_to"] > 7500:
+			# Skip question if max raise exceeds initial stack
+			if training_question["is_answer"] and training_question["max_raise_to"] > config.initial_stack:
 				complete_raise(training_question["max_raise_to"])
 				guard += 1
 				continue

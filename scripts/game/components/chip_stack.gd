@@ -39,19 +39,28 @@ func set_chip_size(new_size: float) -> void:
 func _build_stack() -> void:
 	_clear_chips()
 
+	var prev_angle: int = -1
 	for i in range(chip_count):
 		var chip_node := TextureRect.new()
 		chip_node.set_script(Chip)
 
-		# 随机角度或固定角度
+		# 随机角度或固定角度（保证相邻不同）
 		var angle: int
 		if use_random_angles:
-			angle = _rng.randi_range(0, 3)
+			if prev_angle < 0:
+				angle = _rng.randi_range(0, 3)
+			else:
+				var candidates := []
+				for a in range(4):
+					if a != prev_angle:
+						candidates.append(a)
+				angle = candidates[_rng.randi_range(0, candidates.size() - 1)]
 		else:
 			angle = i % 4
+		prev_angle = angle
 
 		# 设置筹码属性（在 add_child 之前，避免 _ready 用默认值加载纹理）
-		chip_node.chip_color = _map_chip_color_to_enum(chip_color)
+		chip_node.chip_color = ChipRenderUtils.map_color(chip_color)
 		chip_node.chip_angle = angle
 		chip_node.chip_size = chip_size
 		chip_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -73,22 +82,7 @@ func _rebuild_stack() -> void:
 
 
 func _clear_chips() -> void:
-	for chip in _chip_nodes:
-		chip.queue_free()
-	_chip_nodes.clear()
-
-
-func _map_chip_color_to_enum(color: ChipUtils.ChipColor) -> int:
-	# 将 ChipUtils.ChipColor 映射到 Chip.ChipColor
-	match color:
-		ChipUtils.ChipColor.PURPLE500:
-			return 7  # Chip.ChipColor.PURPLE500
-		ChipUtils.ChipColor.BLACK100:
-			return 8  # Chip.ChipColor.BLACK100
-		ChipUtils.ChipColor.GREEN25:
-			return 9  # Chip.ChipColor.GREEN25
-		_:
-			return 7
+	ChipRenderUtils.clear_chips(_chip_nodes)
 
 
 func get_stack_height() -> float:

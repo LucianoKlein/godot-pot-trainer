@@ -37,6 +37,12 @@ func set_gaps(gap_x: float, gap_y: float) -> void:
 		_rebuild()
 
 
+func set_v_gap(gap: float) -> void:
+	stack_gap_y = gap
+	if is_node_ready():
+		_rebuild()
+
+
 func _rebuild() -> void:
 	_clear_stacks()
 	if _chips.is_empty():
@@ -117,8 +123,12 @@ func _split_into_stacks(group: Dictionary) -> Array:
 	var color: ChipUtils.ChipColor = group.color
 	var count: int = group.count
 
-	# purple500/green25 每堆4枚，black100 每堆5枚
-	var stack_size: int = 5 if color == ChipUtils.ChipColor.BLACK100 else 4
+	var stack_size: int
+	var bm := GameManager.blinds_mode
+	if bm == "5/10" or bm == "1/2" or bm == "1/2/5":
+		stack_size = 5
+	else:
+		stack_size = 5 if color == ChipUtils.ChipColor.BLACK100 else 4
 
 	var stacks: Array = []
 	var remaining: int = count

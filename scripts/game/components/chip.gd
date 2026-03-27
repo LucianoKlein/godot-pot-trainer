@@ -12,7 +12,9 @@ enum ChipColor {
 	YELLOW1K,    # 1,000
 	PURPLE500,   # 500
 	BLACK100,    # 100
-	GREEN25      # 25
+	GREEN25,     # 25
+	RED5,        # 5
+	WHITE1       # 1
 }
 
 enum ChipAngle {
@@ -37,7 +39,9 @@ const COLOR_NAMES = {
 	ChipColor.YELLOW1K: "yellow1k",
 	ChipColor.PURPLE500: "purple500",
 	ChipColor.BLACK100: "black100",
-	ChipColor.GREEN25: "green25k"  # 使用 green25k 资源
+	ChipColor.GREEN25: "green25k",  # 使用 green25k 资源
+	ChipColor.RED5: "red5",  # 使用 red5 资源（5块面额）
+	ChipColor.WHITE1: "white1"  # 1块面额
 }
 
 # 角度名称映射

@@ -25,13 +25,9 @@ func _ready() -> void:
 
 func _build_ui() -> void:
 	# Panel style — BoardAnalysis gold theme
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.08, 0.08, 0.10, 0.96 if not preview_mode else 0.88)
-	sb.border_color = Color(0.50, 0.40, 0.16)
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(6)
-	sb.content_margin_left = int(6 * scale_factor)
-	sb.content_margin_right = int(6 * scale_factor)
+	var sb := UiFactory.make_stylebox(
+		Color(0.08, 0.08, 0.10, 0.96 if not preview_mode else 0.88),
+		6, int(6 * scale_factor), Color(0.50, 0.40, 0.16), 1)
 	sb.content_margin_top = int(4 * scale_factor)
 	sb.content_margin_bottom = int(4 * scale_factor)
 	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.25)
@@ -51,11 +47,7 @@ func _build_ui() -> void:
 	_player_label.text = ""
 	_player_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_player_label.add_theme_font_size_override("font_size", int(18 * scale_factor))
-	var tag_bg := StyleBoxFlat.new()
-	tag_bg.bg_color = Color(0.50, 0.40, 0.16, 0.7)
-	tag_bg.set_corner_radius_all(6)
-	tag_bg.content_margin_left = int(10 * scale_factor)
-	tag_bg.content_margin_right = int(10 * scale_factor)
+	var tag_bg := UiFactory.make_stylebox(Color(0.50, 0.40, 0.16, 0.7), 6, int(10 * scale_factor))
 	tag_bg.content_margin_top = int(2 * scale_factor)
 	tag_bg.content_margin_bottom = int(2 * scale_factor)
 	_player_label.add_theme_stylebox_override("normal", tag_bg)
@@ -94,13 +86,7 @@ func _build_ui() -> void:
 	_answer_input.add_theme_color_override("font_color", Color.WHITE)
 	_answer_input.add_theme_color_override("font_placeholder_color", Color(0.50, 0.40, 0.30))
 	_answer_input.virtual_keyboard_enabled = false
-	var input_bg := StyleBoxFlat.new()
-	input_bg.bg_color = Color(0.08, 0.08, 0.10, 0.9)
-	input_bg.border_color = Color(0.50, 0.40, 0.16, 0.6)
-	input_bg.set_border_width_all(1)
-	input_bg.set_corner_radius_all(6)
-	input_bg.content_margin_left = int(10 * scale_factor)
-	input_bg.content_margin_right = int(10 * scale_factor)
+	var input_bg := UiFactory.make_stylebox(Color(0.08, 0.08, 0.10, 0.9), 6, int(10 * scale_factor), Color(0.50, 0.40, 0.16, 0.6), 1)
 	input_bg.content_margin_top = int(4 * scale_factor)
 	input_bg.content_margin_bottom = int(4 * scale_factor)
 	_answer_input.add_theme_stylebox_override("normal", input_bg)
@@ -116,8 +102,8 @@ func _build_ui() -> void:
 
 
 func _apply_scale() -> void:
-	custom_minimum_size = Vector2(420, 210) * scale_factor
-	size = Vector2(420, 210) * scale_factor
+	custom_minimum_size = Vector2(420, 140) * scale_factor
+	size = Vector2(420, 140) * scale_factor
 
 
 func update_scale(new_scale: float) -> void:
@@ -199,6 +185,7 @@ func numpad_key_pressed(key: String) -> void:
 			# Digit key — append to input
 			_answer_input.text += key
 			_answer_input.caret_column = _answer_input.text.length()
+
 
 
 func _on_answer_submitted(_text: String) -> void:

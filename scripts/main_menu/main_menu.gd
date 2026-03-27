@@ -3,7 +3,6 @@ extends Control
 var _entry_panel: Control
 var _entry_vbox: VBoxContainer
 var _back_btn: Button
-var _new_game_btn: Button
 var _settings_btn: Button
 
 # Delegated managers
@@ -30,9 +29,7 @@ func _ready() -> void:
 	_login_panel_mgr.play_sfx_requested.connect(_play_sfx)
 	_login_panel_mgr.connect_firebase_signals()
 	_build_ui()
-	Locale.language_changed.connect(_on_language_changed)
-	if FirebaseAuth.is_logged_in:
-		_update_new_game_btn_state()
+	GameManager.language_changed.connect(_on_language_changed)
 
 
 func _process(delta: float) -> void:
@@ -93,11 +90,15 @@ func _build_ui() -> void:
 	add_child(_entry_panel)
 
 	_entry_vbox = VBoxContainer.new()
-	_entry_vbox.set_anchors_preset(Control.PRESET_CENTER)
-	_entry_vbox.offset_left = -200
-	_entry_vbox.offset_right = 200
-	_entry_vbox.offset_top = -160
-	_entry_vbox.offset_bottom = 160
+	# Anchor to bottom-left
+	_entry_vbox.anchor_left = 0.0
+	_entry_vbox.anchor_top = 1.0
+	_entry_vbox.anchor_right = 0.0
+	_entry_vbox.anchor_bottom = 1.0
+	_entry_vbox.offset_left = 60
+	_entry_vbox.offset_right = 500
+	_entry_vbox.offset_top = -420
+	_entry_vbox.offset_bottom = -60
 	_entry_vbox.add_theme_constant_override("separation", 24)
 	_entry_panel.add_child(_entry_vbox)
 
@@ -113,16 +114,7 @@ func _build_ui() -> void:
 	_login_status_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_entry_vbox.add_child(_login_status_area)
 
-	_new_game_btn = _make_entry_btn(Locale.tr_key("start_game"), Color(0.08, 0.08, 0.10, 0.82), Color(0.82, 0.66, 0.26))
-	_new_game_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_new_game_btn.pressed.connect(_on_new_game_pressed)
-
-	_settings_btn = _make_entry_btn(Locale.tr_key("settings"), Color(0.08, 0.08, 0.10, 0.82), Color(0.82, 0.66, 0.26))
-	_settings_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_settings_btn.pressed.connect(_on_settings_pressed)
-
 	_build_login_status()
-	_update_new_game_btn_state()
 
 	# --- Settings panel (delegated to SettingsPanel) ---
 	var settings_script := load("res://scripts/main_menu/settings_panel.gd")
@@ -157,6 +149,14 @@ func _play_sfx(path: String) -> void:
 
 func _on_new_game_pressed() -> void:
 	_play_sfx("res://assets/music/sounds_effect/button.ogg")
+	GameManager.is_guest_mode = false
+	GameManager.change_state(GameManager.State.PLAYING)
+	get_tree().root.get_node("Main").switch_scene("res://scenes/game/game_table.tscn")
+
+
+func _on_guest_mode_pressed() -> void:
+	_play_sfx("res://assets/music/sounds_effect/button.ogg")
+	GameManager.is_guest_mode = true
 	GameManager.change_state(GameManager.State.PLAYING)
 	get_tree().root.get_node("Main").switch_scene("res://scenes/game/game_table.tscn")
 
@@ -193,6 +193,7 @@ func _build_login_status() -> void:
 	for c in _entry_vbox.get_children():
 		if c != _login_status_area and c.size_flags_vertical != Control.SIZE_EXPAND_FILL:
 			_entry_vbox.remove_child(c)
+			c.queue_free()
 	if _logout_btn and is_instance_valid(_logout_btn):
 		_logout_btn.queue_free()
 		_logout_btn = null
@@ -205,8 +206,17 @@ func _build_login_status() -> void:
 		_login_status_lbl.clip_text = true
 		_login_status_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_login_status_area.add_child(_login_status_lbl)
-		_entry_vbox.add_child(_new_game_btn)
+
+		var new_game_btn := _make_entry_btn(Locale.tr_key("start_game"), Color(0.08, 0.08, 0.10, 0.82), Color(0.82, 0.66, 0.26))
+		new_game_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		new_game_btn.pressed.connect(_on_new_game_pressed)
+		_entry_vbox.add_child(new_game_btn)
+
+		_settings_btn = _make_entry_btn(Locale.tr_key("settings"), Color(0.08, 0.08, 0.10, 0.82), Color(0.82, 0.66, 0.26))
+		_settings_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_settings_btn.pressed.connect(_on_settings_pressed)
 		_entry_vbox.add_child(_settings_btn)
+
 		_logout_btn = _make_entry_btn(Locale.tr_key("logout"), Color(0.08, 0.08, 0.10, 0.82), Color(0.68, 0.45, 0.20))
 		_logout_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_logout_btn.pressed.connect(_on_logout_pressed)
@@ -219,31 +229,16 @@ func _build_login_status() -> void:
 			_login_panel_mgr.show()
 		)
 		_entry_vbox.add_child(login_btn)
-		_entry_vbox.add_child(_new_game_btn)
+
+		var guest_btn := _make_entry_btn(Locale.tr_key("guest_mode"), Color(0.08, 0.08, 0.10, 0.82), Color(0.82, 0.66, 0.26))
+		guest_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		guest_btn.pressed.connect(_on_guest_mode_pressed)
+		_entry_vbox.add_child(guest_btn)
+
+		_settings_btn = _make_entry_btn(Locale.tr_key("settings"), Color(0.08, 0.08, 0.10, 0.82), Color(0.82, 0.66, 0.26))
+		_settings_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_settings_btn.pressed.connect(_on_settings_pressed)
 		_entry_vbox.add_child(_settings_btn)
-
-
-func _update_new_game_btn_state(force_enable: bool = false) -> void:
-	if not _new_game_btn:
-		return
-	_new_game_btn.disabled = not (FirebaseAuth.is_logged_in or force_enable)
-	if not FirebaseAuth.is_logged_in and not force_enable:
-		var ds := StyleBoxFlat.new()
-		ds.bg_color = Color(0.08, 0.08, 0.10, 0.60)
-		ds.border_color = Color(0.30, 0.25, 0.12)
-		ds.set_border_width_all(1)
-		ds.set_corner_radius_all(6)
-		ds.set_content_margin_all(14)
-		_new_game_btn.add_theme_stylebox_override("disabled", ds)
-		_new_game_btn.add_theme_color_override("font_disabled_color", Color(0.40, 0.35, 0.20))
-	else:
-		var s := StyleBoxFlat.new()
-		s.bg_color = Color(0.08, 0.08, 0.10, 0.82)
-		s.border_color = Color(0.82, 0.66, 0.26)
-		s.set_border_width_all(1)
-		s.set_corner_radius_all(6)
-		s.set_content_margin_all(14)
-		_new_game_btn.add_theme_stylebox_override("normal", s)
 
 
 func _on_logout_pressed() -> void:
@@ -253,13 +248,11 @@ func _on_logout_pressed() -> void:
 
 func _on_login_status_changed() -> void:
 	_build_login_status()
-	_update_new_game_btn_state()
 
 
 func _activate_debug_mode() -> void:
 	print("Debug mode activated - New Game unlocked")
 	_play_sfx("res://assets/music/sounds_effect/button.ogg")
-	_update_new_game_btn_state(true)
 
 
 func _on_language_changed() -> void:
@@ -268,7 +261,6 @@ func _on_language_changed() -> void:
 		c.queue_free()
 	_build_ui()
 	_build_login_status()
-	_update_new_game_btn_state()
 
 
 # =============================================================================
@@ -276,51 +268,23 @@ func _on_language_changed() -> void:
 # =============================================================================
 
 func _make_entry_btn(text: String, bg: Color, border: Color) -> Button:
-	var btn := Button.new()
-	btn.text = text
-	btn.custom_minimum_size = Vector2(340, 80)
-	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn.add_theme_font_size_override("font_size", 28)
-	btn.add_theme_color_override("font_color", Color(0.90, 0.80, 0.55))
-	var s := StyleBoxFlat.new()
-	s.bg_color = bg
-	s.border_color = border
-	s.set_border_width_all(1)
-	s.set_corner_radius_all(6)
-	s.set_content_margin_all(14)
-	btn.add_theme_stylebox_override("normal", s)
-	var h := StyleBoxFlat.new()
-	h.bg_color = Color(0.14, 0.13, 0.10, 0.85)
-	h.border_color = Color(border.r + 0.15, border.g + 0.12, border.b + 0.05)
-	h.set_border_width_all(1)
-	h.set_corner_radius_all(6)
-	h.set_content_margin_all(14)
-	btn.add_theme_stylebox_override("hover", h)
-	btn.add_theme_stylebox_override("pressed", h)
-	btn.add_theme_stylebox_override("focus", s)
-	return btn
+	return _make_menu_btn(text, bg, border, Vector2(340, 80), 28, 14)
 
 
 func _make_toolbar_btn(text: String, bg: Color, border: Color) -> Button:
+	return _make_menu_btn(text, bg, border, Vector2(180, 56), 22, 12)
+
+
+func _make_menu_btn(text: String, bg: Color, border: Color, min_size: Vector2, font_size: int, margin: int) -> Button:
 	var btn := Button.new()
 	btn.text = text
-	btn.custom_minimum_size = Vector2(180, 56)
+	btn.custom_minimum_size = min_size
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn.add_theme_font_size_override("font_size", 22)
+	btn.add_theme_font_size_override("font_size", font_size)
 	btn.add_theme_color_override("font_color", Color(0.90, 0.80, 0.55))
-	var s := StyleBoxFlat.new()
-	s.bg_color = bg
-	s.border_color = border
-	s.set_border_width_all(1)
-	s.set_corner_radius_all(6)
-	s.set_content_margin_all(12)
+	var s := UiFactory.make_stylebox(bg, 6, margin, border, 1)
 	btn.add_theme_stylebox_override("normal", s)
-	var h := StyleBoxFlat.new()
-	h.bg_color = Color(0.14, 0.13, 0.10, 0.85)
-	h.border_color = border.lightened(0.15)
-	h.set_border_width_all(1)
-	h.set_corner_radius_all(6)
-	h.set_content_margin_all(12)
+	var h := UiFactory.make_stylebox(Color(0.14, 0.13, 0.10, 0.85), 6, margin, Color(border.r + 0.15, border.g + 0.12, border.b + 0.05), 1)
 	btn.add_theme_stylebox_override("hover", h)
 	btn.add_theme_stylebox_override("pressed", h)
 	btn.add_theme_stylebox_override("focus", s)

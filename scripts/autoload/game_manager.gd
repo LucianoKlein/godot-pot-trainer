@@ -1,5 +1,9 @@
 extends Node
 
+const AdCounterScript := preload("res://scripts/features/ads/ad_counter.gd")
+const GameLoopControllerScript := preload("res://scripts/core/game_loop_controller.gd")
+const DeckManagerScript := preload("res://scripts/core/deck_manager.gd")
+
 # --- Enums ---
 enum State { MENU, PLAYING, PAUSED }
 enum Street { PREFLOP, FLOP, TURN, RIVER, SHOWDOWN }
@@ -13,7 +17,7 @@ const STREET_NAMES := {
 }
 
 const POT_BLINDS := [
-	[25, 50], [50, 100], [100, 200], [200, 400], [500, 1000],
+	[1, 2], [1, 5], [5, 10], [25, 50], [50, 100], [100, 200], [200, 400], [500, 1000],
 ]
 
 # --- Signals ---
@@ -35,9 +39,17 @@ signal game_over()
 signal hand_started()
 signal display_mode_changed(mode: String)
 signal hole_cards_changed()
+signal language_changed()
+signal show_ad_requested()  # emitted when guest needs to watch ad
 
 # --- State ---
 var current_state: State = State.MENU
+
+# Language
+var language: String = "zh":
+	set(v):
+		language = v
+		language_changed.emit()
 
 var players: Array = []
 var community_cards: Array = []
@@ -65,6 +77,11 @@ var layout_config: Dictionary:
 var _layout_mgr: RefCounted  # LayoutConfigManager
 var pending_layout_mode: bool = false
 var display_mode: String = "chips"  # "numbers" or "chips"
+var blinds_mode: String = "25/50"  # "25/50" / "5/10" / "1/2" / "1/2/5"
+var is_guest_mode: bool = false  # true if playing as guest
+var _ad_counter: AdCounter  # guest mode ad counter
+var _loop: GameLoopController  # game loop controller
+var _deck_mgr: DeckManager  # deck manager
 
 # Seat mapping: seat_map[logical_index] = physical_seat (0-8)
 # e.g. seat_map = [0, 3, 5, 7] means 4 players at physical seats 0, 3, 5, 7
@@ -73,56 +90,15 @@ var seat_map: Array[int] = []
 
 func _ready() -> void:
 	_layout_mgr = LayoutConfigManager.new().setup(layout_changed.emit)
+	_ad_counter = AdCounterScript.new()
+	_ad_counter.ad_requested.connect(func() -> void: show_ad_requested.emit())
+	_loop = GameLoopControllerScript.new().setup(self)
+	_deck_mgr = DeckManagerScript.new()
 
 
 func change_state(new_state: State) -> void:
 	current_state = new_state
 	state_changed.emit()
-
-
-# --- Deck (for board card display) ---
-
-func _build_deck() -> Array:
-	var d: Array = []
-	for s in [CardData.Suit.HEARTS, CardData.Suit.DIAMONDS, CardData.Suit.CLUBS, CardData.Suit.SPADES]:
-		for r in range(CardData.Rank.TWO, CardData.Rank.ACE + 1):
-			d.append(CardData.new(s, r))
-	return d
-
-
-func _shuffle_deck(d: Array) -> Array:
-	var shuffled := d.duplicate()
-	for i in range(shuffled.size() - 1, 0, -1):
-		var j := randi_range(0, i)
-		var tmp: RefCounted = shuffled[i]
-		shuffled[i] = shuffled[j]
-		shuffled[j] = tmp
-	return shuffled
-
-
-func _generate_board_cards() -> void:
-	var card_count := 0
-	match engine.street:
-		"preflop": card_count = 0
-		"flop": card_count = 3
-		"turn": card_count = 4
-		"river": card_count = 5
-
-	board_cards.clear()
-	if card_count == 0:
-		community_cards.clear()
-		community_cards_changed.emit()
-		return
-
-	# Single board — deal from shared deck
-	while community_cards.size() < card_count:
-		if deck.is_empty():
-			break
-		var c: RefCounted = deck.pop_back()
-		c.face_up = true
-		community_cards.append(c)
-
-	community_cards_changed.emit()
 
 
 # --- Game Init & Control ---
@@ -164,15 +140,16 @@ func reset_game() -> void:
 
 
 func _restart_paused() -> void:
-	# Config changed mid-game: reset, deal a new hand, but pause — wait for user to press Start
 	is_game_running = false
 	layout_mode = false
 	init_game()
 	engine = PotEngine.new()
 	engine.create_initial_state(config)
 	_sync_from_engine()
-	deck = _shuffle_deck(_build_deck())
-	_deal_hole_cards()
+	_deck_mgr.reset()
+	_deck_mgr.build_and_shuffle()
+	deck = _deck_mgr.deck
+	_deck_mgr.deal_hole_cards(players)
 	is_hand_in_progress = false
 	is_game_started = false
 	game_reset.emit()
@@ -184,25 +161,21 @@ func _start_new_hand() -> void:
 	engine = PotEngine.new()
 	engine.create_initial_state(config)
 	_sync_from_engine()
-	# Build and shuffle a shared deck for the entire hand
-	deck = _shuffle_deck(_build_deck())
-	# Deal hole cards (2 per player)
-	_deal_hole_cards()
+	_deck_mgr.reset()
+	_deck_mgr.build_and_shuffle()
+	deck = _deck_mgr.deck
+	community_cards = _deck_mgr.community_cards
+	_deck_mgr.deal_hole_cards(players)
 	is_hand_in_progress = true
 	hand_started.emit()
 	hole_cards_changed.emit()
-	_run_game_loop()
+	_loop.run_game_loop()
 
 
-func _deal_hole_cards() -> void:
-	for i in range(players.size()):
-		players[i].hole_cards.clear()
-		for _j in range(2):
-			if deck.is_empty():
-				break
-			var c: RefCounted = deck.pop_back()
-			c.face_up = false
-			players[i].hole_cards.append(c)
+func _generate_board_cards() -> void:
+	_deck_mgr.generate_board_cards(engine.street)
+	community_cards = _deck_mgr.community_cards
+	community_cards_changed.emit()
 
 
 func _sync_from_engine() -> void:
@@ -234,118 +207,10 @@ func _sync_from_engine() -> void:
 	street_changed.emit(engine.street)
 
 
-# --- Game Loop ---
-
-func _run_game_loop() -> void:
-	if config.training_mode == "game":
-		_run_step_by_step()
-	else:
-		_run_until_question()
-
-
-func _run_step_by_step() -> void:
-	if not is_game_running:
-		return
-
-	var result: Dictionary = engine.advance_one_step(config)
-	_sync_from_engine()
-	_generate_board_cards()
-
-	if result["is_game_over"]:
-		_handle_game_over()
-		return
-
-	if result["has_question"]:
-		_handle_training_question()
-		return
-
-	# Emit npc_acted signal for UI to show the action
-	if result["seat"] >= 0:
-		npc_acted.emit(result["seat"], result["action"], result["amount"])
-
-	# Wait 1 second then execute next step
-	get_tree().create_timer(1.0).timeout.connect(_run_step_by_step)
-
-
-func _run_until_question() -> void:
-	if not is_game_running:
-		return
-
-	engine.run_until_question(config)
-	_sync_from_engine()
-	_generate_board_cards()
-
-	if engine.is_game_over:
-		_handle_game_over()
-		return
-
-	if not engine.training_question.is_empty():
-		_handle_training_question()
-
-
-func _handle_training_question() -> void:
-	var q: Dictionary = engine.training_question
-	if q["is_answer"]:
-		# Skip question if max raise exceeds 7500 or player is all-in
-		if q["max_raise_to"] > PotEngine.INITIAL_STACK or q["is_all_in"]:
-			var amount: int = q["all_in_amount"] if q["is_all_in"] else q["max_raise_to"]
-			last_action = Locale.tr_key("seat_raise_to") % [get_physical_seat(q["seat"]) + 1, amount]
-			last_action_changed.emit(last_action)
-			npc_acted.emit(q["seat"], "raise", amount)
-			engine.complete_raise(amount)
-			_sync_from_engine()
-			get_tree().create_timer(0.3).timeout.connect(_run_game_loop)
-			return
-		last_action = Locale.tr_key("seat_raise_question") % (get_physical_seat(q["seat"]) + 1)
-		last_action_changed.emit(last_action)
-		training_question_appeared.emit(q)
-	else:
-		# Non-answer question: auto-complete after brief delay
-		last_action = Locale.tr_key("seat_raise_to") % [get_physical_seat(q["seat"]) + 1, q["raise_amount"]]
-		last_action_changed.emit(last_action)
-		npc_acted.emit(q["seat"], "raise", q["raise_amount"])
-		engine.complete_raise(q["raise_amount"])
-		_sync_from_engine()
-		get_tree().create_timer(0.3).timeout.connect(_run_game_loop)
-
-
-func _handle_game_over() -> void:
-	is_hand_in_progress = false
-	last_action = Locale.tr_key("hand_over")
-	last_action_changed.emit(last_action)
-	game_over.emit()
-
-	if config.training_mode == "scenario" and is_game_running:
-		# Auto-restart in scenario mode
-		get_tree().create_timer(2.0).timeout.connect(_start_new_hand)
-	else:
-		is_game_running = false
-		is_game_started = false
-
-
 # --- Answer Submission ---
 
 func submit_answer(user_input: int) -> bool:
-	if engine.training_question.is_empty():
-		return false
-	if not engine.training_question["is_answer"]:
-		return false
-
-	var expected: int = engine.training_question["max_raise_to"]
-
-	if user_input == expected:
-		# Correct
-		answer_result.emit(true, user_input, expected)
-		engine.complete_raise(expected)
-		_sync_from_engine()
-		training_question_cleared.emit()
-		# Continue game loop after brief pause
-		get_tree().create_timer(0.5).timeout.connect(_run_game_loop)
-		return true
-	else:
-		# Wrong
-		answer_result.emit(false, user_input, expected)
-		return false
+	return _loop.submit_answer(user_input)
 
 
 # --- Config ---
@@ -353,8 +218,8 @@ func submit_answer(user_input: int) -> bool:
 func set_blinds(sb: int, bb: int) -> void:
 	small_blind = sb
 	big_blind = bb
-	config.small_blind = sb
-	config.big_blind = bb
+	config.set_blinds(sb, bb)
+	blinds_mode = config.blinds_mode
 	blinds_changed.emit()
 	if is_game_started:
 		_restart_paused()
@@ -489,53 +354,27 @@ func load_layout_from_file() -> bool:
 func get_layout_position_px(category: String, index: int = -1) -> Vector2:
 	return _layout_mgr.get_position_px(category, index)
 
-func set_dealer_button_scale(scale: float) -> void:
-	_layout_mgr.set_scale("dealer_button_scale", scale)
+func set_layout_scale(key: String, value: float) -> void:
+	_layout_mgr.set_scale(key, value)
 
-func set_hole_card_scale(scale: float) -> void:
-	_layout_mgr.set_scale("hole_card_scale", scale)
+func switch_layout_mode(mode: String) -> void:
+	_layout_mgr.switch_mode(mode)
 
-func set_hole_card_gap(gap: float) -> void:
-	_layout_mgr.set_scale("hole_card_gap", gap)
 
-func set_community_card_scale(scale: float) -> void:
-	_layout_mgr.set_scale("community_card_scale", scale)
+func set_per_seat_value(key: String, seat: int, value: float) -> void:
+	var arr: Array = layout_config.get(key, [])
+	if seat >= 0 and seat < arr.size():
+		arr[seat] = value
+		layout_config[key] = arr
+		layout_changed.emit()
 
-func set_muck_card_scale(scale: float) -> void:
-	_layout_mgr.set_scale("muck_card_scale", scale)
 
-func set_bet_label_scale(scale: float) -> void:
-	_layout_mgr.set_scale("bet_label_scale", scale)
+# --- Guest mode ad counter ---
 
-func set_stack_label_scale(scale: float) -> void:
-	_layout_mgr.set_scale("stack_label_scale", scale)
+func increment_guest_answer_count() -> void:
+	if is_guest_mode:
+		_ad_counter.increment()
 
-func set_pitch_hand_scale(scale: float) -> void:
-	_layout_mgr.set_scale("pitch_hand_scale", scale)
 
-func set_pitch_hand_rotation(deg: float) -> void:
-	_layout_mgr.set_scale("pitch_hand_rotation", deg)
-
-func set_action_box_scale(scale: float) -> void:
-	_layout_mgr.set_scale("action_box_scale", scale)
-
-func set_answer_box_scale(scale: float) -> void:
-	_layout_mgr.set_scale("answer_box_scale", scale)
-
-func set_player_chip_scale(scale: float) -> void:
-	_layout_mgr.set_scale("player_chip_scale", scale)
-
-func set_bet_chip_scale(scale: float) -> void:
-	_layout_mgr.set_scale("bet_chip_scale", scale)
-
-func set_bet_chip_spread(spread: float) -> void:
-	_layout_mgr.set_scale("bet_chip_spread", spread)
-
-func set_pot_chip_scale(scale: float) -> void:
-	_layout_mgr.set_scale("pot_chip_scale", scale)
-
-func set_chip_record_scale(scale: float) -> void:
-	_layout_mgr.set_scale("chip_record_scale", scale)
-
-func set_ordered_bet_chip_scale(scale: float) -> void:
-	_layout_mgr.set_scale("ordered_bet_chip_scale", scale)
+func reset_guest_answer_count() -> void:
+	_ad_counter.reset()

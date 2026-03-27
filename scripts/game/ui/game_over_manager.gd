@@ -34,13 +34,8 @@ func show() -> void:
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.add_theme_font_size_override("font_size", 32)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
-	var lbl_sb := StyleBoxFlat.new()
-	lbl_sb.bg_color = Color(0.08, 0.08, 0.10, 0.92)
-	lbl_sb.border_color = Color(0.72, 0.58, 0.24)
-	lbl_sb.set_border_width_all(2)
-	lbl_sb.set_corner_radius_all(12)
-	lbl_sb.set_content_margin_all(24)
-	lbl.add_theme_stylebox_override("normal", lbl_sb)
+	lbl.add_theme_stylebox_override("normal", UiFactory.make_stylebox(
+		Color(0.08, 0.08, 0.10, 0.92), 12, 24, Color(0.72, 0.58, 0.24), 2))
 	lbl.set_anchors_preset(Control.PRESET_CENTER)
 	lbl.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	lbl.grow_vertical = Control.GROW_DIRECTION_BOTH

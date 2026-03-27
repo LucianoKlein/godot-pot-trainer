@@ -29,18 +29,22 @@ func build() -> void:
 
 
 func _build_pot_display() -> void:
+	var pd_scale: float = GameManager.layout_config.get("pot_display_scale", 1.0)
+	var pd_w: float = 80 * pd_scale
+	var pd_h: float = 40 * pd_scale
+
 	pot_display = VBoxContainer.new()
 	pot_display.name = "PotDisplay"
 	pot_display.z_index = 5
 	var pot_pos: Vector2 = GameManager.get_layout_position_px("pot")
-	pot_display.position = pot_pos - Vector2(40, 10)
-	pot_display.size = Vector2(80, 40)
+	pot_display.position = pot_pos - Vector2(pd_w / 2, pd_h / 2)
+	pot_display.size = Vector2(pd_w, pd_h)
 	table_overlay.add_child(pot_display)
 
 	pot_amount_label = Label.new()
 	pot_amount_label.text = Locale.tr_key("pot_display") % 0
 	pot_amount_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	pot_amount_label.add_theme_font_size_override("font_size", 14)
+	pot_amount_label.add_theme_font_size_override("font_size", int(14 * pd_scale))
 	pot_amount_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
 	pot_display.add_child(pot_amount_label)
 
@@ -49,11 +53,15 @@ func _build_pot_display() -> void:
 	street_badge.name = "StreetBadge"
 	street_badge.text = Locale.tr_key("street_preflop")
 	street_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	street_badge.add_theme_font_size_override("font_size", 12)
+	var sb_scale: float = GameManager.layout_config.get("street_badge_scale", 1.0)
+	street_badge.add_theme_font_size_override("font_size", int(12 * sb_scale))
 	street_badge.add_theme_color_override("font_color", Color(0.8, 0.8, 1.0))
 	street_badge.z_index = 5
-	street_badge.position = pot_pos - Vector2(40, 10) + Vector2(0, 22)
-	street_badge.size = Vector2(80, 18)
+	var sb_pos: Vector2 = GameManager.get_layout_position_px("street_badge")
+	var sb_w: float = 80 * sb_scale
+	var sb_h: float = 18 * sb_scale
+	street_badge.position = sb_pos - Vector2(sb_w / 2, sb_h / 2)
+	street_badge.size = Vector2(sb_w, sb_h)
 	table_overlay.add_child(street_badge)
 
 
@@ -89,6 +97,7 @@ func refresh_pot(pot_chip_area: Control = null) -> void:
 	# Only show pot_total (settled rounds + folded players' contributions)
 	var total: int = GameManager.engine.pot_total
 	pot_amount_label.text = Locale.tr_key("pot_display") % total
+	refresh_pot_display_position()
 
 	# In game mode, respect display_mode
 	if not GameManager.layout_mode:
@@ -102,6 +111,17 @@ func refresh_pot(pot_chip_area: Control = null) -> void:
 		pot_chip_area.set_pot_total(total)
 
 
+## 刷新底池显示位置和大小
+func refresh_pot_display_position() -> void:
+	var pd_scale: float = GameManager.layout_config.get("pot_display_scale", 1.0)
+	var pd_w: float = 80 * pd_scale
+	var pd_h: float = 40 * pd_scale
+	var pot_pos: Vector2 = GameManager.get_layout_position_px("pot")
+	pot_display.position = pot_pos - Vector2(pd_w / 2, pd_h / 2)
+	pot_display.size = Vector2(pd_w, pd_h)
+	pot_amount_label.add_theme_font_size_override("font_size", int(14 * pd_scale))
+
+
 ## 刷新街道标签
 func refresh_street() -> void:
 	match GameManager.engine.street:
@@ -110,6 +130,18 @@ func refresh_street() -> void:
 		"turn": street_badge.text = Locale.tr_key("street_turn")
 		"river": street_badge.text = Locale.tr_key("street_river")
 		_: street_badge.text = GameManager.engine.street
+	refresh_street_badge_position()
+
+
+## 刷新轮次标签位置和大小
+func refresh_street_badge_position() -> void:
+	var sb_scale: float = GameManager.layout_config.get("street_badge_scale", 1.0)
+	street_badge.add_theme_font_size_override("font_size", int(12 * sb_scale))
+	var sb_pos: Vector2 = GameManager.get_layout_position_px("street_badge")
+	var sb_w: float = 80 * sb_scale
+	var sb_h: float = 18 * sb_scale
+	street_badge.position = sb_pos - Vector2(sb_w / 2, sb_h / 2)
+	street_badge.size = Vector2(sb_w, sb_h)
 
 
 ## 刷新公共牌显示

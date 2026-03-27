@@ -128,20 +128,15 @@ func build() -> Control:
 	var lang_option := OptionButton.new()
 	lang_option.add_item("English", 0)
 	lang_option.add_item("中文", 1)
-	lang_option.selected = 1 if Locale.current_language == "zh" else 0
+	lang_option.selected = 1 if GameManager.language == "zh" else 0
 	lang_option.custom_minimum_size = Vector2(160, 48)
 	lang_option.add_theme_font_size_override("font_size", 24)
-	var lang_s := StyleBoxFlat.new()
-	lang_s.bg_color = Color(0.08, 0.08, 0.10, 0.82)
-	lang_s.border_color = Color(0.50, 0.40, 0.16)
-	lang_s.set_border_width_all(1)
-	lang_s.set_corner_radius_all(6)
-	lang_s.set_content_margin_all(8)
-	lang_option.add_theme_stylebox_override("normal", lang_s)
+	lang_option.add_theme_stylebox_override("normal", UiFactory.make_stylebox(
+		Color(0.08, 0.08, 0.10, 0.82), 6, 8, Color(0.50, 0.40, 0.16), 1))
 	lang_option.add_theme_color_override("font_color", Color(0.90, 0.80, 0.55))
 	lang_option.item_selected.connect(func(index: int) -> void:
 		var lang: String = "en" if index == 0 else "zh"
-		Locale.current_language = lang
+		GameManager.language = lang
 		var mn := _parent.get_tree().root.get_node_or_null("Main")
 		if mn:
 			mn._save_settings()

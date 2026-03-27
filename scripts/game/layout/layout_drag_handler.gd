@@ -31,11 +31,7 @@ func _build_tooltip() -> void:
 	_drag_tooltip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_drag_tooltip.add_theme_font_size_override("font_size", 26)
 	_drag_tooltip.add_theme_color_override("font_color", Color(0.8, 0.8, 0.9))
-	var tt_bg := StyleBoxFlat.new()
-	tt_bg.bg_color = Color(0.1, 0.1, 0.18, 0.82)
-	tt_bg.set_corner_radius_all(4)
-	tt_bg.set_content_margin_all(4)
-	_drag_tooltip.add_theme_stylebox_override("normal", tt_bg)
+	_drag_tooltip.add_theme_stylebox_override("normal", UiFactory.make_stylebox(Color(0.1, 0.1, 0.18, 0.82), 4, 4))
 	_drag_tooltip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_parent.add_child(_drag_tooltip)
 
@@ -185,33 +181,25 @@ func _hide_drag_tooltip() -> void:
 		_drag_tooltip.visible = false
 
 
+const ELEMENT_NAMES: Dictionary = {
+	"seats": "头像", "chairs": "椅子", "bets": "下注筹码", "stacks": "本金",
+	"cards": "手牌", "dealer_buttons": "庄家按钮", "answer_boxes": "答题框",
+	"action_boxes": "行动框", "pot": "底池", "community_cards": "公共牌",
+	"purple_stacks": "紫色筹码", "black_stacks": "黑色筹码", "green_stacks": "绿色筹码",
+	"red_stacks_1": "红色筹码1", "red_stacks_2": "红色筹码2", "red_stacks_3": "红色筹码3",
+	"bet_chips": "下注筹码", "ordered_bet_chips": "整齐筹码",
+	"pot_chips": "底池筹码", "chip_record": "筹码记录", "street_badge": "轮次标签",
+}
+
+const CONFIG_KEY_MAP: Dictionary = {
+	"bet_chips": "bets", "ordered_bet_chips": "ordered_bet_chips", "pot_chips": "pot",
+}
+
+
 func _get_element_name(category: String, idx: int) -> String:
 	var seat_str: String = "玩家%d " % (idx + 1) if idx >= 0 else ""
-	match category:
-		"seats": return seat_str + "头像"
-		"chairs": return seat_str + "椅子"
-		"bets": return seat_str + "下注筹码"
-		"stacks": return seat_str + "本金"
-		"cards": return seat_str + "手牌"
-		"dealer_buttons": return seat_str + "庄家按钮"
-		"answer_boxes": return seat_str + "答题框"
-		"action_boxes": return seat_str + "行动框"
-		"pot": return "底池"
-		"community_cards": return "公共牌"
-		"purple_stacks": return seat_str + "紫色筹码"
-		"black_stacks": return seat_str + "黑色筹码"
-		"green_stacks": return seat_str + "绿色筹码"
-		"bet_chips": return seat_str + "下注筹码"
-		"ordered_bet_chips": return seat_str + "整齐筹码"
-		"pot_chips": return "底池筹码"
-		"chip_record": return "筹码记录"
-		_: return category
+	return seat_str + ELEMENT_NAMES.get(category, category)
 
 
 func _get_config_key(category: String) -> String:
-	# Map display category to layout_config key
-	match category:
-		"bet_chips": return "bets"
-		"ordered_bet_chips": return "ordered_bet_chips"
-		"pot_chips": return "pot"
-		_: return category
+	return CONFIG_KEY_MAP.get(category, category)

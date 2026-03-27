@@ -94,15 +94,17 @@ func _rebuild_scattered() -> void:
 
 
 func _rebuild_ordered() -> void:
+	var row_gap: float = GameManager.layout_config.get("ordered_chip_v_gap", 6.0)
 	if _current_child == null or not is_instance_valid(_current_child):
 		var node := Node2D.new()
 		node.set_script(OrderedChipStacks)
 		node.chip_size = 32.0 * chip_scale
 		node.stack_gap_x = 6.0
-		node.stack_gap_y = 6.0
+		node.stack_gap_y = row_gap
 		add_child(node)
 		_current_child = node
 	else:
 		_current_child.set_chip_size(32.0 * chip_scale)
+		_current_child.set_v_gap(row_gap)
 
 	_current_child.set_chips(_chips)

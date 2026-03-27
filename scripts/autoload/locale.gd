@@ -28,6 +28,7 @@ const TRANSLATIONS := {
 	"login": {"en": "Login", "zh": "登录"},
 	"logout": {"en": "Logout", "zh": "登出"},
 	"register": {"en": "Register", "zh": "注册"},
+	"guest_mode": {"en": "Guest Mode", "zh": "游客模式"},
 	"email": {"en": "Email", "zh": "邮箱"},
 	"password": {"en": "Password", "zh": "密码"},
 	"email_placeholder": {"en": "Enter email", "zh": "请输入邮箱"},
@@ -51,7 +52,20 @@ const TRANSLATIONS := {
 	"err_too_many_attempts": {"en": "Too many attempts, try later", "zh": "尝试次数过多，请稍后再试"},
 	"err_network": {"en": "Network error, check connection", "zh": "网络错误，请检查连接"},
 	"err_login_failed": {"en": "Login failed: ", "zh": "登录失败："},
-	"google_login_soon": {"en": "Google login coming soon", "zh": "Google 登录即将支持"},
+	"err_google_not_available": {"en": "Google Sign-In not available", "zh": "Google 登录不可用"},
+	"err_google_signin_failed": {"en": "Google sign-in failed: ", "zh": "Google 登录失败："},
+	"err_google_signin_cancelled": {"en": "Google sign-in cancelled", "zh": "已取消 Google 登录"},
+
+	# Guest mode
+	"guest_login_required": {"en": "Login required to submit answers", "zh": "需要登录才能提交答案"},
+	"go_to_login": {"en": "Go to Login", "zh": "去登录"},
+
+	# Ad overlay
+	"ad_title": {"en": "Advertisement", "zh": "广告时间"},
+	"ad_countdown": {"en": "Close in %d seconds", "zh": "%d 秒后可关闭"},
+	"ad_can_close": {"en": "You can close now", "zh": "现在可以关闭"},
+	"ad_login_hint": {"en": "Login to remove ads", "zh": "登录即可免广告"},
+	"ad_close": {"en": "Close", "zh": "关闭"},
 
 	# === Game Table ===
 	"question_text": {"en": "What is the pot-limit max raise?", "zh": "底池限注最大加注是多少？"},
@@ -97,8 +111,8 @@ const TRANSLATIONS := {
 	"blinds": {"en": "Blinds:", "zh": "盲注:"},
 	"table_preset": {"en": "Table:", "zh": "牌桌:"},
 	"mode_label": {"en": "Mode:", "zh": "模式:"},
-	"scenario_mode": {"en": "Scenario", "zh": "场景模式"},
-	"game_mode": {"en": "Game", "zh": "游戏模式"},
+	"scenario_mode": {"en": "Spot Mode", "zh": "场景模式"},
+	"game_mode": {"en": "Game Mode", "zh": "游戏模式"},
 	"dealer_label": {"en": "Dealer:", "zh": "庄家:"},
 	"display_mode_label": {"en": "Display:", "zh": "展示模式:"},
 	"chips_mode": {"en": "Chips", "zh": "筹码"},
@@ -127,11 +141,14 @@ const TRANSLATIONS := {
 	"pot_chips_label": {"en": "Pot Chips", "zh": "底池筹码"},
 	"chip_record_label": {"en": "Chip Record", "zh": "筹码记录"},
 	"ordered_chips_label": {"en": "Ordered Chips", "zh": "整齐筹码"},
+	"ordered_chip_v_gap_label": {"en": "Chip V-Gap", "zh": "筹码纵向间距"},
 	"answer_box_label": {"en": "Answer Box", "zh": "答题框"},
 	"action_box_label": {"en": "Action Box", "zh": "行动框"},
+	"street_badge_label": {"en": "Street Badge", "zh": "轮次标签"},
 	"save_to_file": {"en": "Save to File", "zh": "保存到文件"},
 	"reset_layout": {"en": "Reset Layout", "zh": "重置布局"},
 	"display_mode_toggle": {"en": "Display Mode:", "zh": "显示模式:"},
+	"blinds_mode_toggle": {"en": "Blinds Mode:", "zh": "盲注模式:"},
 	"select_all": {"en": "Select/Deselect All", "zh": "全选/取消全选"},
 
 	# === Player Templates ===
@@ -149,13 +166,15 @@ const TRANSLATIONS := {
 	"preset_casual": {"en": "Casual Table", "zh": "休闲牌桌"},
 	"preset_crazy": {"en": "Crazy Table", "zh": "激进牌桌"},
 	"preset_normal": {"en": "Normal Table", "zh": "常规牌桌"},
+
 }
 
 
 func tr_key(key: String) -> String:
 	if TRANSLATIONS.has(key):
 		var entry: Dictionary = TRANSLATIONS[key]
-		if entry.has(current_language):
-			return entry[current_language]
+		var lang := GameManager.language if GameManager else "en"
+		if entry.has(lang):
+			return entry[lang]
 		return entry.get("en", key)
 	return key

@@ -1,7 +1,10 @@
 extends Control
 
-var _ready_for_input := false
+var _spinner_angle := 0.0
+var _spinner: Control
 
+func _t(en: String, zh: String) -> String:
+	return zh if GameManager.language == "zh" else en
 
 func _ready() -> void:
 	# Full-screen dark background
@@ -45,16 +48,35 @@ func _ready() -> void:
 	school_lbl.offset_bottom = logo_land_bottom + 90
 	add_child(school_lbl)
 
-	# "Tap to continue" prompt — hidden initially
-	var prompt_lbl := Label.new()
-	prompt_lbl.text = Locale.tr_key("splash_continue")
-	prompt_lbl.add_theme_font_size_override("font_size", 22)
-	prompt_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 0.0))
-	prompt_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	prompt_lbl.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	prompt_lbl.offset_top = -80
-	prompt_lbl.offset_bottom = -40
-	add_child(prompt_lbl)
+	# Loading text — right-bottom, hidden initially
+	var loading_lbl := Label.new()
+	loading_lbl.text = _t("Loading, please wait...", "正在进入，请稍后...")
+	loading_lbl.add_theme_font_size_override("font_size", 20)
+	loading_lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6, 0.0))
+	loading_lbl.anchor_left = 1.0
+	loading_lbl.anchor_top = 1.0
+	loading_lbl.anchor_right = 1.0
+	loading_lbl.anchor_bottom = 1.0
+	loading_lbl.offset_left = -300
+	loading_lbl.offset_right = -60
+	loading_lbl.offset_top = -50
+	loading_lbl.offset_bottom = -20
+	loading_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	add_child(loading_lbl)
+
+	# Spinner — right-bottom, next to loading text
+	_spinner = Control.new()
+	_spinner.anchor_left = 1.0
+	_spinner.anchor_top = 1.0
+	_spinner.anchor_right = 1.0
+	_spinner.anchor_bottom = 1.0
+	_spinner.offset_left = -48
+	_spinner.offset_right = -20
+	_spinner.offset_top = -50
+	_spinner.offset_bottom = -22
+	_spinner.modulate.a = 0.0
+	_spinner.connect("draw", _draw_spinner)
+	add_child(_spinner)
 
 	# Animation sequence
 	var tween := create_tween()
@@ -76,30 +98,40 @@ func _ready() -> void:
 	tween.tween_property(logo_img, "offset_top", logo_land_top, 0.10).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tween.parallel().tween_property(logo_img, "offset_bottom", logo_land_bottom, 0.10).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
-	# Fade in REG School + prompt together
+	# Fade in REG School + loading text + spinner
 	tween.tween_property(school_lbl, "theme_override_colors/font_color", Color(1.0, 1.0, 1.0, 1.0), 0.4).set_trans(Tween.TRANS_SINE)
-	tween.parallel().tween_property(prompt_lbl, "theme_override_colors/font_color", Color(0.7, 0.7, 0.7, 1.0), 0.4).set_trans(Tween.TRANS_SINE)
+	tween.parallel().tween_property(loading_lbl, "theme_override_colors/font_color", Color(0.6, 0.6, 0.6, 1.0), 0.4).set_trans(Tween.TRANS_SINE)
+	tween.parallel().tween_property(_spinner, "modulate:a", 1.0, 0.4).set_trans(Tween.TRANS_SINE)
 
-	tween.tween_callback(func() -> void:
-		_ready_for_input = true
-		# Blinking prompt
-		var blink := create_tween().set_loops()
-		blink.tween_property(prompt_lbl, "theme_override_colors/font_color", Color(0.7, 0.7, 0.7, 0.2), 0.7).set_trans(Tween.TRANS_SINE).set_delay(0.5)
-		blink.tween_property(prompt_lbl, "theme_override_colors/font_color", Color(0.7, 0.7, 0.7, 1.0), 0.7).set_trans(Tween.TRANS_SINE)
-	)
+	# Hold for background loading
+	tween.tween_interval(1.0)
+
+	# Auto-enter main menu
+	tween.tween_callback(_go_to_menu)
 
 
-func _input(event: InputEvent) -> void:
-	if not _ready_for_input:
-		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		_go_to_menu()
-	elif event is InputEventMouseButton and event.pressed:
-		_go_to_menu()
-	elif event is InputEventScreenTouch and event.pressed:
-		_go_to_menu()
+func _process(delta: float) -> void:
+	_spinner_angle += delta * 360.0
+	if _spinner_angle > 360.0:
+		_spinner_angle -= 360.0
+	if _spinner:
+		_spinner.queue_redraw()
+
+
+func _draw_spinner() -> void:
+	var center := _spinner.size / 2.0
+	var radius: float = min(center.x, center.y) - 2.0
+	var color := Color(0.7, 0.7, 0.7)
+	var arc_points := 24
+	var start_angle := deg_to_rad(_spinner_angle)
+	var end_angle := start_angle + deg_to_rad(270.0)
+	var points := PackedVector2Array()
+	for i in range(arc_points + 1):
+		var angle := start_angle + (end_angle - start_angle) * float(i) / float(arc_points)
+		points.append(center + Vector2(cos(angle), sin(angle)) * radius)
+	for i in range(arc_points):
+		_spinner.draw_line(points[i], points[i + 1], color, 2.5, true)
 
 
 func _go_to_menu() -> void:
-	_ready_for_input = false
 	get_tree().root.get_node("Main").switch_from_splash("res://scenes/main_menu/main_menu.tscn")

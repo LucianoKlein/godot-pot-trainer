@@ -1,13 +1,27 @@
 class_name LayoutConfigManager
 extends RefCounted
 ## LayoutConfigManager — 布局配置管理
-## 从 game_manager.gd 提取，负责 layout_config 字典、导入导出、文件读写、scale setter
+## 负责 layout_config 字典、导入导出、文件读写、scale setter
+## 支持按盲注模式（25/50 vs 5/10）分开保存手牌和筹码相关配置
 
 const DEFAULT_LAYOUT_PATH := "res://data/default_layout.json"
 const USER_LAYOUT_PATH := "user://layout.json"
 
+# 按盲注模式分开保存的配置键
+const MODE_KEYS: Array[String] = [
+	"cards", "bets", "purple_stacks", "black_stacks", "green_stacks",
+	"red_stacks_1", "red_stacks_2", "red_stacks_3", "ordered_bet_chips",
+	"pot", "chip_record",
+	"hole_card_scale", "hole_card_gap",
+	"player_chip_scale", "bet_chip_scale", "bet_chip_spread",
+	"pot_chip_scale", "chip_record_scale",
+	"ordered_bet_chip_scale", "ordered_chip_v_gap",
+]
+
 var config: Dictionary = {}
 var _emit_changed: Callable  # GameManager.layout_changed.emit
+var _mode_configs: Dictionary = {}  # {"25/50": {...}, "5/10": {...}}
+var _current_mode: String = "25/50"
 
 
 func setup(emit_changed: Callable) -> RefCounted:
@@ -17,49 +31,25 @@ func setup(emit_changed: Callable) -> RefCounted:
 
 
 func reset_config() -> void:
-	config = {
-		"seats": TableLayout.DEFAULT_SEATS_PCT.duplicate(),
-		"chairs": TableLayout.DEFAULT_CHAIRS_PCT.duplicate(),
-		"cards": TableLayout.DEFAULT_CARDS_PCT.duplicate(),
-		"stacks": TableLayout.DEFAULT_STACKS_PCT.duplicate(),
-		"bets": TableLayout.DEFAULT_BETS_PCT.duplicate(),
-		"dealer_buttons": TableLayout.DEFAULT_DEALER_BUTTONS_PCT.duplicate(),
-		"pot": TableLayout.DEFAULT_POT_PCT,
-		"muck": TableLayout.DEFAULT_MUCK_PCT,
-		"community_cards": TableLayout.DEFAULT_COMMUNITY_CARDS_PCT,
-		"avatar_scale": 2.4,
-		"avatar_per_seat_scale": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-		"avatar_rotation": [180.0, 0.0, -37.0, 0.0, 0.0, -125.0, 76.0, 120.0, 126.0],
-		"chair_scale": 0.95,
-		"chair_rotation": [177.0, -133.0, -39.0, 0.0, 0.0, 0.0, 23.0, 136.0, 177.0],
-		"dealer_button_scale": 1.0,
-		"hole_card_scale": 0.55,
-		"hole_card_gap": 0.6,
-		"community_card_scale": 1.0,
-		"muck_card_scale": 1.0,
-		"bet_label_scale": 2.05,
-		"stack_label_scale": 1.0,
-		"pitch_hand": TableLayout.DEFAULT_PITCH_HAND_PCT,
-		"pitch_hand_scale": 1.0,
-		"pitch_hand_rotation": 0.0,
-		"hole_card_rotation": TableLayout.DEFAULT_HOLE_CARD_ROTATION.duplicate(),
-		"action_boxes": TableLayout.DEFAULT_ACTION_BOXES_PCT.duplicate(),
-		"action_box_scale": 1.0,
-		"answer_boxes": TableLayout.DEFAULT_ANSWER_BOXES_PCT.duplicate(),
-		"answer_box_scale": 1.0,
-		"player_chip_scale": 1.45,
-		"bet_chip_scale": 1.0,
-		"bet_chip_spread": 1.0,
-		"pot_chip_scale": 1.0,
-		"chip_record": TableLayout.DEFAULT_CHIP_RECORD_PCT,
-		"chip_record_scale": 1.0,
-		"purple_stacks": TableLayout._make_color_stack_defaults(0),
-		"black_stacks": TableLayout._make_color_stack_defaults(1),
-		"green_stacks": TableLayout._make_color_stack_defaults(2),
-		"ordered_bet_chips": TableLayout.DEFAULT_ORDERED_BET_CHIPS_PCT.duplicate(),
-		"ordered_bet_chip_scale": 1.0,
-		"display_mode": "chips",
+	config = _make_global_defaults()
+	_mode_configs = {
+		"25/50": _make_mode_defaults(),
+		"5/10": _make_mode_defaults(),
+		"1/2": _make_mode_defaults(),
+		"1/2/5": _make_mode_defaults(),
 	}
+	_current_mode = "25/50"
+	_apply_mode_to_config()
+
+
+## 切换盲注模式，保存当前模式配置并加载目标模式配置
+func switch_mode(mode: String) -> void:
+	if mode == _current_mode:
+		return
+	_save_mode_from_config()
+	_current_mode = mode
+	_apply_mode_to_config()
+	_emit_changed.call()
 
 
 func update_position(category: String, index: int, x: float, y: float) -> void:
@@ -85,21 +75,27 @@ func get_position_px(category: String, index: int = -1) -> Vector2:
 # --- Export / Import ---
 
 func export_layout() -> String:
+	# 先同步当前模式的值回 _mode_configs
+	_save_mode_from_config()
+
 	var out := {}
+	# 只导出全局键
 	for key in config:
+		if key in MODE_KEYS:
+			continue
 		var val = config[key]
-		if val is Array:
-			var arr := []
-			for v in val:
-				if v is Vector2:
-					arr.append({"x": snapped(v.x, 0.01), "y": snapped(v.y, 0.01)})
-				else:
-					arr.append(v)
-			out[key] = arr
-		elif val is Vector2:
-			out[key] = {"x": snapped(val.x, 0.01), "y": snapped(val.y, 0.01)}
-		else:
-			out[key] = val
+		out[key] = _serialize_value(val)
+
+	# 导出两套模式配置
+	var mc := {}
+	for mode_name in _mode_configs:
+		var mode_out := {}
+		for key in _mode_configs[mode_name]:
+			mode_out[key] = _serialize_value(_mode_configs[mode_name][key])
+		mc[mode_name] = mode_out
+	out["mode_configs"] = mc
+	out["current_mode"] = _current_mode
+
 	return JSON.stringify(out, "\t")
 
 
@@ -108,26 +104,41 @@ func import_layout(json_str: String) -> void:
 	if not parsed is Dictionary:
 		return
 	var d: Dictionary = parsed
-	for key in d:
-		var val = d[key]
-		if val is Array:
-			var arr: Array = []
-			for item in val:
-				if item is Dictionary and item.has("x") and item.has("y"):
-					arr.append(Vector2(item["x"], item["y"]))
-				else:
-					arr.append(item)
-			config[key] = arr
-		elif val is Dictionary and val.has("x") and val.has("y"):
-			config[key] = Vector2(val["x"], val["y"])
-		else:
-			if key in ["hole_card_rotation", "avatar_rotation", "chair_rotation"] and (val is float or val is int):
-				var arr: Array = []
-				for _i in range(9):
-					arr.append(val)
-				config[key] = arr
-			else:
-				config[key] = val
+
+	# 检查是否有新格式的 mode_configs
+	var has_mode_configs: bool = d.has("mode_configs")
+
+	if has_mode_configs:
+		# 新格式：全局键写入 config，模式键从 mode_configs 读取
+		for key in d:
+			if key == "mode_configs" or key == "current_mode":
+				continue
+			config[key] = _deserialize_value(key, d[key])
+
+		var mc: Dictionary = d["mode_configs"]
+		for mode_name in mc:
+			if not _mode_configs.has(mode_name):
+				_mode_configs[mode_name] = _make_mode_defaults()
+			var mode_data: Dictionary = mc[mode_name]
+			for key in mode_data:
+				_mode_configs[mode_name][key] = _deserialize_value(key, mode_data[key])
+
+		if d.has("current_mode"):
+			_current_mode = d["current_mode"]
+	else:
+		# 旧格式兼容：所有键都在顶层，当作 25/50 的配置
+		for key in d:
+			config[key] = _deserialize_value(key, d[key])
+		# 把 MODE_KEYS 的值存为 25/50 配置
+		for key in MODE_KEYS:
+			if config.has(key):
+				_mode_configs["25/50"][key] = _deep_duplicate(config[key])
+		# 5/10, 1/2, 1/2/5 用默认值
+		_mode_configs["5/10"] = _make_mode_defaults()
+		_mode_configs["1/2"] = _make_mode_defaults()
+		_mode_configs["1/2/5"] = _make_mode_defaults()
+
+	_apply_mode_to_config()
 	_emit_changed.call()
 
 
@@ -182,3 +193,129 @@ func reset_layout() -> void:
 func set_scale(key: String, value: float) -> void:
 	config[key] = value
 	_emit_changed.call()
+
+
+# --- Internal helpers ---
+
+## 构建全局默认配置（不含 MODE_KEYS）
+func _make_global_defaults() -> Dictionary:
+	return {
+		"seats": TableLayout.DEFAULT_SEATS_PCT.duplicate(),
+		"chairs": TableLayout.DEFAULT_CHAIRS_PCT.duplicate(),
+		"stacks": TableLayout.DEFAULT_STACKS_PCT.duplicate(),
+		"dealer_buttons": TableLayout.DEFAULT_DEALER_BUTTONS_PCT.duplicate(),
+		"muck": TableLayout.DEFAULT_MUCK_PCT,
+		"community_cards": TableLayout.DEFAULT_COMMUNITY_CARDS_PCT,
+		"avatar_scale": 2.45,
+		"avatar_per_seat_scale": [1.2, 1.3, 1.2, 0.9, 1.45, 1.25, 1.2, 1.3, 1.05],
+		"avatar_rotation": [59.0, -130.0, -52.0, 153.0, 0.0, -44.0, 76.0, 135.0, 179.0],
+		"chair_scale": 1.35,
+		"chair_rotation": [175.0, -133.0, -39.0, 0.0, 0.0, 0.0, 23.0, 136.0, 177.0],
+		"dealer_button_scale": 2.0,
+		"community_card_scale": 1.4,
+		"muck_card_scale": 1.0,
+		"bet_label_scale": 1.65,
+		"stack_label_scale": 1.2,
+		"pot_display_scale": 2.65,
+		"pitch_hand": TableLayout.DEFAULT_PITCH_HAND_PCT,
+		"pitch_hand_scale": 1.0,
+		"pitch_hand_rotation": 0.0,
+		"hole_card_rotation": TableLayout.DEFAULT_HOLE_CARD_ROTATION.duplicate(),
+		"action_boxes": TableLayout.DEFAULT_ACTION_BOXES_PCT.duplicate(),
+		"action_box_scale": 0.65,
+		"answer_boxes": TableLayout.DEFAULT_ANSWER_BOXES_PCT.duplicate(),
+		"answer_box_scale": 1.15,
+		"street_badge": TableLayout.DEFAULT_STREET_BADGE_PCT,
+		"street_badge_scale": 2.65,
+		"display_mode": "numbers",
+	}
+
+
+## 构建模式相关的默认配置
+func _make_mode_defaults() -> Dictionary:
+	return {
+		"cards": TableLayout.DEFAULT_CARDS_PCT.duplicate(),
+		"bets": TableLayout.DEFAULT_BETS_PCT.duplicate(),
+		"purple_stacks": TableLayout._make_color_stack_defaults(0),
+		"black_stacks": TableLayout._make_color_stack_defaults(1),
+		"green_stacks": TableLayout._make_color_stack_defaults(2),
+		"red_stacks_1": TableLayout._make_color_stack_defaults(3),
+		"red_stacks_2": TableLayout._make_color_stack_defaults(4),
+		"red_stacks_3": TableLayout._make_color_stack_defaults(5),
+		"ordered_bet_chips": TableLayout.DEFAULT_ORDERED_BET_CHIPS_PCT.duplicate(),
+		"pot": TableLayout.DEFAULT_POT_PCT,
+		"chip_record": TableLayout.DEFAULT_CHIP_RECORD_PCT,
+		"hole_card_scale": 1.3,
+		"hole_card_gap": 0.25,
+		"player_chip_scale": 1.4,
+		"bet_chip_scale": 1.7,
+		"bet_chip_spread": 1.6,
+		"pot_chip_scale": 0.95,
+		"chip_record_scale": 0.85,
+		"ordered_bet_chip_scale": 1.05,
+		"ordered_chip_v_gap": 6.0,
+	}
+
+
+## 从 config 中提取 MODE_KEYS 的值保存到 _mode_configs[_current_mode]
+func _save_mode_from_config() -> void:
+	if not _mode_configs.has(_current_mode):
+		_mode_configs[_current_mode] = {}
+	for key in MODE_KEYS:
+		if config.has(key):
+			_mode_configs[_current_mode][key] = _deep_duplicate(config[key])
+
+
+## 从 _mode_configs[_current_mode] 中取出值写入 config
+func _apply_mode_to_config() -> void:
+	if not _mode_configs.has(_current_mode):
+		_mode_configs[_current_mode] = _make_mode_defaults()
+	var mc: Dictionary = _mode_configs[_current_mode]
+	for key in MODE_KEYS:
+		if mc.has(key):
+			config[key] = _deep_duplicate(mc[key])
+
+
+## 深拷贝值（Array 和 Vector2 需要拷贝，float/int/String 不需要）
+func _deep_duplicate(val) -> Variant:
+	if val is Array:
+		var arr: Array = []
+		for v in val:
+			arr.append(v)  # Vector2 和 float 都是值类型，直接 append 即可
+		return arr
+	return val
+
+
+## 序列化单个值用于 JSON 导出
+func _serialize_value(val) -> Variant:
+	if val is Array:
+		var arr := []
+		for v in val:
+			if v is Vector2:
+				arr.append({"x": snapped(v.x, 0.01), "y": snapped(v.y, 0.01)})
+			else:
+				arr.append(v)
+		return arr
+	elif val is Vector2:
+		return {"x": snapped(val.x, 0.01), "y": snapped(val.y, 0.01)}
+	return val
+
+
+## 反序列化单个值用于 JSON 导入
+func _deserialize_value(key: String, val) -> Variant:
+	if val is Array:
+		var arr: Array = []
+		for item in val:
+			if item is Dictionary and item.has("x") and item.has("y"):
+				arr.append(Vector2(item["x"], item["y"]))
+			else:
+				arr.append(item)
+		return arr
+	elif val is Dictionary and val.has("x") and val.has("y"):
+		return Vector2(val["x"], val["y"])
+	elif key in ["hole_card_rotation", "avatar_rotation", "chair_rotation"] and (val is float or val is int):
+		var arr: Array = []
+		for _i in range(9):
+			arr.append(val)
+		return arr
+	return val
