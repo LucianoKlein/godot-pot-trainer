@@ -22,9 +22,12 @@ func connect_signals() -> void:
 	FirebaseAuth.signup_failed.connect(_on_signup_fail)
 	FirebaseAuth.logout_completed.connect(func() -> void: login_status_changed.emit())
 	FirebaseAuth.services_loaded.connect(func() -> void: login_status_changed.emit())
-	GoogleSignInMobile.google_signin_completed.connect(_on_google_signin_completed)
-	GoogleSignInMobile.google_signin_failed.connect(_on_google_signin_failed)
-	GoogleSignInMobile.google_signin_cancelled.connect(_on_google_signin_cancelled)
+	GoogleSignIn.sign_in_success.connect(_on_google_sign_in_success)
+	GoogleSignIn.sign_in_failed.connect(_on_google_sign_in_failed)
+	GoogleSignIn.sign_in_cancelled.connect(_on_google_sign_in_cancelled)
+	AppleSignIn.sign_in_success.connect(_on_apple_sign_in_success)
+	AppleSignIn.sign_in_failed.connect(_on_apple_sign_in_failed)
+	AppleSignIn.sign_in_cancelled.connect(_on_apple_sign_in_cancelled)
 
 
 func submit(email: String, password: String, is_register: bool) -> void:
@@ -36,13 +39,11 @@ func submit(email: String, password: String, is_register: bool) -> void:
 
 func apply_debug_login(email: String) -> void:
 	var far_future := Time.get_unix_time_from_system() + 365.0 * 24.0 * 3600.0
-	FirebaseAuth.user_info = {
-		"email": email,
-		"localId": "debug_user_001",
-		"idToken": "debug_token",
-		"refreshToken": "debug_refresh",
-		"expiresAt": far_future,
-	}
+	FirebaseAuth.user_email = email
+	FirebaseAuth.user_id = "debug_user_001"
+	FirebaseAuth.id_token = "debug_token"
+	FirebaseAuth.refresh_token = "debug_refresh"
+	FirebaseAuth._token_expires_at = far_future
 	FirebaseAuth.is_logged_in = true
 	play_sfx_requested.emit("res://assets/music/sounds_effect/right.ogg")
 	_hide_callback.call()
@@ -50,10 +51,17 @@ func apply_debug_login(email: String) -> void:
 
 
 func start_google_login() -> void:
-	if OS.get_name() == "Android":
-		GoogleSignInMobile.start_signin()
+	if GoogleSignIn.is_available():
+		GoogleSignIn.sign_in()
 	else:
-		login_error.emit(Locale.tr_key("err_google_android_only"))
+		login_error.emit(Locale.tr_key("err_google_failed"))
+
+
+func start_apple_login() -> void:
+	if AppleSignIn.is_available():
+		AppleSignIn.sign_in()
+	else:
+		login_error.emit(Locale.tr_key("err_apple_failed"))
 
 
 func translate_error(code: String) -> String:
@@ -87,13 +95,25 @@ func _on_signup_fail(error_msg: String) -> void:
 	login_error.emit(translate_error(error_msg))
 
 
-func _on_google_signin_completed(id_token: String, email: String) -> void:
-	FirebaseAuth.login_with_google(id_token, email)
+func _on_google_sign_in_success(id_token: String) -> void:
+	FirebaseAuth.login_google(id_token)
 
 
-func _on_google_signin_failed(error: String) -> void:
-	login_error.emit(Locale.tr_key("err_google_failed") + error)
+func _on_google_sign_in_failed(error_msg: String) -> void:
+	login_error.emit(Locale.tr_key("err_google_failed") + error_msg)
 
 
-func _on_google_signin_cancelled() -> void:
+func _on_google_sign_in_cancelled() -> void:
 	login_error.emit(Locale.tr_key("err_google_cancelled"))
+
+
+func _on_apple_sign_in_success(id_token: String) -> void:
+	FirebaseAuth.login_apple(id_token)
+
+
+func _on_apple_sign_in_failed(error_msg: String) -> void:
+	login_error.emit(Locale.tr_key("err_apple_failed") + error_msg)
+
+
+func _on_apple_sign_in_cancelled() -> void:
+	login_error.emit(Locale.tr_key("err_apple_cancelled"))

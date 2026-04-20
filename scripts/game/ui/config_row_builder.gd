@@ -38,13 +38,15 @@ func build(config_row: HBoxContainer) -> void:
 	var blind_labels := {
 		"1_2": "1/2 Pot Limit",
 		"1_5": "1/2/5 Pot Limit(WSOP)",
+		"5_10": "5/10 Pot Limit",
+		"25_50": "25/50 Pot Limit",
 	}
 	for pair in GameManager.POT_BLINDS:
 		var key := "%d_%d" % [pair[0], pair[1]]
 		if blind_labels.has(key):
 			blinds_option.add_item(blind_labels[key])
 		else:
-			blinds_option.add_item("%d/%d" % [pair[0], pair[1]])
+			blinds_option.add_item("%d/%d Pot Limit" % [pair[0], pair[1]])
 	blinds_option.selected = 3  # 默认 25/50（index 3: [1,2],[1,5],[5,10],[25,50],...）
 	blinds_option.item_selected.connect(func(index: int) -> void:
 		var pair: Array = GameManager.POT_BLINDS[index]

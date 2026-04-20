@@ -14,8 +14,13 @@ scripts/
   splash_screen.gd                 — Splash screen with logo bounce animation (137)
   autoload/
     game_manager.gd                — Game state, engine integration, signals (380)
-    firebase_auth.gd               — Firebase authentication service (347)
-    locale.gd                      — Localization EN/ZH (180)
+    firebase_auth.gd               — Firebase authentication service (370)
+    locale.gd                      — Localization EN/ZH (190)
+    google_sign_in.gd              — Google Sign-In wrapper: Native + GDExtension (92)
+    apple_sign_in.gd               — Apple Sign-In wrapper: Native + GDExtension (74)
+    admob_manager.gd               — Google AdMob rewarded ad singleton (140)
+    guest_mode_manager.gd          — Guest mode: ad counter, progress persistence (75)
+    subscription_manager.gd        — RevenueCat subscription: single $12.99/mo plan (170)
   core/
     game_loop_controller.gd        — Game loop, training questions, answer submission (113)
     deck_manager.gd                — Deck build, shuffle, deal, board cards (68)

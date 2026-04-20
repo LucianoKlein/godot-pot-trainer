@@ -27,13 +27,18 @@ config/icon="res://assets/ui/launcher.png"
 GameManager="*res://scripts/autoload/game_manager.gd"
 FirebaseAuth="*res://scripts/autoload/firebase_auth.gd"
 Locale="*res://scripts/autoload/locale.gd"
-GoogleSignInMobile="*res://scripts/autoload/google_signin_mobile.gd"
+GoogleSignIn="*res://scripts/autoload/google_sign_in.gd"
+AppleSignIn="*res://scripts/autoload/apple_sign_in.gd"
 AdMobManager="*res://scripts/autoload/admob_manager.gd"
+GuestModeManager="*res://scripts/autoload/guest_mode_manager.gd"
+SubscriptionManager="*res://scripts/autoload/subscription_manager.gd"
 
 [display]
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
+window/size/mode=3
+window/size/borderless=true
 window/stretch/mode="canvas_items"
 window/handheld/orientation="landscape"
 

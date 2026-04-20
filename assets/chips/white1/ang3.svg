@@ -3,7 +3,7 @@
   <defs>
     <style>
       .white3-cls-1 {
-        fill: #a7aeb5;
+        fill: #d8dde2;
       }
 
       .white3-cls-1, .white3-cls-2, .white3-cls-3, .white3-cls-4, .white3-cls-5, .white3-cls-6, .white3-cls-7, .white3-cls-8, .white3-cls-9, .white3-cls-10 {
@@ -23,7 +23,7 @@
       }
 
       .white3-cls-11, .white3-cls-12, .white3-cls-13, .white3-cls-14, .white3-cls-15, .white3-cls-17, .white3-cls-18, .white3-cls-19 {
-        stroke: #231815;
+        stroke: #8a8f95;
       }
 
       .white3-cls-11, .white3-cls-12, .white3-cls-14, .white3-cls-18 {
@@ -51,7 +51,7 @@
       }
 
       .white3-cls-13, .white3-cls-15, .white3-cls-17, .white3-cls-19 {
-        fill: #1c487b;
+        fill: #c8cdd3;
       }
 
       .white3-cls-6 {
@@ -76,7 +76,7 @@
 
       .white3-cls-16 {
         fill: none;
-        stroke: #b5b6b8;
+        stroke: #e0e2e4;
         stroke-width: .16px;
       }
 

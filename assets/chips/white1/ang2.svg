@@ -4,7 +4,7 @@
     <style>
       .white2-cls-1 {
         fill: none;
-        stroke: #b5b6b8;
+        stroke: #e0e2e4;
         stroke-width: .31px;
       }
 
@@ -21,11 +21,11 @@
       }
 
       .white2-cls-2 {
-        fill: #1c487b;
+        fill: #c8cdd3;
       }
 
       .white2-cls-2, .white2-cls-3, .white2-cls-4, .white2-cls-5, .white2-cls-6, .white2-cls-7, .white2-cls-8 {
-        stroke: #231815;
+        stroke: #8a8f95;
       }
 
       .white2-cls-2, .white2-cls-3, .white2-cls-6, .white2-cls-7, .white2-cls-8 {

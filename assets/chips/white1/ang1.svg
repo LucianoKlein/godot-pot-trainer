@@ -8,7 +8,7 @@
 
       .white1-cls-1, .white1-cls-2 {
         fill: none;
-        stroke: #b5b6b8;
+        stroke: #e0e2e4;
         stroke-width: .31px;
       }
 
@@ -17,7 +17,7 @@
       }
 
       .white1-cls-10 {
-        fill: #a7aeb5;
+        fill: #d8dde2;
       }
 
       .white1-cls-10, .white1-cls-11, .white1-cls-12, .white1-cls-13, .white1-cls-14, .white1-cls-15, .white1-cls-16, .white1-cls-17, .white1-cls-18, .white1-cls-19 {
@@ -25,7 +25,7 @@
       }
 
       .white1-cls-11 {
-        fill: #082b46;
+        fill: #cdd2d7;
       }
 
       .white1-cls-3 {
@@ -33,15 +33,15 @@
       }
 
       .white1-cls-3, .white1-cls-4, .white1-cls-5, .white1-cls-6, .white1-cls-7, .white1-cls-8, .white1-cls-9 {
-        stroke: #231815;
+        stroke: #8a8f95;
       }
 
       .white1-cls-3, .white1-cls-6, .white1-cls-7, .white1-cls-9 {
-        fill: #1c487b;
+        fill: #c8cdd3;
       }
 
       .white1-cls-12 {
-        fill: #052a44;
+        fill: #d0d5da;
       }
 
       .white1-cls-4, .white1-cls-5, .white1-cls-8 {
@@ -53,11 +53,11 @@
       }
 
       .white1-cls-13 {
-        fill: #122e4a;
+        fill: #c2c7cd;
       }
 
       .white1-cls-14 {
-        fill: #0c3259;
+        fill: #c8cdd3;
       }
 
       .white1-cls-5, .white1-cls-7 {
@@ -65,23 +65,23 @@
       }
 
       .white1-cls-15 {
-        fill: #1b3150;
+        fill: #b9bec4;
       }
 
       .white1-cls-16 {
-        fill: #0f2d48;
+        fill: #c5cad0;
       }
 
       .white1-cls-17 {
-        fill: #152f4c;
+        fill: #bfc4ca;
       }
 
       .white1-cls-18 {
-        fill: #18304e;
+        fill: #bcc1c7;
       }
 
       .white1-cls-19 {
-        fill: #0b2c47;
+        fill: #cbd0d5;
       }
 
       .white1-cls-9 {

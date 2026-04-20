@@ -10,10 +10,10 @@ signal signup_failed(error_msg: String)
 signal logout_completed
 signal services_loaded
 
-const API_KEY := "AIzaSyApKIQ66DzjYrs3DxknQLoHJ5r0YnWU7xg"
+const API_KEY := "AIzaSyB4kkW803TKH8EttKiqW-OvIFRgm26pljA"
 const AUTH_BASE := "https://identitytoolkit.googleapis.com/v1/accounts"
 const TOKEN_URL := "https://securetoken.googleapis.com/v1/token"
-const FIRESTORE_BASE := "https://firestore.googleapis.com/v1/projects/reg-training-tool/databases/(default)/documents"
+const FIRESTORE_BASE := "https://firestore.googleapis.com/v1/projects/pot-limit-trainer/databases/(default)/documents"
 
 # Auth state
 var is_logged_in := false
@@ -23,6 +23,8 @@ var id_token := ""
 var refresh_token := ""
 var _token_expires_at := 0.0
 
+# User role from Firestore (e.g. "admin", "user")
+var user_role := ""
 # Service permissions: { "potTrainer": { "expiresAt": unix_seconds }, ... }
 var services: Dictionary = {}
 
@@ -103,6 +105,20 @@ func login_google(google_id_token: String) -> void:
 	_http_login.request(url, headers, HTTPClient.METHOD_POST, body)
 
 
+## Sign in with Apple OAuth id_token
+func login_apple(apple_id_token: String) -> void:
+	_cancel_if_busy(_http_login)
+	var url := AUTH_BASE + ":signInWithIdp?key=" + API_KEY
+	var body := JSON.stringify({
+		"postBody": "id_token=" + apple_id_token + "&providerId=apple.com",
+		"requestUri": "http://localhost",
+		"returnIdpCredential": true,
+		"returnSecureToken": true,
+	})
+	var headers := ["Content-Type: application/json"]
+	_http_login.request(url, headers, HTTPClient.METHOD_POST, body)
+
+
 ## Logout — clear all state
 func logout() -> void:
 	is_logged_in = false
@@ -111,6 +127,7 @@ func logout() -> void:
 	id_token = ""
 	refresh_token = ""
 	_token_expires_at = 0.0
+	user_role = ""
 	services = {}
 	_delete_auth()
 	logout_completed.emit()
@@ -125,8 +142,15 @@ func fetch_services() -> void:
 	_http_services.request(url, headers, HTTPClient.METHOD_GET)
 
 
+## Check if user is admin
+func is_admin() -> bool:
+	return user_role == "admin"
+
+
 ## Check if potTrainer service is active (not expired)
 func has_pot_trainer() -> bool:
+	if is_admin():
+		return true
 	var now := Time.get_unix_time_from_system()
 	if services.has("potTrainer"):
 		var exp = services["potTrainer"].get("expiresAt", 0.0)
@@ -209,7 +233,12 @@ func _on_services_completed(result: int, response_code: int, _headers: PackedStr
 		services_loaded.emit()
 		return
 	services = {}
+	user_role = ""
 	var fields = data.get("fields", {})
+	# Parse role
+	var role_raw = fields.get("role", {})
+	if role_raw.has("stringValue"):
+		user_role = role_raw["stringValue"]
 	var svc_map = fields.get("services", {}).get("mapValue", {}).get("fields", {})
 	for svc_name in svc_map:
 		var svc_fields = svc_map[svc_name].get("mapValue", {}).get("fields", {})
@@ -239,6 +268,7 @@ func _apply_auth_data(data: Dictionary) -> void:
 	var expires_in := float(data.get("expiresIn", "3600"))
 	_token_expires_at = Time.get_unix_time_from_system() + expires_in
 	services = {}
+	user_role = ""
 	_save_auth()
 
 
@@ -287,6 +317,7 @@ func _save_auth() -> void:
 		"id_token": id_token,
 		"refresh_token": refresh_token,
 		"expires_at": _token_expires_at,
+		"role": user_role,
 		"services": services,
 	}))
 	f.close()
@@ -307,6 +338,7 @@ func _load_auth() -> void:
 	id_token = data.get("id_token", "")
 	refresh_token = data.get("refresh_token", "")
 	_token_expires_at = float(data.get("expires_at", 0.0))
+	user_role = data.get("role", "")
 	var saved_services = data.get("services", null)
 	if saved_services is Dictionary:
 		services = saved_services

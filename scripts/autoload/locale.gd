@@ -55,6 +55,11 @@ const TRANSLATIONS := {
 	"err_google_not_available": {"en": "Google Sign-In not available", "zh": "Google 登录不可用"},
 	"err_google_signin_failed": {"en": "Google sign-in failed: ", "zh": "Google 登录失败："},
 	"err_google_signin_cancelled": {"en": "Google sign-in cancelled", "zh": "已取消 Google 登录"},
+	"err_google_failed": {"en": "Google sign-in failed: ", "zh": "Google 登录失败："},
+	"err_google_cancelled": {"en": "Google sign-in cancelled", "zh": "已取消 Google 登录"},
+	"apple_login": {"en": "  Sign in with Apple", "zh": "  使用 Apple 登录"},
+	"err_apple_failed": {"en": "Apple sign-in failed: ", "zh": "Apple 登录失败："},
+	"err_apple_cancelled": {"en": "Apple sign-in cancelled", "zh": "已取消 Apple 登录"},
 
 	# Guest mode
 	"guest_login_required": {"en": "Login required to submit answers", "zh": "需要登录才能提交答案"},
@@ -66,6 +71,16 @@ const TRANSLATIONS := {
 	"ad_can_close": {"en": "You can close now", "zh": "现在可以关闭"},
 	"ad_login_hint": {"en": "Login to remove ads", "zh": "登录即可免广告"},
 	"ad_close": {"en": "Close", "zh": "关闭"},
+	"ad_watch_title": {"en": "Watch Ad to Continue", "zh": "观看广告继续"},
+	"ad_watch_msg": {"en": "You've completed 3 questions!\nWatch an ad to unlock 3 more.", "zh": "你已完成 3 题！\n观看一次广告解锁 3 题。"},
+	"ad_watch_btn": {"en": "▶ Watch Ad (15-20s)", "zh": "▶ 观看广告 (15-20秒)"},
+	"ad_debug_skip": {"en": "[DEBUG] Skip Ad", "zh": "[测试] 跳过广告"},
+	"ad_loading": {"en": "Loading ad...", "zh": "广告加载中..."},
+	"ad_unavailable": {"en": "Ad not available.\nPlease try again later.", "zh": "广告暂不可用。\n请稍后再试。"},
+	"ad_reward_title": {"en": "✓ Reward Unlocked!", "zh": "✓ 奖励已解锁！"},
+	"ad_reward_msg": {"en": "You've unlocked 3 more questions!\nKeep playing.", "zh": "已解锁 3 题！\n继续答题吧。"},
+	"continue_btn": {"en": "Continue", "zh": "继续"},
+	"ok": {"en": "OK", "zh": "确定"},
 
 	# === Game Table ===
 	"question_text": {"en": "What is the pot-limit max raise?", "zh": "底池限注最大加注是多少？"},

@@ -3,7 +3,7 @@
   <defs>
     <style>
       .white4-cls-1 {
-        fill: #a7aeb5;
+        fill: #d8dde2;
       }
 
       .white4-cls-1, .white4-cls-2, .white4-cls-3, .white4-cls-4, .white4-cls-5, .white4-cls-6, .white4-cls-7, .white4-cls-8, .white4-cls-9 {
@@ -27,7 +27,7 @@
       }
 
       .white4-cls-10, .white4-cls-11, .white4-cls-12, .white4-cls-14, .white4-cls-15, .white4-cls-16, .white4-cls-17 {
-        stroke: #231815;
+        stroke: #8a8f95;
       }
 
       .white4-cls-10, .white4-cls-14, .white4-cls-15 {
@@ -39,7 +39,7 @@
       }
 
       .white4-cls-11, .white4-cls-12, .white4-cls-16, .white4-cls-17 {
-        fill: #1c487b;
+        fill: #c8cdd3;
       }
 
       .white4-cls-4 {
@@ -59,7 +59,7 @@
       }
 
       .white4-cls-13 {
-        stroke: #b5b6b8;
+        stroke: #e0e2e4;
         stroke-width: .31px;
       }
 

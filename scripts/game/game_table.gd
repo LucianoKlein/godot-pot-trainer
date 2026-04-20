@@ -1,5 +1,8 @@
 extends Control
 
+func _t(en: String, zh: String) -> String:
+	return zh if GameManager.language == "zh" else en
+
 const CardDisplayScene := preload("res://scenes/game/components/card_display.tscn")
 const LayoutEditorScript := preload("res://scripts/game/layout_editor.gd")
 const SeatManagerScript := preload("res://scripts/ui/managers/seat_manager.gd")
@@ -10,7 +13,7 @@ const ControlPanelManagerScript := preload("res://scripts/game/ui/control_panel_
 const QuestionPanelManagerScript := preload("res://scripts/game/ui/question_panel_manager.gd")
 const GameOverManagerScript := preload("res://scripts/game/ui/game_over_manager.gd")
 const ActionBoxManagerScript := preload("res://scripts/game/ui/action_box_manager.gd")
-const AdOverlayManagerScript := preload("res://scripts/game/ui/ad_overlay_manager.gd")
+const AdDialogManagerScript := preload("res://scripts/game/ui/ad_dialog_manager.gd")
 
 # --- Node references ---
 var _bg: TextureRect
@@ -27,7 +30,7 @@ var _layout_editor: RefCounted
 var _question_mgr: RefCounted
 var _game_over_mgr: RefCounted
 var _action_box_mgr: RefCounted
-var _ad_mgr: RefCounted
+var _ad_dialog_mgr: RefCounted
 
 
 func _ready() -> void:
@@ -75,8 +78,7 @@ func _ready() -> void:
 	_layout_editor.build()
 	_game_over_mgr = GameOverManagerScript.new().setup(self)
 	_action_box_mgr = ActionBoxManagerScript.new().setup(self, seats)
-	_ad_mgr = AdOverlayManagerScript.new().setup(self)
-	_ad_mgr.build()
+	_ad_dialog_mgr = AdDialogManagerScript.new(self)
 	_connect_signals()
 	GameManager.load_layout_from_file()
 	# Apply persisted display_mode to UI after layout load
@@ -87,8 +89,6 @@ func _ready() -> void:
 		_layout_editor.toggle()
 
 
-func _process(delta: float) -> void:
-	_ad_mgr.process(delta)
 
 
 func _build_table_overlay() -> void:
@@ -151,7 +151,11 @@ func _connect_signals() -> void:
 	GameManager.display_mode_changed.connect(_on_display_mode_changed)
 	GameManager.hole_cards_changed.connect(_on_hole_cards_changed)
 	GameManager.npc_acted.connect(_on_npc_acted)
-	GameManager.show_ad_requested.connect(_on_show_ad_requested)
+	GuestModeManager.guest_ad_required.connect(_on_guest_ad_required)
+	AdMobManager.rewarded_ad_completed.connect(_on_ad_completed)
+	AdMobManager.rewarded_ad_closed.connect(_on_ad_closed)
+	AdMobManager.rewarded_ad_loaded.connect(_on_ad_loaded)
+	AdMobManager.rewarded_ad_failed_to_load.connect(_on_ad_failed_to_load)
 
 
 # =============================================================================
@@ -233,8 +237,210 @@ func _on_npc_acted(seat: int, _action: String, _amount: int) -> void:
 		var physical_seat: int = GameManager.get_physical_seat(seat)
 		_action_box_mgr.auto_hide(physical_seat)
 
-func _on_show_ad_requested() -> void:
-	_ad_mgr.show_ad()
+
+# =============================================================================
+# Guest Mode Ad System
+# =============================================================================
+
+func _on_guest_ad_required() -> void:
+	"""3 题完成，两道门：套餐→广告循环（不强制登录）"""
+	if GuestModeManager.is_subscribed():
+		return
+	_show_gate_subscribe()
+
+
+func _show_gate_subscribe() -> void:
+	_show_subscribe_popup(func() -> void:
+		# 关闭套餐 → 广告
+		_show_gate_ad()
+	)
+
+
+func _show_gate_ad() -> void:
+	_ad_dialog_mgr.show_ad_dialog(func() -> void:
+		# 关闭广告 → 回到套餐
+		_show_gate_subscribe()
+	)
+
+
+func _on_ad_completed() -> void:
+	_ad_dialog_mgr.on_ad_completed()
+
+
+func _on_ad_closed() -> void:
+	_ad_dialog_mgr.on_ad_closed()
+
+
+func _on_ad_loaded() -> void:
+	_ad_dialog_mgr.on_ad_loaded()
+
+
+func _on_ad_failed_to_load(error: String) -> void:
+	_ad_dialog_mgr.on_ad_failed_to_load(error)
+
+
+# =============================================================================
+# Guest Subscribe Popup (广告弹窗关闭时触发)
+# =============================================================================
+
+func _show_subscribe_popup(dismiss_callback: Callable = Callable()) -> void:
+	var overlay := Control.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.z_index = 500
+
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.0, 0.0, 0.0, 0.75)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(dim)
+
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(center)
+
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(550, 0)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.08, 0.08, 0.10, 0.97)
+	panel_style.border_color = Color(0.90, 0.72, 0.28)
+	panel_style.set_border_width_all(2)
+	panel_style.set_corner_radius_all(12)
+	panel_style.set_content_margin_all(28)
+	panel.add_theme_stylebox_override("panel", panel_style)
+	center.add_child(panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 16)
+	panel.add_child(vbox)
+
+	# X 关闭按钮
+	var close_row := HBoxContainer.new()
+	close_row.alignment = BoxContainer.ALIGNMENT_END
+	vbox.add_child(close_row)
+	var close_btn := Button.new()
+	close_btn.text = "✕"
+	close_btn.flat = true
+	close_btn.custom_minimum_size = Vector2(40, 40)
+	close_btn.add_theme_font_size_override("font_size", 28)
+	close_btn.add_theme_color_override("font_color", Color(0.70, 0.60, 0.35))
+	close_btn.add_theme_color_override("font_hover_color", Color(0.95, 0.85, 0.55))
+	close_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	close_btn.pressed.connect(func() -> void:
+		_play_sfx("res://assets/music/sounds_effect/button.ogg")
+		overlay.queue_free()
+		if dismiss_callback.is_valid():
+			dismiss_callback.call()
+	)
+	close_row.add_child(close_btn)
+
+	# Title
+	var title := Label.new()
+	title.text = _t("Unlock Full Access", "解锁完整功能")
+	title.add_theme_font_size_override("font_size", 30)
+	title.add_theme_color_override("font_color", Color(0.95, 0.85, 0.55))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var msg := Label.new()
+	msg.text = _t("Subscribe to unlock unlimited practice\nwith no ads.", "订阅解锁无限练习，无广告。")
+	msg.add_theme_font_size_override("font_size", 20)
+	msg.add_theme_color_override("font_color", Color(0.75, 0.65, 0.45))
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(msg)
+
+	# 单套餐卡片
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(0, 0)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var card_style := StyleBoxFlat.new()
+	card_style.bg_color = Color(0.12, 0.12, 0.15, 0.95)
+	card_style.border_color = Color(0.90, 0.72, 0.28)
+	card_style.set_border_width_all(2)
+	card_style.set_corner_radius_all(10)
+	card_style.set_content_margin_all(20)
+	card.add_theme_stylebox_override("panel", card_style)
+	vbox.add_child(card)
+
+	var card_vbox := VBoxContainer.new()
+	card_vbox.add_theme_constant_override("separation", 12)
+	card.add_child(card_vbox)
+
+	# 套餐名
+	var name_lbl := Label.new()
+	name_lbl.text = _t("Pot Trainer Pro", "Pot Trainer 专业版")
+	name_lbl.add_theme_font_size_override("font_size", 26)
+	name_lbl.add_theme_color_override("font_color", Color(0.90, 0.72, 0.28))
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	card_vbox.add_child(name_lbl)
+
+	# 价格
+	var price_lbl := Label.new()
+	price_lbl.text = "$12.99" + _t("/mo", "/月")
+	price_lbl.add_theme_font_size_override("font_size", 32)
+	price_lbl.add_theme_color_override("font_color", Color(0.95, 0.90, 0.80))
+	price_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	card_vbox.add_child(price_lbl)
+
+	# 功能描述
+	var features_lbl := Label.new()
+	features_lbl.text = _t("✓ Unlimited practice\n✓ No ads\n✓ All training modes", "✓ 无限练习\n✓ 无广告\n✓ 全部训练模式")
+	features_lbl.add_theme_font_size_override("font_size", 18)
+	features_lbl.add_theme_color_override("font_color", Color(0.70, 0.65, 0.55))
+	features_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	features_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	card_vbox.add_child(features_lbl)
+
+	# 购买按钮
+	var buy_btn := Button.new()
+	buy_btn.text = _t("Subscribe", "订阅")
+	buy_btn.custom_minimum_size = Vector2(0, 50)
+	buy_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	buy_btn.add_theme_font_size_override("font_size", 22)
+	buy_btn.add_theme_color_override("font_color", Color(0.06, 0.05, 0.03))
+	var buy_style := StyleBoxFlat.new()
+	buy_style.bg_color = Color(0.90, 0.72, 0.28)
+	buy_style.set_corner_radius_all(6)
+	buy_style.set_content_margin_all(10)
+	buy_btn.add_theme_stylebox_override("normal", buy_style)
+	var buy_hover := StyleBoxFlat.new()
+	buy_hover.bg_color = Color(0.90, 0.72, 0.28).lightened(0.2)
+	buy_hover.set_corner_radius_all(6)
+	buy_hover.set_content_margin_all(10)
+	buy_btn.add_theme_stylebox_override("hover", buy_hover)
+	buy_btn.add_theme_stylebox_override("pressed", buy_hover)
+	buy_btn.pressed.connect(func() -> void:
+		_play_sfx("res://assets/music/sounds_effect/button.ogg")
+		overlay.queue_free()
+		SubscriptionManager.purchase()
+	)
+	card_vbox.add_child(buy_btn)
+
+	# 底部登录提示
+	var login_row := HBoxContainer.new()
+	login_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(login_row)
+	var login_hint := Label.new()
+	login_hint.text = _t("Already have an account?", "已有账号？")
+	login_hint.add_theme_font_size_override("font_size", 18)
+	login_hint.add_theme_color_override("font_color", Color(0.60, 0.55, 0.45))
+	login_row.add_child(login_hint)
+	var login_link := Button.new()
+	login_link.text = _t(" Login", " 登录")
+	login_link.flat = true
+	login_link.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	login_link.add_theme_font_size_override("font_size", 18)
+	login_link.add_theme_color_override("font_color", Color(0.55, 0.75, 1.0))
+	login_link.add_theme_color_override("font_hover_color", Color(0.70, 0.85, 1.0))
+	login_link.pressed.connect(func() -> void:
+		_play_sfx("res://assets/music/sounds_effect/button.ogg")
+		overlay.queue_free()
+		get_tree().root.get_node("Main").switch_scene("res://scenes/main_menu/main_menu.tscn")
+	)
+	login_row.add_child(login_link)
+
+	add_child(overlay)
 
 
 # =============================================================================

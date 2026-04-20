@@ -101,7 +101,6 @@ func toggle() -> void:
 		_enable_drag()
 		show_preview()
 		_visibility_manager.select_all()
-		_visibility_manager.apply_display_mode(_panel_ui.get_display_mode())
 		_parent.gui_input.connect(_on_parent_input)
 	else:
 		GameManager.save_layout_to_file()

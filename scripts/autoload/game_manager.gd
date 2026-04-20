@@ -1,6 +1,5 @@
 extends Node
 
-const AdCounterScript := preload("res://scripts/features/ads/ad_counter.gd")
 const GameLoopControllerScript := preload("res://scripts/core/game_loop_controller.gd")
 const DeckManagerScript := preload("res://scripts/core/deck_manager.gd")
 
@@ -17,7 +16,7 @@ const STREET_NAMES := {
 }
 
 const POT_BLINDS := [
-	[1, 2], [1, 5], [5, 10], [25, 50], [50, 100], [100, 200], [200, 400], [500, 1000],
+	[1, 2], [1, 5], [5, 10], [25, 50],
 ]
 
 # --- Signals ---
@@ -40,7 +39,6 @@ signal hand_started()
 signal display_mode_changed(mode: String)
 signal hole_cards_changed()
 signal language_changed()
-signal show_ad_requested()  # emitted when guest needs to watch ad
 
 # --- State ---
 var current_state: State = State.MENU
@@ -79,7 +77,6 @@ var pending_layout_mode: bool = false
 var display_mode: String = "chips"  # "numbers" or "chips"
 var blinds_mode: String = "25/50"  # "25/50" / "5/10" / "1/2" / "1/2/5"
 var is_guest_mode: bool = false  # true if playing as guest
-var _ad_counter: AdCounter  # guest mode ad counter
 var _loop: GameLoopController  # game loop controller
 var _deck_mgr: DeckManager  # deck manager
 
@@ -90,8 +87,6 @@ var seat_map: Array[int] = []
 
 func _ready() -> void:
 	_layout_mgr = LayoutConfigManager.new().setup(layout_changed.emit)
-	_ad_counter = AdCounterScript.new()
-	_ad_counter.ad_requested.connect(func() -> void: show_ad_requested.emit())
 	_loop = GameLoopControllerScript.new().setup(self)
 	_deck_mgr = DeckManagerScript.new()
 
@@ -372,9 +367,8 @@ func set_per_seat_value(key: String, seat: int, value: float) -> void:
 # --- Guest mode ad counter ---
 
 func increment_guest_answer_count() -> void:
-	if is_guest_mode:
-		_ad_counter.increment()
+	GuestModeManager.increment_guest_question()
 
 
 func reset_guest_answer_count() -> void:
-	_ad_counter.reset()
+	pass  # GuestModeManager handles its own state

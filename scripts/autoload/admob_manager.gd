@@ -1,22 +1,16 @@
 extends Node
-## AdMobManager — Google AdMob 插屏广告管理单例
+## AdMobManager — Google AdMob 激励广告管理单例
 
-signal ad_loaded()
-signal ad_failed_to_load(error_message: String)
-signal ad_opened()
-signal ad_closed()
-signal ad_failed_to_show(error_message: String)
+signal rewarded_ad_loaded()
+signal rewarded_ad_failed_to_load(error_message: String)
+signal rewarded_ad_opened()
+signal rewarded_ad_closed()
+signal rewarded_ad_completed()  # 用户看完广告，发放奖励
+signal rewarded_ad_failed_to_show(error_message: String)
 
-# 测试广告 ID（开发阶段使用，不会产生真实收益）
-const TEST_APP_ID := "ca-app-pub-3940256099942544~3347511713"  # AdMob 官方测试 App ID
-const TEST_AD_UNIT_ID := "ca-app-pub-3940256099942544/1033173712"  # AdMob 官方测试插屏广告 ID
-
-# 正式广告 ID（上架后替换为你在 AdMob 后台创建的 ID）
-const PROD_APP_ID := "ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY"  # TODO: 替换为正式 App ID
-const PROD_AD_UNIT_ID := "ca-app-pub-XXXXXXXXXXXXXXXX/ZZZZZZZZZZ"  # TODO: 替换为正式广告单元 ID
-
-# 是否使用测试广告（上架前设为 false）
-var use_test_ads: bool = true
+# AdMob IDs — TODO: 替换为正式 ID
+const ANDROID_REWARDED_AD_UNIT_ID := "ca-app-pub-3940256099942544/5224354917"  # 测试 rewarded ad ID
+const IOS_REWARDED_AD_UNIT_ID := "ca-app-pub-3940256099942544/1712485313"  # 测试 rewarded ad ID
 
 var _admob_plugin: Object = null
 var _is_initialized: bool = false
@@ -25,106 +19,136 @@ var _is_showing: bool = false
 
 
 func _ready() -> void:
-	_initialize_admob()
-
-
-func _initialize_admob() -> void:
-	# 检查 AdMob 插件是否存在
-	if Engine.has_singleton("AdMob"):
-		_admob_plugin = Engine.get_singleton("AdMob")
-		print("[AdMob] Plugin found, initializing...")
-
-		# 连接插件信号
-		_admob_plugin.interstitial_loaded.connect(_on_interstitial_loaded)
-		_admob_plugin.interstitial_failed_to_load.connect(_on_interstitial_failed_to_load)
-		_admob_plugin.interstitial_opened.connect(_on_interstitial_opened)
-		_admob_plugin.interstitial_closed.connect(_on_interstitial_closed)
-		_admob_plugin.interstitial_failed_to_show.connect(_on_interstitial_failed_to_show)
-
-		# 初始化 AdMob
-		var app_id := TEST_APP_ID if use_test_ads else PROD_APP_ID
-		_admob_plugin.initialize(app_id)
-		_is_initialized = true
-		print("[AdMob] Initialized with App ID: ", app_id)
-
-		# 预加载第一个广告
-		load_interstitial()
+	if OS.get_name() == "Android":
+		_init_android()
+	elif OS.get_name() == "iOS":
+		_init_ios()
 	else:
-		print("[AdMob] Plugin not found. Ads will not be shown.")
-		print("[AdMob] Make sure the AdMob plugin is installed and enabled in Project Settings.")
+		print("[AdMob] AdMob not available on this platform")
 
 
-func load_interstitial() -> void:
-	if not _is_initialized or _admob_plugin == null:
-		print("[AdMob] Cannot load ad: plugin not initialized")
-		ad_failed_to_load.emit("Plugin not initialized")
+func _init_android() -> void:
+	if Engine.has_singleton("GodotAdMob"):
+		_admob_plugin = Engine.get_singleton("GodotAdMob")
+		_admob_plugin.initialize()
+		_is_initialized = true
+		print("[AdMob] Initialized (Android)")
+		_connect_signals()
+		# 延迟预加载第一个广告
+		await get_tree().create_timer(2.0).timeout
+		load_rewarded_ad()
+	else:
+		print("[AdMob] GodotAdMob plugin not found")
+
+
+func _init_ios() -> void:
+	if Engine.has_singleton("GodotAdMob"):
+		_admob_plugin = Engine.get_singleton("GodotAdMob")
+		_admob_plugin.initialize()
+		_is_initialized = true
+		print("[AdMob] Initialized (iOS)")
+		_connect_signals()
+		await get_tree().create_timer(2.0).timeout
+		load_rewarded_ad()
+	else:
+		print("[AdMob] GodotAdMob plugin not found")
+
+
+func _connect_signals() -> void:
+	if not _admob_plugin:
 		return
+	if _admob_plugin.has_signal("rewarded_ad_loaded"):
+		_admob_plugin.rewarded_ad_loaded.connect(_on_rewarded_ad_loaded)
+	if _admob_plugin.has_signal("rewarded_ad_failed_to_load"):
+		_admob_plugin.rewarded_ad_failed_to_load.connect(_on_rewarded_ad_failed_to_load)
+	if _admob_plugin.has_signal("rewarded_ad_opened"):
+		_admob_plugin.rewarded_ad_opened.connect(_on_rewarded_ad_opened)
+	if _admob_plugin.has_signal("rewarded_ad_closed"):
+		_admob_plugin.rewarded_ad_closed.connect(_on_rewarded_ad_closed)
+	if _admob_plugin.has_signal("user_earned_reward"):
+		_admob_plugin.user_earned_reward.connect(_on_user_earned_reward)
+	if _admob_plugin.has_signal("rewarded_ad_failed_to_show"):
+		_admob_plugin.rewarded_ad_failed_to_show.connect(_on_rewarded_ad_failed_to_show)
 
-	if _is_ad_loaded:
-		print("[AdMob] Ad already loaded, skipping")
+
+## Check if AdMob is available
+func is_available() -> bool:
+	return _admob_plugin != null
+
+
+## Load a rewarded ad
+func load_rewarded_ad() -> void:
+	if not _admob_plugin:
+		rewarded_ad_failed_to_load.emit("AdMob not available")
 		return
+	var ad_unit_id := ANDROID_REWARDED_AD_UNIT_ID if OS.get_name() == "Android" else IOS_REWARDED_AD_UNIT_ID
+	print("[AdMob] Loading rewarded ad: ", ad_unit_id)
+	if _admob_plugin.has_method("load_rewarded_ad"):
+		_admob_plugin.load_rewarded_ad(ad_unit_id)
+	else:
+		rewarded_ad_failed_to_load.emit("Method not found")
 
-	var ad_unit_id := TEST_AD_UNIT_ID if use_test_ads else PROD_AD_UNIT_ID
-	print("[AdMob] Loading interstitial ad: ", ad_unit_id)
-	_admob_plugin.load_interstitial(ad_unit_id)
 
-
-func show_interstitial() -> void:
-	if not _is_initialized or _admob_plugin == null:
-		print("[AdMob] Cannot show ad: plugin not initialized")
-		ad_failed_to_show.emit("Plugin not initialized")
+## Show the loaded rewarded ad
+func show_rewarded_ad() -> void:
+	if not _admob_plugin:
+		rewarded_ad_failed_to_show.emit("AdMob not available")
 		return
-
 	if not _is_ad_loaded:
-		print("[AdMob] Cannot show ad: ad not loaded yet")
-		ad_failed_to_show.emit("Ad not loaded")
+		rewarded_ad_failed_to_show.emit("Ad not loaded")
 		return
-
 	if _is_showing:
-		print("[AdMob] Ad already showing, skipping")
 		return
+	print("[AdMob] Showing rewarded ad")
+	if _admob_plugin.has_method("show_rewarded_ad"):
+		_admob_plugin.show_rewarded_ad()
+		_is_showing = true
+	else:
+		rewarded_ad_failed_to_show.emit("Method not found")
 
-	print("[AdMob] Showing interstitial ad")
-	_admob_plugin.show_interstitial()
 
-
+## Check if ad is ready to show
 func is_ad_ready() -> bool:
-	return _is_initialized and _is_ad_loaded and not _is_showing
+	return _is_ad_loaded and not _is_showing
 
 
-# --- AdMob 插件回调 ---
+# --- AdMob signal handlers ---
 
-func _on_interstitial_loaded() -> void:
-	print("[AdMob] Interstitial ad loaded successfully")
+func _on_rewarded_ad_loaded() -> void:
+	print("[AdMob] Rewarded ad loaded")
 	_is_ad_loaded = true
-	ad_loaded.emit()
+	rewarded_ad_loaded.emit()
 
 
-func _on_interstitial_failed_to_load(error_code: int, error_message: String) -> void:
-	print("[AdMob] Failed to load interstitial ad: ", error_message, " (code: ", error_code, ")")
+func _on_rewarded_ad_failed_to_load(error_code: int, error_msg: String) -> void:
+	print("[AdMob] Rewarded ad failed to load: ", error_code, " - ", error_msg)
 	_is_ad_loaded = false
-	ad_failed_to_load.emit(error_message)
+	rewarded_ad_failed_to_load.emit(error_msg)
 
 
-func _on_interstitial_opened() -> void:
-	print("[AdMob] Interstitial ad opened")
-	_is_showing = true
-	ad_opened.emit()
+func _on_rewarded_ad_opened() -> void:
+	print("[AdMob] Rewarded ad opened")
+	rewarded_ad_opened.emit()
 
 
-func _on_interstitial_closed() -> void:
-	print("[AdMob] Interstitial ad closed")
+func _on_rewarded_ad_closed() -> void:
+	print("[AdMob] Rewarded ad closed")
+	_is_ad_loaded = false
 	_is_showing = false
-	_is_ad_loaded = false
-	ad_closed.emit()
+	rewarded_ad_closed.emit()
 	# 预加载下一个广告
-	load_interstitial()
+	load_rewarded_ad()
 
 
-func _on_interstitial_failed_to_show(error_message: String) -> void:
-	print("[AdMob] Failed to show interstitial ad: ", error_message)
-	_is_showing = false
+func _on_user_earned_reward(reward_type: String, reward_amount: int) -> void:
+	print("[AdMob] User earned reward: ", reward_type, " x", reward_amount)
+	rewarded_ad_completed.emit()
+
+
+func _on_rewarded_ad_failed_to_show(error_code: int, error_msg: String) -> void:
+	print("[AdMob] Rewarded ad failed to show: ", error_code, " - ", error_msg)
 	_is_ad_loaded = false
-	ad_failed_to_show.emit(error_message)
+	_is_showing = false
+	rewarded_ad_failed_to_show.emit(error_msg)
 	# 尝试重新加载
-	load_interstitial()
+	load_rewarded_ad()

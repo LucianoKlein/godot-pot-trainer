@@ -129,10 +129,18 @@ func show() -> void:
 	vbox.add_child(_login_submit_btn)
 
 	# Google login button
-	var google_btn: Button = _make_entry_btn.call(Locale.tr_key("google_login"), Color(0.08, 0.08, 0.10, 0.82), Color(0.30, 0.50, 0.80))
-	google_btn.custom_minimum_size = Vector2(0, 60)
-	google_btn.pressed.connect(_on_google_login_pressed)
-	vbox.add_child(google_btn)
+	if GoogleSignIn.is_available():
+		var google_btn: Button = _make_entry_btn.call(Locale.tr_key("google_login"), Color(0.08, 0.08, 0.10, 0.82), Color(0.30, 0.50, 0.80))
+		google_btn.custom_minimum_size = Vector2(0, 60)
+		google_btn.pressed.connect(_on_google_login_pressed)
+		vbox.add_child(google_btn)
+
+	# Apple login button (iOS only)
+	if AppleSignIn.is_available():
+		var apple_btn: Button = _make_entry_btn.call(Locale.tr_key("apple_login"), Color(0.08, 0.08, 0.10, 0.82), Color(0.75, 0.75, 0.80))
+		apple_btn.custom_minimum_size = Vector2(0, 60)
+		apple_btn.pressed.connect(_on_apple_login_pressed)
+		vbox.add_child(apple_btn)
 
 	# Toggle login/register
 	_login_toggle_btn = Button.new()
@@ -142,17 +150,6 @@ func show() -> void:
 	_login_toggle_btn.add_theme_color_override("font_color", Color(0.5, 0.7, 1.0))
 	_login_toggle_btn.pressed.connect(_on_toggle_login_register)
 	vbox.add_child(_login_toggle_btn)
-
-	# Guest button
-	var guest_btn: Button = _make_entry_btn.call(Locale.tr_key("guest_play"), Color(0.08, 0.08, 0.10, 0.82), Color(0.50, 0.40, 0.16))
-	guest_btn.custom_minimum_size = Vector2(0, 60)
-	guest_btn.pressed.connect(func() -> void:
-		_play_sfx("res://assets/music/sounds_effect/button.ogg")
-		GameManager.is_guest_mode = true
-		hide()
-		login_status_changed.emit()
-	)
-	vbox.add_child(guest_btn)
 
 	_parent.add_child(_login_panel)
 
@@ -187,6 +184,13 @@ func _on_google_login_pressed() -> void:
 	_login_submit_btn.disabled = true
 	_login_submit_btn.text = Locale.tr_key("please_wait")
 	_auth.start_google_login()
+
+
+func _on_apple_login_pressed() -> void:
+	_login_error_lbl.visible = false
+	_login_submit_btn.disabled = true
+	_login_submit_btn.text = Locale.tr_key("please_wait")
+	_auth.start_apple_login()
 
 
 func connect_firebase_signals() -> void:
@@ -233,11 +237,12 @@ func show_logout_confirm() -> void:
 # Virtual keyboard adaptation
 # =============================================================================
 
-func process(delta: float) -> void:
+func process(_delta: float) -> void:
 	if _login_card == null:
 		return
+	if not (OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios")):
+		return
 	var kb_h: float = DisplayServer.virtual_keyboard_get_height()
-	var screen_h: float = DisplayServer.screen_get_size().y
 	if kb_h > 0:
 		var shift: float = kb_h * 0.5
 		_login_card.offset_top = _login_card_base_offset_top - shift

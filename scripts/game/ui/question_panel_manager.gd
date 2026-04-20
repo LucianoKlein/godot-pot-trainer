@@ -97,16 +97,14 @@ func on_answer_result(correct: bool, user_answer: int, expected: int) -> void:
 	if correct:
 		_question_panel.set_result_text(Locale.tr_key("correct_answer") % expected, Color(0.25, 0.75, 0.40))
 		_feedback_fx.play_correct()
-		GameManager.increment_guest_answer_count()
 	else:
 		_question_panel.set_result_text(Locale.tr_key("wrong_answer") % [user_answer, expected], Color(0.85, 0.30, 0.30))
 		_feedback_fx.play_wrong()
+	# 每次提交都计数（不管对错），由 GuestModeManager 判断是否需要弹广告
+	GameManager.increment_guest_answer_count()
 
 
 func _on_answer_box_submit(answer: int) -> void:
-	if GameManager.is_guest_mode:
-		_show_guest_login_dialog()
-		return
 	var correct: bool = GameManager.submit_answer(answer)
 	if not correct:
 		_question_panel.clear_input()
