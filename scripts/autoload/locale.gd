@@ -29,6 +29,7 @@ const TRANSLATIONS := {
 	"logout": {"en": "Logout", "zh": "登出"},
 	"register": {"en": "Register", "zh": "注册"},
 	"guest_mode": {"en": "Guest Mode", "zh": "游客模式"},
+	"quit": {"en": "Quit", "zh": "退出"},
 	"email": {"en": "Email", "zh": "邮箱"},
 	"password": {"en": "Password", "zh": "密码"},
 	"email_placeholder": {"en": "Enter email", "zh": "请输入邮箱"},
@@ -45,11 +46,16 @@ const TRANSLATIONS := {
 	"err_email_invalid": {"en": "Invalid email format", "zh": "邮箱格式不正确"},
 	"err_password_required": {"en": "Please enter password", "zh": "请输入密码"},
 	"err_password_short": {"en": "Password must be at least 6 characters", "zh": "密码至少6位"},
+	"confirm_password": {"en": "Confirm Password", "zh": "确认密码"},
+	"confirm_password_placeholder": {"en": "Re-enter password", "zh": "请再次输入密码"},
+	"err_password_mismatch": {"en": "Passwords do not match", "zh": "两次密码不一致"},
 	"err_email_not_found": {"en": "Email not found", "zh": "邮箱不存在"},
 	"err_invalid_password": {"en": "Wrong password", "zh": "密码错误"},
 	"err_email_exists": {"en": "Email already registered", "zh": "邮箱已注册"},
 	"err_weak_password": {"en": "Password must be at least 6 characters", "zh": "密码至少6位"},
 	"err_too_many_attempts": {"en": "Too many attempts, try later", "zh": "尝试次数过多，请稍后再试"},
+	"forgot_password": {"en": "Forgot password?", "zh": "忘记密码？"},
+	"password_reset_sent": {"en": "Password reset email sent!", "zh": "密码重置邮件已发送！"},
 	"err_network": {"en": "Network error, check connection", "zh": "网络错误，请检查连接"},
 	"err_login_failed": {"en": "Login failed: ", "zh": "登录失败："},
 	"err_google_not_available": {"en": "Google Sign-In not available", "zh": "Google 登录不可用"},
@@ -64,6 +70,16 @@ const TRANSLATIONS := {
 	# Guest mode
 	"guest_login_required": {"en": "Login required to submit answers", "zh": "需要登录才能提交答案"},
 	"go_to_login": {"en": "Go to Login", "zh": "去登录"},
+
+	# Gate dialog (3-question gate)
+	"gate_title": {"en": "Continue Training", "zh": "继续答题"},
+	"gate_message": {"en": "Watch an ad or subscribe to continue", "zh": "观看广告或订阅以继续"},
+	"gate_watch_ad": {"en": "▶ Watch Ad (15-20s)", "zh": "▶ 观看广告 (15-20秒)"},
+	"gate_subscribe": {"en": "Subscribe $12.99/mo", "zh": "订阅 $12.99/月"},
+	"gate_login_required_title": {"en": "Login Required", "zh": "需要登录"},
+	"gate_login_required_msg": {"en": "Please login first to subscribe", "zh": "请先登录后再订阅"},
+	"gate_go_login": {"en": "Go to Login", "zh": "去登录"},
+	"gate_cancel": {"en": "Cancel", "zh": "取消"},
 
 	# Ad overlay
 	"ad_title": {"en": "Advertisement", "zh": "广告时间"},
@@ -81,6 +97,13 @@ const TRANSLATIONS := {
 	"ad_reward_msg": {"en": "You've unlocked 3 more questions!\nKeep playing.", "zh": "已解锁 3 题！\n继续答题吧。"},
 	"continue_btn": {"en": "Continue", "zh": "继续"},
 	"ok": {"en": "OK", "zh": "确定"},
+
+	# Subscription purchase
+	"purchase_success_title": {"en": "Subscription Activated!", "zh": "订阅已激活！"},
+	"purchase_success_msg": {"en": "Enjoy unlimited training with no ads!", "zh": "畅享无广告无限答题！"},
+	"purchase_failed_msg": {"en": "Purchase failed", "zh": "购买失败"},
+	"purchase_cancelled": {"en": "Purchase cancelled", "zh": "已取消购买"},
+	"get_started": {"en": "Get Started", "zh": "开始使用"},
 
 	# === Game Table ===
 	"question_text": {"en": "What is the pot-limit max raise?", "zh": "底池限注最大加注是多少？"},
@@ -119,6 +142,7 @@ const TRANSLATIONS := {
 	"err_invalid_number": {"en": "Please enter a valid number", "zh": "请输入有效数字"},
 	"numpad_confirm": {"en": "OK", "zh": "确定"},
 	"numpad_cancel": {"en": "CLR", "zh": "取消"},
+
 	"preview": {"en": "Preview", "zh": "预览"},
 
 	# === Control Panel ===

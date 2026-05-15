@@ -100,6 +100,51 @@ static func make_slider(min_val: float, max_val: float, initial: float, step: fl
 	return slider
 
 
+## 给 CheckBox 应用明显的边框样式，使未选中状态也清晰可见
+static func apply_checkbox_style(cb: CheckBox) -> void:
+	cb.custom_minimum_size = Vector2(44, 44)
+	cb.add_theme_constant_override("check_v_offset", 0)
+	cb.add_theme_font_size_override("font_size", 1)
+	var sz := 36
+	cb.add_theme_icon_override("checked", _make_check_icon(sz, true))
+	cb.add_theme_icon_override("unchecked", _make_check_icon(sz, false))
+	var normal := make_stylebox(Color(0.15, 0.15, 0.22, 0.9), 4, 2, Color(0.55, 0.48, 0.30), 1)
+	var hover := make_stylebox(Color(0.20, 0.20, 0.28, 0.9), 4, 2, Color(0.72, 0.58, 0.24), 1)
+	var pressed := make_stylebox(Color(0.25, 0.25, 0.35, 0.9), 4, 2, Color(0.72, 0.58, 0.24), 2)
+	cb.add_theme_stylebox_override("normal", normal)
+	cb.add_theme_stylebox_override("hover", hover)
+	cb.add_theme_stylebox_override("pressed", pressed)
+	cb.add_theme_stylebox_override("focus", normal)
+
+
+static func _make_check_icon(sz: int, checked: bool) -> ImageTexture:
+	var img := Image.create(sz, sz, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	if checked:
+		var col := Color(0.72, 0.58, 0.24)
+		var points: Array[Vector2i] = []
+		var x0 := int(sz * 0.15)
+		var y0 := int(sz * 0.50)
+		var x1 := int(sz * 0.40)
+		var y1 := int(sz * 0.78)
+		var x2 := int(sz * 0.85)
+		var y2 := int(sz * 0.22)
+		for t in range(101):
+			var f := t / 100.0
+			points.append(Vector2i(int(lerpf(x0, x1, f)), int(lerpf(y0, y1, f))))
+		for t in range(101):
+			var f := t / 100.0
+			points.append(Vector2i(int(lerpf(x1, x2, f)), int(lerpf(y1, y2, f))))
+		for p in points:
+			for dx in range(-1, 2):
+				for dy in range(-1, 2):
+					var px := p.x + dx
+					var py := p.y + dy
+					if px >= 0 and px < sz and py >= 0 and py < sz:
+						img.set_pixel(px, py, col)
+	return ImageTexture.create_from_image(img)
+
+
 ## 创建带标签的滑块行（布局编辑器通用）
 static func make_slider_row(parent: VBoxContainer, label_text: String, min_val: float, max_val: float, initial: float, callback: Callable, label_width: float = 160.0, step: float = 0.05, checkbox: CheckBox = null) -> HSlider:
 	var row := HBoxContainer.new()

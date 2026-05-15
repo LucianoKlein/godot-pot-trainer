@@ -5,13 +5,11 @@ extends RefCounted
 const AnswerBoxScene := preload("res://scenes/game/components/answer_box.tscn")
 const NumpadUIScript := preload("res://scripts/features/training/numpad_ui.gd")
 const FeedbackFXScript := preload("res://scripts/features/training/feedback_fx.gd")
-const GuestDialogScript := preload("res://scripts/features/training/guest_dialog.gd")
 
 var _parent: Control
 var _question_panel: Control
 var _numpad: NumpadUI
 var _feedback_fx: FeedbackFX
-var _guest_dialog: GuestDialog
 
 
 func setup(parent: Control) -> RefCounted:
@@ -22,7 +20,6 @@ func setup(parent: Control) -> RefCounted:
 func build() -> void:
 	_build_question_panel()
 	_build_feedback_fx()
-	_build_guest_dialog()
 
 
 func _build_question_panel() -> void:
@@ -100,8 +97,8 @@ func on_answer_result(correct: bool, user_answer: int, expected: int) -> void:
 	else:
 		_question_panel.set_result_text(Locale.tr_key("wrong_answer") % [user_answer, expected], Color(0.85, 0.30, 0.30))
 		_feedback_fx.play_wrong()
-	# 每次提交都计数（不管对错），由 GuestModeManager 判断是否需要弹广告
-	GameManager.increment_guest_answer_count()
+	if correct:
+		GameManager.increment_guest_answer_count()
 
 
 func _on_answer_box_submit(answer: int) -> void:
@@ -111,6 +108,7 @@ func _on_answer_box_submit(answer: int) -> void:
 
 
 func position_for_seat(seat: int) -> void:
+	const BOTTOM_SAFE_MARGIN := 20
 	var scale: float = GameManager.layout_config.get("answer_box_scale", 1.0)
 	_question_panel.update_scale(scale)
 	var box_size := Vector2(420, 140) * scale
@@ -120,10 +118,11 @@ func position_for_seat(seat: int) -> void:
 	var numpad_width: float = _numpad.get_combined_minimum_size().x
 	var numpad_height: float = _numpad.get_combined_minimum_size().y
 	var screen_size: Vector2 = _parent.get_viewport_rect().size
+	var safe_bottom: float = screen_size.y - BOTTOM_SAFE_MARGIN
 
-	# Clamp answer box bottom within screen
-	if _question_panel.position.y + box_size.y > screen_size.y:
-		_question_panel.position.y = screen_size.y - box_size.y
+	# Clamp answer box bottom within safe area
+	if _question_panel.position.y + box_size.y > safe_bottom:
+		_question_panel.position.y = safe_bottom - box_size.y
 
 	# Horizontal: prefer right side, fallback to left
 	var right_x := _question_panel.position.x + box_size.x + gap
@@ -132,22 +131,10 @@ func position_for_seat(seat: int) -> void:
 	else:
 		_numpad.position = Vector2(right_x, _question_panel.position.y)
 
-	# Clamp numpad bottom within screen
-	if _numpad.position.y + numpad_height > screen_size.y:
-		_numpad.position.y = screen_size.y - numpad_height
-
-
-func _build_guest_dialog() -> void:
-	_guest_dialog = GuestDialogScript.new()
-	_guest_dialog.name = "GuestDialog"
-	_parent.add_child(_guest_dialog)
-	_guest_dialog.go_to_login.connect(_on_guest_dialog_go_to_login)
-
-
-func _show_guest_login_dialog() -> void:
-	_guest_dialog.show_dialog()
-
-
-func _on_guest_dialog_go_to_login() -> void:
-	GameManager.change_state(GameManager.State.MENU)
-	_parent.get_tree().root.get_node("Main").switch_scene("res://scenes/main_menu/main_menu.tscn")
+	# Clamp numpad within safe area
+	if _numpad.position.y + numpad_height > safe_bottom:
+		_numpad.position.y = safe_bottom - numpad_height
+	if _numpad.position.x < 0:
+		_numpad.position.x = 0
+	if _numpad.position.x + numpad_width > screen_size.x:
+		_numpad.position.x = screen_size.x - numpad_width

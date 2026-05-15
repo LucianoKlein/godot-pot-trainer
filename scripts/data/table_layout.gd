@@ -1,18 +1,30 @@
 class_name TableLayout
 extends RefCounted
 
-# Background now fills the entire viewport (1920x1080)
-const BG_OFFSET := Vector2(0.0, 0.0)
-const BG_SIZE := Vector2(1920.0, 1080.0)
+const DESIGN_SIZE := Vector2(1920.0, 1080.0)
 
-# Convert percentage position (relative to poker-table div) to pixel position
+static var BG_OFFSET := Vector2(0.0, 0.0)
+static var BG_SIZE := Vector2(1920.0, 1080.0)
+
+static var scale_x: float = 1.0
+static var scale_y: float = 1.0
+static var scale_vec: Vector2 = Vector2(1.0, 1.0)
+static var ui_scale: float = 1.0
+
+static func set_viewport_size(vp_size: Vector2) -> void:
+	BG_SIZE = Vector2(vp_size.x, vp_size.y)
+	BG_OFFSET = Vector2(0.0, 0.0)
+	scale_x = BG_SIZE.x / DESIGN_SIZE.x
+	scale_y = BG_SIZE.y / DESIGN_SIZE.y
+	scale_vec = Vector2(scale_x, scale_y)
+	ui_scale = scale_y
+
 static func pct_to_px(pct: Vector2) -> Vector2:
 	return Vector2(
 		BG_OFFSET.x + (pct.x / 100.0) * BG_SIZE.x,
 		BG_OFFSET.y + (pct.y / 100.0) * BG_SIZE.y
 	)
 
-# Convert pixel position back to percentage
 static func px_to_pct(px: Vector2) -> Vector2:
 	return Vector2(
 		((px.x - BG_OFFSET.x) / BG_SIZE.x) * 100.0,
@@ -23,8 +35,8 @@ static func px_to_pct(px: Vector2) -> Vector2:
 
 const DEFAULT_SEATS_PCT := [
 	Vector2(31.24, 82.74), Vector2(5.76, 68.98), Vector2(5.65, 17.11),
-	Vector2(24.29, 5.33), Vector2(49.89, 4.37), Vector2(76.58, 6.31),
-	Vector2(94.96, 15.46), Vector2(93.11, 71.11), Vector2(74.68, 81.1),
+	Vector2(24.29, 5.33), Vector2(49.89, 4.37), Vector2(92.33, 6.9),
+	Vector2(76.33, 6.49), Vector2(93.11, 71.11), Vector2(74.68, 81.1),
 ]
 
 const DEFAULT_CARDS_PCT := [
@@ -137,7 +149,7 @@ const DEFAULT_ANSWER_BOXES_PCT := [
 
 # Chair center positions (calculated from .tscn offsets)
 const DEFAULT_CHAIRS_PCT := [
-	Vector2(31.27, 82.37), Vector2(4.72, 70.45), Vector2(5.47, 15.94),
+	Vector2(31.27, 82.37), Vector2(4.72, 70.45), Vector2(5.2, 16.62),
 	Vector2(24.28, 3.56), Vector2(49.78, 3.75), Vector2(75.75, 3.56),
 	Vector2(94.79, 13.46), Vector2(93.91, 73.99), Vector2(75.2, 82.58),
 ]

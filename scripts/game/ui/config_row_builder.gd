@@ -18,8 +18,8 @@ var dealer_option: OptionButton
 var _display_mode_option: OptionButton
 
 
-func build(config_row: HBoxContainer) -> void:
-	# 人数
+func build_two_rows(row1: HBoxContainer, row2: HBoxContainer) -> void:
+	# ── 第一行：人数、盲注、牌桌 ──
 	var pc_group := ControlPanelStyles.make_option_group(Locale.tr_key("player_count"))
 	player_count_option = ControlPanelStyles.make_styled_option()
 	for n in range(2, 10):
@@ -30,9 +30,8 @@ func build(config_row: HBoxContainer) -> void:
 	)
 	ControlPanelStyles.style_popup(player_count_option)
 	pc_group.add_child(player_count_option)
-	config_row.add_child(pc_group)
+	row1.add_child(pc_group)
 
-	# 盲注
 	var bl_group := ControlPanelStyles.make_option_group(Locale.tr_key("blinds"))
 	blinds_option = ControlPanelStyles.make_styled_option()
 	var blind_labels := {
@@ -47,16 +46,15 @@ func build(config_row: HBoxContainer) -> void:
 			blinds_option.add_item(blind_labels[key])
 		else:
 			blinds_option.add_item("%d/%d Pot Limit" % [pair[0], pair[1]])
-	blinds_option.selected = 3  # 默认 25/50（index 3: [1,2],[1,5],[5,10],[25,50],...）
+	blinds_option.selected = 3
 	blinds_option.item_selected.connect(func(index: int) -> void:
 		var pair: Array = GameManager.POT_BLINDS[index]
 		blinds_changed.emit(pair[0], pair[1])
 	)
 	bl_group.add_child(blinds_option)
 	ControlPanelStyles.style_popup(blinds_option)
-	config_row.add_child(bl_group)
+	row1.add_child(bl_group)
 
-	# 牌桌
 	var tp_group := ControlPanelStyles.make_option_group(Locale.tr_key("table_preset"))
 	preset_option = ControlPanelStyles.make_styled_option()
 	var preset_names := TablePresets.get_preset_names()
@@ -68,9 +66,9 @@ func build(config_row: HBoxContainer) -> void:
 	)
 	tp_group.add_child(preset_option)
 	ControlPanelStyles.style_popup(preset_option)
-	config_row.add_child(tp_group)
+	row1.add_child(tp_group)
 
-	# 模式
+	# ── 第二行：模式、庄家、展示模式 ──
 	var mo_group := ControlPanelStyles.make_option_group(Locale.tr_key("mode_label"))
 	mode_option = ControlPanelStyles.make_styled_option()
 	mode_option.add_item(Locale.tr_key("scenario_mode"))
@@ -82,9 +80,8 @@ func build(config_row: HBoxContainer) -> void:
 	)
 	mo_group.add_child(mode_option)
 	ControlPanelStyles.style_popup(mode_option)
-	config_row.add_child(mo_group)
+	row2.add_child(mo_group)
 
-	# 庄家
 	var dl_group := ControlPanelStyles.make_option_group(Locale.tr_key("dealer_label"))
 	dealer_option = ControlPanelStyles.make_styled_option()
 	_rebuild_dealer_options()
@@ -93,9 +90,8 @@ func build(config_row: HBoxContainer) -> void:
 	)
 	dl_group.add_child(dealer_option)
 	ControlPanelStyles.style_popup(dealer_option)
-	config_row.add_child(dl_group)
+	row2.add_child(dl_group)
 
-	# 展示模式
 	var dm_group := ControlPanelStyles.make_option_group(Locale.tr_key("display_mode_label"))
 	_display_mode_option = ControlPanelStyles.make_styled_option()
 	_display_mode_option.add_item(Locale.tr_key("chips_mode"), 0)
@@ -107,7 +103,7 @@ func build(config_row: HBoxContainer) -> void:
 	)
 	dm_group.add_child(_display_mode_option)
 	ControlPanelStyles.style_popup(_display_mode_option)
-	config_row.add_child(dm_group)
+	row2.add_child(dm_group)
 
 
 func update_dealer_options() -> void:

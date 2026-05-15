@@ -66,9 +66,11 @@ var sfx_volume: float = 1.0:
 
 
 func _ready() -> void:
-	# Force fullscreen on all platforms
-	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
+	if OS.get_name() in ["Android", "iOS"]:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, false)
 
 	_load_settings()
 	_intro_player.stream = load("res://assets/music/intro_music.ogg")

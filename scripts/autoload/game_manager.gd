@@ -77,6 +77,7 @@ var pending_layout_mode: bool = false
 var display_mode: String = "chips"  # "numbers" or "chips"
 var blinds_mode: String = "25/50"  # "25/50" / "5/10" / "1/2" / "1/2/5"
 var is_guest_mode: bool = false  # true if playing as guest
+var open_subscription_on_menu: bool = false  # open subscription panel on return to menu
 var _loop: GameLoopController  # game loop controller
 var _deck_mgr: DeckManager  # deck manager
 
@@ -248,7 +249,6 @@ func set_training_mode(mode: String) -> void:
 
 func set_display_mode(mode: String) -> void:
 	display_mode = mode
-	_layout_mgr.config["display_mode"] = mode
 	display_mode_changed.emit(mode)
 
 
@@ -342,8 +342,6 @@ func save_layout_to_file() -> bool:
 
 func load_layout_from_file() -> bool:
 	var loaded: bool = _layout_mgr.load_from_file()
-	var saved_mode: String = _layout_mgr.config.get("display_mode", "chips")
-	display_mode = saved_mode
 	return loaded
 
 func get_layout_position_px(category: String, index: int = -1) -> Vector2:

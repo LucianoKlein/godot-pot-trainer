@@ -23,8 +23,8 @@ func _build_ui() -> void:
 	_grid = GridContainer.new()
 	_grid.name = "Grid"
 	_grid.columns = 3
-	_grid.add_theme_constant_override("h_separation", 6)
-	_grid.add_theme_constant_override("v_separation", 6)
+	_grid.add_theme_constant_override("h_separation", 8)
+	_grid.add_theme_constant_override("v_separation", 8)
 	add_child(_grid)
 
 	# 按键布局
@@ -32,15 +32,27 @@ func _build_ui() -> void:
 		"1", "2", "3", "4", "5", "6", "7", "8", "9", "cancel", "0", "confirm",
 	]
 
+	var btn_size := _calc_button_size()
+	var font_size := int(btn_size.y * 0.32)
 	for key in keys:
-		var btn := _create_key_button(key)
+		var btn := _create_key_button(key, btn_size, font_size)
 		_grid.add_child(btn)
 
 
-func _create_key_button(key: String) -> Button:
+func _calc_button_size() -> Vector2:
+	var base := Vector2(110, 88)
+	var screen := DisplayServer.screen_get_size()
+	var sep := 8
+	var pad := 20
+	var max_w: float = (screen.x - pad * 2 - sep * 2) / 3.0
+	var max_h: float = (screen.y - pad * 2 - sep * 3 - 20) / 4.0
+	return Vector2(minf(base.x, max_w), minf(base.y, max_h))
+
+
+func _create_key_button(key: String, btn_size: Vector2, font_size: int) -> Button:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(90, 72)
-	btn.add_theme_font_size_override("font_size", 28)
+	btn.custom_minimum_size = btn_size
+	btn.add_theme_font_size_override("font_size", font_size)
 
 	var colors: Array  # [font, ns_bg, ns_border, hs_bg, hs_border, ps_bg, ps_border]
 	if key == "confirm":

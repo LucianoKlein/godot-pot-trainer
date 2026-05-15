@@ -8,7 +8,7 @@ signal sign_in_failed(error_msg: String)
 signal sign_in_cancelled
 
 # OAuth 2.0 Web Client ID from Google Cloud Console
-const WEB_CLIENT_ID := "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com"  # TODO: 替换
+const WEB_CLIENT_ID := "525819571029-u15gh7tqq4dsikopbh64g2ul2jbsnth1.apps.googleusercontent.com"
 
 var _plugin = null
 var _auth_plugin = null  # SwiftGodot GDExtension

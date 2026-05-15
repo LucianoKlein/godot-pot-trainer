@@ -10,6 +10,7 @@ var _numbers_rows: Array[Control] = []
 var _chips_rows: Array[Control] = []
 var _display_mode: String = "numbers"
 var _blinds_mode: String = "25/50"
+var _visibility_manager: RefCounted = null
 
 # Toggle button refs
 var _display_btns: Array[Button] = []
@@ -43,6 +44,7 @@ const BLINDS_MODES: Array = ["25/50", "5/10", "1/2", "1/2/5"]
 
 
 func build_sliders(parent: VBoxContainer, visibility_manager: RefCounted) -> void:
+	_visibility_manager = visibility_manager
 	var toggles_inserted := false
 	for def in SLIDER_DEFS:
 		var config_key: String = def[0]
@@ -164,6 +166,16 @@ func _apply_display_mode() -> void:
 		row.visible = is_numbers
 	for row in _chips_rows:
 		row.visible = not is_numbers
+	if _visibility_manager:
+		var hidden: Array[String] = []
+		for def in SLIDER_DEFS:
+			var element_key: String = def[2]
+			var group: String = def[6]
+			if element_key == "":
+				continue
+			if (group == "numbers" and not is_numbers) or (group == "chips" and is_numbers):
+				hidden.append(element_key)
+		_visibility_manager.set_hidden_keys(hidden)
 
 
 func _update_display_styles() -> void:

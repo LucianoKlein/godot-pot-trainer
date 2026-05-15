@@ -15,7 +15,7 @@ var _bottom_cols: Array[Control] = []
 
 var _current_amount: int = -1
 var _chip_size: float = 28.0
-var _base_size := Vector2(280, 180)
+var _base_size := Vector2(280, 190)
 
 var scale_factor: float = 1.0:
 	set(v):
@@ -53,7 +53,7 @@ func _build_ui() -> void:
 	_title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(_title_label)
 
-	_top_row = _make_chip_row(vbox, 28, BoxContainer.ALIGNMENT_END)
+	_top_row = _make_chip_row(vbox, 38, BoxContainer.ALIGNMENT_END)
 	_build_digit_cols(_top_row, _top_cols)
 
 	_beam = ColorRect.new()

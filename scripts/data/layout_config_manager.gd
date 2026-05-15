@@ -37,7 +37,7 @@ func reset_config() -> void:
 		"1/2": _make_mode_defaults(),
 		"1/2/5": _make_mode_defaults(),
 	}
-	_current_mode = "25/50"
+	_current_mode = "5/10"
 	_apply_mode_to_config()
 
 
@@ -170,6 +170,7 @@ func load_from_file() -> bool:
 func _load_default() -> bool:
 	# 默认布局已硬编码在 reset_config() 中，无需读取文件
 	reset_config()
+	_emit_changed.call()
 	return true
 
 
@@ -202,29 +203,29 @@ func _make_global_defaults() -> Dictionary:
 		"dealer_buttons": TableLayout.DEFAULT_DEALER_BUTTONS_PCT.duplicate(),
 		"muck": TableLayout.DEFAULT_MUCK_PCT,
 		"community_cards": TableLayout.DEFAULT_COMMUNITY_CARDS_PCT,
-		"avatar_scale": 2.45,
+		"avatar_scale": 2.0,
 		"avatar_per_seat_scale": [1.2, 1.3, 1.2, 0.9, 1.45, 1.25, 1.2, 1.3, 1.05],
-		"avatar_rotation": [59.0, -130.0, -52.0, 153.0, 0.0, -44.0, 76.0, 135.0, 179.0],
-		"chair_scale": 1.35,
+		"avatar_rotation": [58.0, -130.0, -52.0, 153.0, 0.0, -44.0, 43.0, 135.0, 179.0],
+		"chair_scale": 1.1,
 		"chair_rotation": [175.0, -133.0, -39.0, 0.0, 0.0, 0.0, 23.0, 136.0, 177.0],
 		"dealer_button_scale": 2.0,
 		"community_card_scale": 1.4,
 		"muck_card_scale": 1.0,
-		"bet_label_scale": 1.65,
-		"stack_label_scale": 1.2,
-		"pot_display_scale": 2.65,
+		"bet_label_scale": 1.7,
+		"stack_label_scale": 1.0,
+		"pot_display_scale": 2.55,
 		"pitch_hand": TableLayout.DEFAULT_PITCH_HAND_PCT,
 		"pitch_hand_scale": 1.0,
 		"pitch_hand_rotation": 0.0,
 		"hole_card_rotation": TableLayout.DEFAULT_HOLE_CARD_ROTATION.duplicate(),
 		"action_boxes": TableLayout.DEFAULT_ACTION_BOXES_PCT.duplicate(),
-		"action_box_scale": 0.65,
+		"action_box_scale": 0.75,
 		"answer_boxes": [
 			Vector2(30.36, 82.1), Vector2(11.2, 60.03), Vector2(12.96, 16.16),
 			Vector2(27.86, 11.11), Vector2(51.05, 9.67), Vector2(72.18, 10.29),
 			Vector2(91.76, 15.84), Vector2(90.66, 58.79), Vector2(73.1, 87.69),
 		],
-		"answer_box_scale": 1.15,
+		"answer_box_scale": 1.3,
 		"street_badge": TableLayout.DEFAULT_STREET_BADGE_PCT,
 		"street_badge_scale": 2.65,
 		"display_mode": "numbers",
@@ -296,16 +297,20 @@ func _make_mode_defaults_510() -> Dictionary:
 			Vector2(33.36, 29.65), Vector2(56.91, 29.82), Vector2(70.0, 28.84),
 			Vector2(79.95, 36.77), Vector2(79.37, 46.71), Vector2(70.47, 51.18),
 		],
-		"purple_stacks": TableLayout._make_color_stack_defaults(0),
+		"purple_stacks": [
+			Vector2(26.91, 66.32), Vector2(15.11, 63.71), Vector2(8.05, 32.42),
+			Vector2(29.72, 19.2), Vector2(55.54, 19.91), Vector2(66.32, 18.23),
+			Vector2(88.3, 38.99), Vector2(88.09, 56.66), Vector2(73.91, 63.9),
+		],
 		"black_stacks": [
 			Vector2(32.09, 66.51), Vector2(19.8, 65.26), Vector2(11.82, 36.48),
 			Vector2(32.24, 19.88), Vector2(57.73, 20.0), Vector2(68.57, 19.29),
-			Vector2(86.58, 35.62), Vector2(84.52, 61.97), Vector2(74.85, 62.46),
+			Vector2(86.74, 35.14), Vector2(83.43, 61.39), Vector2(75.94, 64.78),
 		],
 		"green_stacks": [
 			Vector2(29.61, 66.81), Vector2(17.65, 64.49), Vector2(9.01, 36.19),
 			Vector2(34.75, 19.88), Vector2(60.14, 19.81), Vector2(71.25, 18.9),
-			Vector2(89.37, 36.97), Vector2(85.73, 58.98), Vector2(78.24, 64.19),
+			Vector2(89.37, 36.97), Vector2(85.68, 58.98), Vector2(78.24, 64.19),
 		],
 		"red_stacks_1": [
 			Vector2(24.47, 67.0), Vector2(12.45, 62.94), Vector2(9.35, 32.32),
@@ -331,12 +336,12 @@ func _make_mode_defaults_510() -> Dictionary:
 		"chip_record": TableLayout.DEFAULT_CHIP_RECORD_PCT,
 		"hole_card_scale": 1.3,
 		"hole_card_gap": 0.25,
-		"player_chip_scale": 1.45,
-		"bet_chip_scale": 1.7,
-		"bet_chip_spread": 1.65,
-		"pot_chip_scale": 0.9,
-		"chip_record_scale": 0.85,
-		"ordered_bet_chip_scale": 1.05,
+		"player_chip_scale": 1.5,
+		"bet_chip_scale": 1.75,
+		"bet_chip_spread": 1.6,
+		"pot_chip_scale": 0.8,
+		"chip_record_scale": 0.9,
+		"ordered_bet_chip_scale": 1.0,
 		"ordered_chip_v_gap": 5.95,
 	}
 

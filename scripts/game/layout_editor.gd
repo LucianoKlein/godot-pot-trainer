@@ -81,7 +81,6 @@ func toggle() -> void:
 	var chip_record = _refs.get("chip_record")
 	if chip_record and is_instance_valid(chip_record):
 		if active:
-			chip_record.visible = true
 			chip_record.mouse_filter = Control.MOUSE_FILTER_STOP
 		else:
 			chip_record.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -98,9 +97,9 @@ func toggle() -> void:
 		_layout_btn.text = "退出布局"
 		_refs.get("dealer_button").visible = false
 		sync_sliders()
-		_enable_drag()
-		show_preview()
-		_visibility_manager.select_all()
+		_visibility_manager.deselect_all()
+		hide_preview()
+		_disable_drag()
 		_parent.gui_input.connect(_on_parent_input)
 	else:
 		GameManager.save_layout_to_file()
@@ -269,7 +268,8 @@ func _on_visibility_changed(element_key: String, _visible: bool) -> void:
 		return
 	if element_key == "all":
 		_disable_drag()
-		_enable_drag()
+		if _visible:
+			_enable_drag()
 		show_preview()
 	else:
 		if _visible:

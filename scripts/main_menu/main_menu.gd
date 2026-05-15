@@ -4,6 +4,8 @@ var _entry_panel: Control
 var _entry_vbox: VBoxContainer
 var _back_btn: Button
 var _settings_btn: Button
+var _subscription_panel: Control
+var _pending_purchase := false
 
 # Delegated managers
 var _login_panel_mgr: Node
@@ -30,6 +32,15 @@ func _ready() -> void:
 	_login_panel_mgr.connect_firebase_signals()
 	_build_ui()
 	GameManager.language_changed.connect(_on_language_changed)
+	FirebaseAuth.services_loaded.connect(_on_services_loaded)
+	SubscriptionManager.subscription_changed.connect(_on_subscription_changed)
+	SubscriptionManager.purchase_success.connect(_on_purchase_success)
+	SubscriptionManager.purchase_failed.connect(_on_purchase_failed_ui)
+	if GameManager.open_subscription_on_menu:
+		GameManager.open_subscription_on_menu = false
+		_entry_panel.visible = false
+		_subscription_panel.visible = true
+		_back_btn.visible = true
 
 
 func _process(delta: float) -> void:
@@ -97,9 +108,9 @@ func _build_ui() -> void:
 	_entry_vbox.anchor_bottom = 1.0
 	_entry_vbox.offset_left = 60
 	_entry_vbox.offset_right = 500
-	_entry_vbox.offset_top = -420
-	_entry_vbox.offset_bottom = -60
-	_entry_vbox.add_theme_constant_override("separation", 24)
+	_entry_vbox.offset_top = -560
+	_entry_vbox.offset_bottom = -40
+	_entry_vbox.add_theme_constant_override("separation", 16)
 	_entry_panel.add_child(_entry_vbox)
 
 	# Spacer to push content to bottom
@@ -124,6 +135,14 @@ func _build_ui() -> void:
 	_settings_panel_mgr.setup(self, _make_entry_btn)
 	_settings_panel_mgr.layout_pressed.connect(_on_layout_pressed)
 	_settings_panel_mgr.build()
+
+	# --- Subscription panel (hidden initially) ---
+	_subscription_panel = Control.new()
+	_subscription_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_subscription_panel.offset_top = 80
+	_subscription_panel.visible = false
+	add_child(_subscription_panel)
+	_build_subscription_panel()
 
 	# Back button — top-left
 	_back_btn = _make_toolbar_btn(Locale.tr_key("back"), Color(0.08, 0.08, 0.10, 0.82), Color(0.55, 0.25, 0.15))
@@ -171,6 +190,7 @@ func _on_settings_pressed() -> void:
 func _on_back_pressed() -> void:
 	_play_sfx("res://assets/music/sounds_effect/button.ogg")
 	_settings_panel_mgr.panel.visible = false
+	_subscription_panel.visible = false
 	_back_btn.visible = false
 	_entry_panel.visible = true
 
@@ -217,10 +237,21 @@ func _build_login_status() -> void:
 		_settings_btn.pressed.connect(_on_settings_pressed)
 		_entry_vbox.add_child(_settings_btn)
 
+		if not SubscriptionManager.is_subscribed():
+			var sub_btn := _make_entry_btn(_t("Subscribe", "订阅"), Color(0.08, 0.08, 0.10, 0.82), Color(0.90, 0.72, 0.28))
+			sub_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			sub_btn.pressed.connect(_on_subscribe_pressed)
+			_entry_vbox.add_child(sub_btn)
+
 		_logout_btn = _make_entry_btn(Locale.tr_key("logout"), Color(0.08, 0.08, 0.10, 0.82), Color(0.68, 0.45, 0.20))
 		_logout_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_logout_btn.pressed.connect(_on_logout_pressed)
 		_entry_vbox.add_child(_logout_btn)
+
+		var quit_btn := _make_entry_btn(Locale.tr_key("quit"), Color(0.08, 0.08, 0.10, 0.82), Color(0.55, 0.25, 0.15))
+		quit_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		quit_btn.pressed.connect(_on_quit_pressed)
+		_entry_vbox.add_child(quit_btn)
 	else:
 		var login_btn := _make_entry_btn(Locale.tr_key("login"), Color(0.08, 0.08, 0.10, 0.82), Color(0.82, 0.66, 0.26))
 		login_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -240,10 +271,25 @@ func _build_login_status() -> void:
 		_settings_btn.pressed.connect(_on_settings_pressed)
 		_entry_vbox.add_child(_settings_btn)
 
+		var sub_btn2 := _make_entry_btn(_t("Subscribe", "订阅"), Color(0.08, 0.08, 0.10, 0.82), Color(0.90, 0.72, 0.28))
+		sub_btn2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		sub_btn2.pressed.connect(_on_subscribe_pressed)
+		_entry_vbox.add_child(sub_btn2)
+
+		var quit_btn2 := _make_entry_btn(Locale.tr_key("quit"), Color(0.08, 0.08, 0.10, 0.82), Color(0.55, 0.25, 0.15))
+		quit_btn2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		quit_btn2.pressed.connect(_on_quit_pressed)
+		_entry_vbox.add_child(quit_btn2)
+
 
 func _on_logout_pressed() -> void:
 	_play_sfx("res://assets/music/sounds_effect/button.ogg")
 	_login_panel_mgr.show_logout_confirm()
+
+
+func _on_quit_pressed() -> void:
+	_play_sfx("res://assets/music/sounds_effect/button.ogg")
+	get_tree().quit()
 
 
 func _on_login_status_changed() -> void:
@@ -289,3 +335,271 @@ func _make_menu_btn(text: String, bg: Color, border: Color, min_size: Vector2, f
 	btn.add_theme_stylebox_override("pressed", h)
 	btn.add_theme_stylebox_override("focus", s)
 	return btn
+
+
+func _t(en: String, zh: String) -> String:
+	return zh if GameManager.language == "zh" else en
+
+
+# =============================================================================
+# Subscription
+# =============================================================================
+
+func _on_subscribe_pressed() -> void:
+	_play_sfx("res://assets/music/sounds_effect/button.ogg")
+	_entry_panel.visible = false
+	_subscription_panel.visible = true
+	_back_btn.visible = true
+
+
+func _build_subscription_panel() -> void:
+	if SubscriptionManager.is_subscribed():
+		var active_lbl := Label.new()
+		active_lbl.text = _t("You are subscribed — Pot Trainer Pro!", "您已订阅 — Pot Trainer 专业版！")
+		active_lbl.add_theme_font_size_override("font_size", 32)
+		active_lbl.add_theme_color_override("font_color", Color(0.90, 0.72, 0.28))
+		active_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		active_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		active_lbl.set_anchors_preset(Control.PRESET_CENTER)
+		active_lbl.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		active_lbl.grow_vertical = Control.GROW_DIRECTION_BOTH
+		_subscription_panel.add_child(active_lbl)
+		return
+
+	var title := Label.new()
+	title.text = _t("Unlock Full Access", "解锁完整功能")
+	title.add_theme_font_size_override("font_size", 32)
+	title.add_theme_color_override("font_color", Color(0.95, 0.80, 0.32))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	title.offset_top = 10
+	title.offset_bottom = 50
+	_subscription_panel.add_child(title)
+
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.offset_top = 60
+	center.offset_bottom = -80
+	_subscription_panel.add_child(center)
+
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(400, 0)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.10, 0.08, 0.04, 0.95)
+	style.border_color = Color(0.54, 0.43, 0.17, 0.8)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(12)
+	style.set_content_margin_all(24)
+	card.add_theme_stylebox_override("panel", style)
+	center.add_child(card)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 12)
+	card.add_child(vbox)
+
+	var name_lbl := Label.new()
+	name_lbl.text = "Pot Trainer Pro"
+	name_lbl.add_theme_font_size_override("font_size", 30)
+	name_lbl.add_theme_color_override("font_color", Color(0.92, 0.82, 0.45))
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(name_lbl)
+
+	var price_lbl := Label.new()
+	price_lbl.text = SubscriptionManager.get_price_display() + _t("/mo", "/月")
+	price_lbl.add_theme_font_size_override("font_size", 36)
+	price_lbl.add_theme_color_override("font_color", Color(0.90, 0.72, 0.28))
+	price_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(price_lbl)
+
+	var sep := HSeparator.new()
+	sep.add_theme_stylebox_override("separator", StyleBoxLine.new())
+	vbox.add_child(sep)
+
+	var features_lbl := Label.new()
+	features_lbl.text = _t(
+		"Unlimited practice questions\nNo ads interruptions\nAll training modes\nFull pot-limit training",
+		"无限练习题目\n无广告打断\n全部训练模式\n完整底池限注训练"
+	)
+	features_lbl.add_theme_font_size_override("font_size", 20)
+	features_lbl.add_theme_color_override("font_color", Color(0.82, 0.72, 0.40))
+	features_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(features_lbl)
+
+	var spacer := Control.new()
+	spacer.custom_minimum_size = Vector2(0, 8)
+	vbox.add_child(spacer)
+
+	var buy_btn := Button.new()
+	buy_btn.text = _t("Subscribe", "订阅")
+	buy_btn.custom_minimum_size = Vector2(0, 60)
+	buy_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	buy_btn.add_theme_font_size_override("font_size", 24)
+	buy_btn.add_theme_color_override("font_color", Color(0.06, 0.05, 0.03))
+	buy_btn.add_theme_color_override("font_hover_color", Color(0.04, 0.03, 0.02))
+	var btn_style := StyleBoxFlat.new()
+	btn_style.bg_color = Color(0.90, 0.72, 0.28)
+	btn_style.set_corner_radius_all(8)
+	btn_style.set_content_margin_all(10)
+	buy_btn.add_theme_stylebox_override("normal", btn_style)
+	var btn_hover := StyleBoxFlat.new()
+	btn_hover.bg_color = Color(1.0, 0.82, 0.38)
+	btn_hover.set_corner_radius_all(8)
+	btn_hover.set_content_margin_all(10)
+	buy_btn.add_theme_stylebox_override("hover", btn_hover)
+	buy_btn.add_theme_stylebox_override("pressed", btn_hover)
+	buy_btn.pressed.connect(_on_tier_purchase)
+	vbox.add_child(buy_btn)
+
+	var restore_btn := Button.new()
+	restore_btn.text = _t("Restore Purchases", "恢复购买")
+	restore_btn.flat = true
+	restore_btn.add_theme_font_size_override("font_size", 20)
+	restore_btn.add_theme_color_override("font_color", Color(0.70, 0.58, 0.24))
+	restore_btn.add_theme_color_override("font_hover_color", Color(0.90, 0.76, 0.30))
+	restore_btn.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	restore_btn.offset_top = -50
+	restore_btn.offset_bottom = -10
+	restore_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	restore_btn.pressed.connect(_on_restore_pressed)
+	_subscription_panel.add_child(restore_btn)
+
+
+func _on_tier_purchase() -> void:
+	_play_sfx("res://assets/music/sounds_effect/button.ogg")
+	if not FirebaseAuth.is_logged_in:
+		_pending_purchase = true
+		_login_panel_mgr.show()
+		return
+	if SubscriptionManager.is_subscribed():
+		_refresh_subscription_panel()
+		return
+	SubscriptionManager.purchase()
+
+
+func _on_restore_pressed() -> void:
+	_play_sfx("res://assets/music/sounds_effect/button.ogg")
+	SubscriptionManager.restore_purchases()
+
+
+func _refresh_subscription_panel() -> void:
+	if _subscription_panel == null:
+		return
+	for c in _subscription_panel.get_children():
+		_subscription_panel.remove_child(c)
+		c.queue_free()
+	_build_subscription_panel()
+
+
+func _on_services_loaded() -> void:
+	if not FirebaseAuth.is_logged_in:
+		return
+	_build_login_status()
+	_refresh_subscription_panel()
+	if _pending_purchase:
+		_pending_purchase = false
+		if SubscriptionManager.is_subscribed():
+			_refresh_subscription_panel()
+		else:
+			SubscriptionManager.purchase()
+
+
+func _on_subscription_changed(_is_active: bool) -> void:
+	_refresh_subscription_panel()
+	_build_login_status()
+
+
+func _on_purchase_success(_product_id: String) -> void:
+	_refresh_subscription_panel()
+	_build_login_status()
+	DialogQueue.show(func() -> void: _create_menu_purchase_success_dialog())
+
+
+func _on_purchase_failed_ui(error_msg: String) -> void:
+	if "cancel" in error_msg.to_lower() or "cancelled" in error_msg.to_lower():
+		return
+	var toast := Label.new()
+	toast.text = _t("Purchase failed: ", "购买失败：") + error_msg
+	toast.add_theme_font_size_override("font_size", 22)
+	toast.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
+	toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	toast.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	toast.offset_top = -80
+	toast.offset_bottom = -40
+	toast.z_index = 200
+	add_child(toast)
+	var tw := create_tween()
+	tw.tween_interval(3.0)
+	tw.tween_property(toast, "modulate:a", 0.0, 0.5)
+	tw.tween_callback(toast.queue_free)
+
+
+func _create_menu_purchase_success_dialog() -> void:
+	var overlay := ColorRect.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.color = Color(0.0, 0.0, 0.0, 0.55)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.z_index = 500
+	add_child(overlay)
+
+	var panel := PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.offset_left = -220
+	panel.offset_right = 220
+	panel.offset_top = -180
+	panel.offset_bottom = 180
+	var ps := StyleBoxFlat.new()
+	ps.bg_color = Color(0.08, 0.08, 0.10, 0.97)
+	ps.border_color = Color(0.90, 0.72, 0.28)
+	ps.set_border_width_all(2)
+	ps.set_corner_radius_all(12)
+	ps.set_content_margin_all(24)
+	panel.add_theme_stylebox_override("panel", ps)
+	overlay.add_child(panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 16)
+	panel.add_child(vbox)
+
+	var check := Label.new()
+	check.text = "✓"
+	check.add_theme_font_size_override("font_size", 64)
+	check.add_theme_color_override("font_color", Color(0.90, 0.72, 0.28))
+	check.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(check)
+
+	var title := Label.new()
+	title.text = _t("Subscription Activated!", "订阅已激活！")
+	title.add_theme_font_size_override("font_size", 28)
+	title.add_theme_color_override("font_color", Color(0.95, 0.85, 0.55))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var tier_lbl := Label.new()
+	tier_lbl.text = "Pot Trainer Pro"
+	tier_lbl.add_theme_font_size_override("font_size", 24)
+	tier_lbl.add_theme_color_override("font_color", Color(0.90, 0.72, 0.28))
+	tier_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(tier_lbl)
+
+	var ok_btn := Button.new()
+	ok_btn.text = _t("Get Started", "开始使用")
+	ok_btn.custom_minimum_size = Vector2(0, 56)
+	ok_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ok_btn.add_theme_font_size_override("font_size", 24)
+	ok_btn.add_theme_color_override("font_color", Color(0.06, 0.05, 0.03))
+	var ok_style := StyleBoxFlat.new()
+	ok_style.bg_color = Color(0.90, 0.72, 0.28)
+	ok_style.set_corner_radius_all(8)
+	ok_style.set_content_margin_all(10)
+	ok_btn.add_theme_stylebox_override("normal", ok_style)
+	var ok_hover := StyleBoxFlat.new()
+	ok_hover.bg_color = Color(1.0, 0.82, 0.38)
+	ok_hover.set_corner_radius_all(8)
+	ok_hover.set_content_margin_all(10)
+	ok_btn.add_theme_stylebox_override("hover", ok_hover)
+	ok_btn.add_theme_stylebox_override("pressed", ok_hover)
+	ok_btn.pressed.connect(func() -> void:
+		overlay.queue_free()
+	)
+	vbox.add_child(ok_btn)
+	DialogQueue.register(overlay)

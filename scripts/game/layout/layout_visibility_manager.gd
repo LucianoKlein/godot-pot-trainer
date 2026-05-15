@@ -14,6 +14,7 @@ var _element_visibility: Dictionary = {
 
 var _element_checkboxes: Dictionary = {}
 var _select_all_checkbox: CheckBox = null
+var _hidden_keys: Array[String] = []
 
 # All refs stored in a single dict for cleaner access
 var _refs: Dictionary = {}
@@ -36,7 +37,7 @@ func build_select_all_checkbox(parent: VBoxContainer) -> void:
 
 	_select_all_checkbox = CheckBox.new()
 	_select_all_checkbox.button_pressed = true
-	_select_all_checkbox.custom_minimum_size = Vector2(32, 32)
+	UiFactory.apply_checkbox_style(_select_all_checkbox)
 	_select_all_checkbox.toggled.connect(_on_select_all_toggled)
 	row.add_child(_select_all_checkbox)
 
@@ -50,7 +51,7 @@ func build_select_all_checkbox(parent: VBoxContainer) -> void:
 func create_element_checkbox(element_key: String) -> CheckBox:
 	var checkbox := CheckBox.new()
 	checkbox.button_pressed = _element_visibility.get(element_key, true)
-	checkbox.custom_minimum_size = Vector2(32, 32)
+	UiFactory.apply_checkbox_style(checkbox)
 	checkbox.toggled.connect(func(pressed: bool) -> void:
 		_element_visibility[element_key] = pressed
 		update_element_visibility(element_key, pressed)
@@ -127,6 +128,17 @@ func select_all() -> void:
 	visibility_changed.emit("all", true)
 
 
+func deselect_all() -> void:
+	for key in _element_visibility.keys():
+		_element_visibility[key] = false
+		if _element_checkboxes.has(key):
+			(_element_checkboxes[key] as CheckBox).set_pressed_no_signal(false)
+		update_element_visibility(key, false)
+	if _select_all_checkbox:
+		_select_all_checkbox.set_pressed_no_signal(false)
+	visibility_changed.emit("all", false)
+
+
 func restore_all_visibility() -> void:
 	var is_numbers: bool = GameManager.display_mode == "numbers"
 	var bm: String = GameManager.blinds_mode
@@ -159,17 +171,7 @@ func is_element_visible(element_key: String) -> bool:
 	return _element_visibility.get(element_key, true)
 
 
-func apply_display_mode(mode: String) -> void:
-	var numbers_keys: Array = ["bet_labels", "stack_labels", "pot_display"]
-	var chips_keys: Array = ["player_chips", "bet_chips", "ordered_bet_chips", "pot_chips", "chip_record"]
-	var on_keys: Array = numbers_keys if mode == "numbers" else chips_keys
-	var off_keys: Array = chips_keys if mode == "numbers" else numbers_keys
-
-	for key in on_keys:
-		_set_visibility_and_checkbox(key, true)
-	for key in off_keys:
-		_set_visibility_and_checkbox(key, false)
-
+func apply_display_mode(_mode: String) -> void:
 	_update_select_all_checkbox()
 	visibility_changed.emit("all", true)
 
@@ -198,6 +200,8 @@ func _set_visibility_and_checkbox(key: String, visible: bool) -> void:
 
 func _on_select_all_toggled(pressed: bool) -> void:
 	for key in _element_visibility.keys():
+		if pressed and key in _hidden_keys:
+			continue
 		_element_visibility[key] = pressed
 		if _element_checkboxes.has(key):
 			(_element_checkboxes[key] as CheckBox).set_pressed_no_signal(pressed)
@@ -205,12 +209,28 @@ func _on_select_all_toggled(pressed: bool) -> void:
 	visibility_changed.emit("all", pressed)
 
 
+func set_hidden_keys(hidden: Array[String]) -> void:
+	var was_all_checked := _is_all_visible_checked()
+	_hidden_keys = hidden
+	if was_all_checked:
+		for key in _element_visibility.keys():
+			if key not in _hidden_keys:
+				_set_visibility_and_checkbox(key, true)
+	_update_select_all_checkbox()
+
+
+func _is_all_visible_checked() -> bool:
+	for key in _element_visibility.keys():
+		if key in _hidden_keys:
+			continue
+		if not _element_checkboxes.has(key):
+			continue
+		if not _element_visibility[key]:
+			return false
+	return true
+
+
 func _update_select_all_checkbox() -> void:
 	if not _select_all_checkbox:
 		return
-	var all_checked: bool = true
-	for key in _element_visibility.keys():
-		if not _element_visibility[key]:
-			all_checked = false
-			break
-	_select_all_checkbox.set_pressed_no_signal(all_checked)
+	_select_all_checkbox.set_pressed_no_signal(_is_all_visible_checked())

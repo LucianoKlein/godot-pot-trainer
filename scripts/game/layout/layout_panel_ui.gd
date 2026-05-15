@@ -31,8 +31,10 @@ func build() -> PanelContainer:
 	_layout_panel.z_index = 200
 	_layout_panel.visible = false
 	_layout_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_layout_panel.custom_minimum_size = Vector2(400, 0)
 	_parent.add_child(_layout_panel)
-	_layout_panel.position = Vector2(50, 50)
+	var vp_size := _parent.get_viewport_rect().size
+	_layout_panel.position = Vector2(vp_size.x - 520, vp_size.y * 0.15)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 12)
@@ -57,7 +59,7 @@ func build() -> PanelContainer:
 
 func _build_title_bar(parent: VBoxContainer) -> void:
 	var title_bar := HBoxContainer.new()
-	title_bar.custom_minimum_size = Vector2(0, 58)
+	title_bar.custom_minimum_size = Vector2(340, 58)
 	title_bar.add_theme_constant_override("separation", 6)
 	title_bar.alignment = BoxContainer.ALIGNMENT_CENTER
 	title_bar.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -70,7 +72,8 @@ func _build_title_bar(parent: VBoxContainer) -> void:
 	drag_area.gui_input.connect(_on_title_input)
 	title_bar.add_child(drag_area)
 
-	var title := UiFactory.make_label(Locale.tr_key("layout_editor_title"), 28, UiFactory.LAYOUT_FONT)
+	var drag_hint_text := "↕ " + ("可拖动此面板" if GameManager.language == "zh" else "Drag to move")
+	var title := UiFactory.make_label(drag_hint_text, 24, Color(0.65, 0.58, 0.42, 0.85))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title.set_anchors_preset(Control.PRESET_FULL_RECT)

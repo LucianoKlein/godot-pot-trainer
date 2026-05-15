@@ -14,6 +14,7 @@ const QuestionPanelManagerScript := preload("res://scripts/game/ui/question_pane
 const GameOverManagerScript := preload("res://scripts/game/ui/game_over_manager.gd")
 const ActionBoxManagerScript := preload("res://scripts/game/ui/action_box_manager.gd")
 const AdDialogManagerScript := preload("res://scripts/game/ui/ad_dialog_manager.gd")
+const AuthDialogManagerScript := preload("res://scripts/game/systems/auth_dialog_manager.gd")
 
 # --- Node references ---
 var _bg: TextureRect
@@ -31,9 +32,15 @@ var _question_mgr: RefCounted
 var _game_over_mgr: RefCounted
 var _action_box_mgr: RefCounted
 var _ad_dialog_mgr: RefCounted
+var _auth_dialog_mgr: RefCounted
+
+# --- Pending purchase (login gate) ---
+var _pending_purchase: bool = false
 
 
 func _ready() -> void:
+	var vp_size := get_viewport_rect().size
+	TableLayout.set_viewport_size(vp_size)
 	_bg = $Background
 	for i in range(1, 10):
 		_chairs.append(get_node("Chair%d" % i) as TextureRect)
@@ -79,6 +86,7 @@ func _ready() -> void:
 	_game_over_mgr = GameOverManagerScript.new().setup(self)
 	_action_box_mgr = ActionBoxManagerScript.new().setup(self, seats)
 	_ad_dialog_mgr = AdDialogManagerScript.new(self)
+	_auth_dialog_mgr = AuthDialogManagerScript.new(self)
 	_connect_signals()
 	GameManager.load_layout_from_file()
 	# Apply persisted display_mode to UI after layout load
@@ -87,7 +95,9 @@ func _ready() -> void:
 	if GameManager.pending_layout_mode:
 		GameManager.pending_layout_mode = false
 		_layout_editor.toggle()
-
+	else:
+		if GuestModeManager.is_gate_locked():
+			call_deferred("_show_gate_subscribe")
 
 
 
@@ -156,6 +166,9 @@ func _connect_signals() -> void:
 	AdMobManager.rewarded_ad_closed.connect(_on_ad_closed)
 	AdMobManager.rewarded_ad_loaded.connect(_on_ad_loaded)
 	AdMobManager.rewarded_ad_failed_to_load.connect(_on_ad_failed_to_load)
+	AdMobManager.rewarded_ad_failed_to_show.connect(_on_ad_failed_to_show)
+	SubscriptionManager.purchase_success.connect(_on_purchase_success)
+	SubscriptionManager.purchase_failed.connect(_on_purchase_failed)
 
 
 # =============================================================================
@@ -243,24 +256,13 @@ func _on_npc_acted(seat: int, _action: String, _amount: int) -> void:
 # =============================================================================
 
 func _on_guest_ad_required() -> void:
-	"""3 题完成，两道门：套餐→广告循环（不强制登录）"""
 	if GuestModeManager.is_subscribed():
 		return
 	_show_gate_subscribe()
 
 
 func _show_gate_subscribe() -> void:
-	_show_subscribe_popup(func() -> void:
-		# 关闭套餐 → 广告
-		_show_gate_ad()
-	)
-
-
-func _show_gate_ad() -> void:
-	_ad_dialog_mgr.show_ad_dialog(func() -> void:
-		# 关闭广告 → 回到套餐
-		_show_gate_subscribe()
-	)
+	_show_subscribe_popup()
 
 
 func _on_ad_completed() -> void:
@@ -279,11 +281,237 @@ func _on_ad_failed_to_load(error: String) -> void:
 	_ad_dialog_mgr.on_ad_failed_to_load(error)
 
 
+func _on_ad_failed_to_show(error: String) -> void:
+	_ad_dialog_mgr.on_ad_failed_to_show(error)
+
+
+func _on_purchase_success(_product_id: String) -> void:
+	GuestModeManager.unlock_gate()
+	_show_purchase_success_dialog()
+
+
+func _on_purchase_failed(error_msg: String) -> void:
+	if "cancel" in error_msg.to_lower() or "cancelled" in error_msg.to_lower():
+		return
+	_show_purchase_failed_toast(error_msg)
+
+
+func _show_purchase_success_dialog() -> void:
+	DialogQueue.show(func() -> void: _create_purchase_success_dialog())
+
+func _create_purchase_success_dialog() -> void:
+	var overlay := ColorRect.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.color = Color(0.0, 0.0, 0.0, 0.7)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.z_index = 500
+
+	var panel := PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.offset_left = -240
+	panel.offset_right = 240
+	panel.offset_top = -180
+	panel.offset_bottom = 180
+	var ps := StyleBoxFlat.new()
+	ps.bg_color = Color(0.08, 0.08, 0.10, 0.97)
+	ps.border_color = Color(0.90, 0.72, 0.28)
+	ps.set_border_width_all(2)
+	ps.set_corner_radius_all(12)
+	ps.set_content_margin_all(28)
+	panel.add_theme_stylebox_override("panel", ps)
+	overlay.add_child(panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 16)
+	panel.add_child(vbox)
+
+	var check_lbl := Label.new()
+	check_lbl.text = "✓"
+	check_lbl.add_theme_font_size_override("font_size", 72)
+	check_lbl.add_theme_color_override("font_color", Color(0.90, 0.72, 0.28))
+	check_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(check_lbl)
+	check_lbl.scale = Vector2(0.3, 0.3)
+	check_lbl.pivot_offset = Vector2(check_lbl.size.x / 2.0, check_lbl.size.y / 2.0)
+	var pop_tw := check_lbl.create_tween()
+	pop_tw.tween_property(check_lbl, "scale", Vector2(1.0, 1.0), 0.35).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+
+	var title := Label.new()
+	title.text = _t("Subscription Activated!", "订阅已激活！")
+	title.add_theme_font_size_override("font_size", 32)
+	title.add_theme_color_override("font_color", Color(0.95, 0.85, 0.55))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var tier_lbl := Label.new()
+	tier_lbl.text = "Pot Trainer Pro"
+	tier_lbl.add_theme_font_size_override("font_size", 24)
+	tier_lbl.add_theme_color_override("font_color", Color(0.90, 0.72, 0.28))
+	tier_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(tier_lbl)
+
+	var expiry_text := ""
+	if SubscriptionManager.expires_at > 0.0:
+		var dt := Time.get_datetime_dict_from_unix_time(int(SubscriptionManager.expires_at))
+		expiry_text = "%04d-%02d-%02d" % [dt["year"], dt["month"], dt["day"]]
+	else:
+		var dt := Time.get_datetime_dict_from_unix_time(int(Time.get_unix_time_from_system()) + 30 * 86400)
+		expiry_text = "%04d-%02d-%02d" % [dt["year"], dt["month"], dt["day"]]
+	var info_lbl := Label.new()
+	info_lbl.text = _t("Valid until ", "有效期至 ") + expiry_text
+	info_lbl.add_theme_font_size_override("font_size", 22)
+	info_lbl.add_theme_color_override("font_color", Color(0.75, 0.65, 0.45))
+	info_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(info_lbl)
+
+	var btn := Button.new()
+	btn.text = _t("Get Started", "开始使用")
+	btn.custom_minimum_size = Vector2(0, 56)
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.add_theme_font_size_override("font_size", 24)
+	btn.add_theme_color_override("font_color", Color(0.06, 0.05, 0.03))
+	var btn_style := StyleBoxFlat.new()
+	btn_style.bg_color = Color(0.90, 0.72, 0.28)
+	btn_style.set_corner_radius_all(8)
+	btn_style.set_content_margin_all(10)
+	btn.add_theme_stylebox_override("normal", btn_style)
+	var btn_hover := StyleBoxFlat.new()
+	btn_hover.bg_color = Color(1.0, 0.82, 0.38)
+	btn_hover.set_corner_radius_all(8)
+	btn_hover.set_content_margin_all(10)
+	btn.add_theme_stylebox_override("hover", btn_hover)
+	btn.add_theme_stylebox_override("pressed", btn_hover)
+	btn.pressed.connect(func() -> void:
+		_play_sfx("res://assets/music/sounds_effect/button.ogg")
+		overlay.queue_free()
+	)
+	vbox.add_child(btn)
+
+	add_child(overlay)
+	DialogQueue.register(overlay)
+
+
+func _show_purchase_failed_toast(error_msg: String) -> void:
+	var overlay := ColorRect.new()
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.color = Color(0.0, 0.0, 0.0, 0.5)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.z_index = 500
+	add_child(overlay)
+
+	var panel := PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.offset_left = -240
+	panel.offset_right = 240
+	panel.offset_top = -120
+	panel.offset_bottom = 120
+	var ps := StyleBoxFlat.new()
+	ps.bg_color = Color(0.08, 0.08, 0.10, 0.97)
+	ps.border_color = Color(0.85, 0.30, 0.30)
+	ps.set_border_width_all(2)
+	ps.set_corner_radius_all(12)
+	ps.set_content_margin_all(24)
+	panel.add_theme_stylebox_override("panel", ps)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	var _dragging := false
+	var _drag_offset := Vector2.ZERO
+	panel.gui_input.connect(func(event: InputEvent) -> void:
+		if event is InputEventMouseButton:
+			if event.button_index == MOUSE_BUTTON_LEFT:
+				if event.pressed:
+					_dragging = true
+					_drag_offset = event.position
+				else:
+					_dragging = false
+		elif event is InputEventMouseMotion and _dragging:
+			panel.position += event.relative
+	)
+	overlay.add_child(panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 12)
+	panel.add_child(vbox)
+
+	var title := Label.new()
+	title.text = _t("Purchase Failed", "购买失败")
+	title.add_theme_font_size_override("font_size", 28)
+	title.add_theme_color_override("font_color", Color(0.95, 0.35, 0.35))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var msg_lbl := Label.new()
+	msg_lbl.text = error_msg
+	msg_lbl.add_theme_font_size_override("font_size", 20)
+	msg_lbl.add_theme_color_override("font_color", Color(0.80, 0.70, 0.50))
+	msg_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(msg_lbl)
+
+	var close_btn := Button.new()
+	close_btn.text = _t("Close", "关闭")
+	close_btn.custom_minimum_size = Vector2(0, 48)
+	close_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	close_btn.add_theme_font_size_override("font_size", 22)
+	close_btn.add_theme_color_override("font_color", Color(0.90, 0.80, 0.55))
+	var close_style := StyleBoxFlat.new()
+	close_style.bg_color = Color(0.15, 0.12, 0.08)
+	close_style.border_color = Color(0.50, 0.40, 0.16)
+	close_style.set_border_width_all(1)
+	close_style.set_corner_radius_all(6)
+	close_style.set_content_margin_all(8)
+	close_btn.add_theme_stylebox_override("normal", close_style)
+	close_btn.pressed.connect(func() -> void: overlay.queue_free())
+	vbox.add_child(close_btn)
+
+
+func _on_gate_login_pressed() -> void:
+	_auth_dialog_mgr.show_auth_dialog(_on_gate_login_success, _show_gate_subscribe)
+
+
+func _on_gate_login_success() -> void:
+	var email := FirebaseAuth.user_email
+	_show_login_success_toast(email)
+	FirebaseAuth.services_loaded.connect(_on_gate_services_check, CONNECT_ONE_SHOT)
+	FirebaseAuth.fetch_services()
+
+
+func _on_gate_services_check() -> void:
+	if GuestModeManager.is_subscribed():
+		GuestModeManager.unlock_gate()
+		_pending_purchase = false
+	elif _pending_purchase:
+		_pending_purchase = false
+		SubscriptionManager.purchase()
+	else:
+		_show_gate_subscribe()
+
+
+func _show_login_success_toast(email: String) -> void:
+	var label := Label.new()
+	label.text = email + _t(" logged in", " 登录成功")
+	label.add_theme_font_size_override("font_size", 24)
+	label.add_theme_color_override("font_color", Color(0.35, 0.85, 0.45))
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	label.offset_top = 40
+	label.offset_bottom = 80
+	label.z_index = 520
+	add_child(label)
+	var tw := create_tween()
+	tw.tween_interval(2.5)
+	tw.tween_property(label, "modulate:a", 0.0, 0.5)
+	tw.tween_callback(label.queue_free)
+
+
 # =============================================================================
 # Guest Subscribe Popup (广告弹窗关闭时触发)
 # =============================================================================
 
-func _show_subscribe_popup(dismiss_callback: Callable = Callable()) -> void:
+func _show_subscribe_popup() -> void:
+	DialogQueue.show(func() -> void: _create_subscribe_popup())
+
+
+func _create_subscribe_popup() -> void:
 	var overlay := Control.new()
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -300,57 +528,38 @@ func _show_subscribe_popup(dismiss_callback: Callable = Callable()) -> void:
 	overlay.add_child(center)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(550, 0)
+	panel.custom_minimum_size = Vector2(820, 0)
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = Color(0.08, 0.08, 0.10, 0.97)
 	panel_style.border_color = Color(0.90, 0.72, 0.28)
 	panel_style.set_border_width_all(2)
 	panel_style.set_corner_radius_all(12)
-	panel_style.set_content_margin_all(28)
+	panel_style.content_margin_left = 42
+	panel_style.content_margin_right = 42
+	panel_style.content_margin_top = 18
+	panel_style.content_margin_bottom = 30
 	panel.add_theme_stylebox_override("panel", panel_style)
 	center.add_child(panel)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 16)
+	vbox.add_theme_constant_override("separation", 18)
 	panel.add_child(vbox)
 
-	# X 关闭按钮
-	var close_row := HBoxContainer.new()
-	close_row.alignment = BoxContainer.ALIGNMENT_END
-	vbox.add_child(close_row)
-	var close_btn := Button.new()
-	close_btn.text = "✕"
-	close_btn.flat = true
-	close_btn.custom_minimum_size = Vector2(40, 40)
-	close_btn.add_theme_font_size_override("font_size", 28)
-	close_btn.add_theme_color_override("font_color", Color(0.70, 0.60, 0.35))
-	close_btn.add_theme_color_override("font_hover_color", Color(0.95, 0.85, 0.55))
-	close_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	close_btn.pressed.connect(func() -> void:
-		_play_sfx("res://assets/music/sounds_effect/button.ogg")
-		overlay.queue_free()
-		if dismiss_callback.is_valid():
-			dismiss_callback.call()
-	)
-	close_row.add_child(close_btn)
-
-	# Title
 	var title := Label.new()
 	title.text = _t("Unlock Full Access", "解锁完整功能")
-	title.add_theme_font_size_override("font_size", 30)
+	title.add_theme_font_size_override("font_size", 45)
 	title.add_theme_color_override("font_color", Color(0.95, 0.85, 0.55))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
 	var msg := Label.new()
 	msg.text = _t("Subscribe to unlock unlimited practice\nwith no ads.", "订阅解锁无限练习，无广告。")
-	msg.add_theme_font_size_override("font_size", 20)
+	msg.add_theme_font_size_override("font_size", 30)
 	msg.add_theme_color_override("font_color", Color(0.75, 0.65, 0.45))
 	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(msg)
 
-	# 单套餐卡片
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(0, 0)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -359,93 +568,117 @@ func _show_subscribe_popup(dismiss_callback: Callable = Callable()) -> void:
 	card_style.border_color = Color(0.90, 0.72, 0.28)
 	card_style.set_border_width_all(2)
 	card_style.set_corner_radius_all(10)
-	card_style.set_content_margin_all(20)
+	card_style.set_content_margin_all(30)
 	card.add_theme_stylebox_override("panel", card_style)
 	vbox.add_child(card)
 
 	var card_vbox := VBoxContainer.new()
-	card_vbox.add_theme_constant_override("separation", 12)
+	card_vbox.add_theme_constant_override("separation", 18)
 	card.add_child(card_vbox)
 
-	# 套餐名
 	var name_lbl := Label.new()
 	name_lbl.text = _t("Pot Trainer Pro", "Pot Trainer 专业版")
-	name_lbl.add_theme_font_size_override("font_size", 26)
+	name_lbl.add_theme_font_size_override("font_size", 39)
 	name_lbl.add_theme_color_override("font_color", Color(0.90, 0.72, 0.28))
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card_vbox.add_child(name_lbl)
 
-	# 价格
 	var price_lbl := Label.new()
 	price_lbl.text = "$12.99" + _t("/mo", "/月")
-	price_lbl.add_theme_font_size_override("font_size", 32)
+	price_lbl.add_theme_font_size_override("font_size", 48)
 	price_lbl.add_theme_color_override("font_color", Color(0.95, 0.90, 0.80))
 	price_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card_vbox.add_child(price_lbl)
 
-	# 功能描述
 	var features_lbl := Label.new()
 	features_lbl.text = _t("✓ Unlimited practice\n✓ No ads\n✓ All training modes", "✓ 无限练习\n✓ 无广告\n✓ 全部训练模式")
-	features_lbl.add_theme_font_size_override("font_size", 18)
+	features_lbl.add_theme_font_size_override("font_size", 27)
 	features_lbl.add_theme_color_override("font_color", Color(0.70, 0.65, 0.55))
 	features_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	features_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	card_vbox.add_child(features_lbl)
 
-	# 购买按钮
 	var buy_btn := Button.new()
 	buy_btn.text = _t("Subscribe", "订阅")
-	buy_btn.custom_minimum_size = Vector2(0, 50)
+	buy_btn.custom_minimum_size = Vector2(0, 75)
 	buy_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	buy_btn.add_theme_font_size_override("font_size", 22)
+	buy_btn.add_theme_font_size_override("font_size", 33)
 	buy_btn.add_theme_color_override("font_color", Color(0.06, 0.05, 0.03))
 	var buy_style := StyleBoxFlat.new()
 	buy_style.bg_color = Color(0.90, 0.72, 0.28)
 	buy_style.set_corner_radius_all(6)
-	buy_style.set_content_margin_all(10)
+	buy_style.set_content_margin_all(15)
 	buy_btn.add_theme_stylebox_override("normal", buy_style)
 	var buy_hover := StyleBoxFlat.new()
 	buy_hover.bg_color = Color(0.90, 0.72, 0.28).lightened(0.2)
 	buy_hover.set_corner_radius_all(6)
-	buy_hover.set_content_margin_all(10)
+	buy_hover.set_content_margin_all(15)
 	buy_btn.add_theme_stylebox_override("hover", buy_hover)
 	buy_btn.add_theme_stylebox_override("pressed", buy_hover)
 	buy_btn.pressed.connect(func() -> void:
 		_play_sfx("res://assets/music/sounds_effect/button.ogg")
 		overlay.queue_free()
-		SubscriptionManager.purchase()
+		if not FirebaseAuth.is_logged_in:
+			_pending_purchase = true
+			_on_gate_login_pressed()
+		else:
+			SubscriptionManager.purchase()
 	)
 	card_vbox.add_child(buy_btn)
 
-	# 底部登录提示
-	var login_row := HBoxContainer.new()
-	login_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_child(login_row)
-	var login_hint := Label.new()
-	login_hint.text = _t("Already have an account?", "已有账号？")
-	login_hint.add_theme_font_size_override("font_size", 18)
-	login_hint.add_theme_color_override("font_color", Color(0.60, 0.55, 0.45))
-	login_row.add_child(login_hint)
-	var login_link := Button.new()
-	login_link.text = _t(" Login", " 登录")
-	login_link.flat = true
-	login_link.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	login_link.add_theme_font_size_override("font_size", 18)
-	login_link.add_theme_color_override("font_color", Color(0.55, 0.75, 1.0))
-	login_link.add_theme_color_override("font_hover_color", Color(0.70, 0.85, 1.0))
-	login_link.pressed.connect(func() -> void:
+	var ad_link := Button.new()
+	ad_link.text = _t("▶ Watch Ad to unlock %d questions" % GuestModeManager.GUEST_QUESTIONS_PER_AD, "▶ 看广告解锁 %d 题" % GuestModeManager.GUEST_QUESTIONS_PER_AD)
+	ad_link.flat = true
+	ad_link.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ad_link.add_theme_font_size_override("font_size", 27)
+	ad_link.add_theme_color_override("font_color", Color(0.55, 0.75, 1.0))
+	ad_link.add_theme_color_override("font_hover_color", Color(0.70, 0.85, 1.0))
+	ad_link.pressed.connect(func() -> void:
 		_play_sfx("res://assets/music/sounds_effect/button.ogg")
 		overlay.queue_free()
-		get_tree().root.get_node("Main").switch_scene("res://scenes/main_menu/main_menu.tscn")
+		_ad_dialog_mgr.load_and_show_ad()
 	)
-	login_row.add_child(login_link)
+	vbox.add_child(ad_link)
+
+	if not FirebaseAuth.is_logged_in:
+		var login_row := HBoxContainer.new()
+		login_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		vbox.add_child(login_row)
+		var login_hint := Label.new()
+		login_hint.text = _t("Already have an account?", "已有账号？")
+		login_hint.add_theme_font_size_override("font_size", 27)
+		login_hint.add_theme_color_override("font_color", Color(0.60, 0.55, 0.45))
+		login_row.add_child(login_hint)
+		var login_link := Button.new()
+		login_link.text = _t(" Login", " 登录")
+		login_link.flat = true
+		login_link.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		login_link.add_theme_font_size_override("font_size", 27)
+		login_link.add_theme_color_override("font_color", Color(0.55, 0.75, 1.0))
+		login_link.add_theme_color_override("font_hover_color", Color(0.70, 0.85, 1.0))
+		login_link.pressed.connect(func() -> void:
+			_play_sfx("res://assets/music/sounds_effect/button.ogg")
+			overlay.queue_free()
+			_on_gate_login_pressed()
+		)
+		login_row.add_child(login_link)
+
+	var menu_btn := Button.new()
+	menu_btn.text = _t("← Back to Menu", "← 返回主菜单")
+	menu_btn.flat = true
+	menu_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	menu_btn.add_theme_font_size_override("font_size", 27)
+	menu_btn.add_theme_color_override("font_color", Color(0.60, 0.55, 0.45))
+	menu_btn.add_theme_color_override("font_hover_color", Color(0.80, 0.72, 0.55))
+	menu_btn.pressed.connect(func() -> void:
+		_play_sfx("res://assets/music/sounds_effect/button.ogg")
+		overlay.queue_free()
+		_on_back_to_menu_pressed()
+	)
+	vbox.add_child(menu_btn)
 
 	add_child(overlay)
-
-
-# =============================================================================
-# BUTTON HANDLERS
-# =============================================================================
+	DialogQueue.register(overlay)
 
 func _on_start_pressed() -> void:
 	_game_over_mgr.hide()
@@ -470,7 +703,6 @@ func _on_back_to_menu_pressed() -> void:
 	GameManager.change_state(GameManager.State.MENU)
 	if main_node:
 		main_node.switch_scene("res://scenes/main_menu/main_menu.tscn")
-
 
 
 # =============================================================================

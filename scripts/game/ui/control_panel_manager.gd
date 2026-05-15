@@ -23,7 +23,7 @@ var reset_btn: Button
 var layout_btn: Button
 
 # 展开/收起
-var _config_row: HBoxContainer
+var _config_row: VBoxContainer
 var _toggle_btn: Button
 var _expanded: bool = false
 
@@ -45,31 +45,40 @@ func build(back_to_menu_callback: Callable) -> void:
 	control_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	control_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	control_panel.offset_left = 0
-	control_panel.offset_top = -16
+	control_panel.offset_top = -48
 	control_panel.offset_right = 0
-	control_panel.offset_bottom = -16
+	control_panel.offset_bottom = -48
 	control_panel.add_theme_stylebox_override("panel", UiFactory.make_stylebox(
-		Color(0.08, 0.08, 0.10, 0.82), 6, 12, Color(0.50, 0.40, 0.16), 1))
+		Color(0.08, 0.08, 0.10, 0.82), 4, 8, Color(0.50, 0.40, 0.16), 1))
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 10)
+	vbox.add_theme_constant_override("separation", 6)
 	control_panel.add_child(vbox)
 
-	# ── 配置行（默认隐藏） ──
-	_config_row = HBoxContainer.new()
+	# ── 配置区（默认隐藏，两行各3个选项） ──
+	_config_row = VBoxContainer.new()
 	_config_row.name = "ConfigRow"
-	_config_row.add_theme_constant_override("separation", 14)
-	_config_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_config_row.add_theme_constant_override("separation", 4)
 	_config_row.visible = false
 	vbox.add_child(_config_row)
 
+	var config_row_1 := HBoxContainer.new()
+	config_row_1.add_theme_constant_override("separation", 8)
+	config_row_1.alignment = BoxContainer.ALIGNMENT_CENTER
+	_config_row.add_child(config_row_1)
+
+	var config_row_2 := HBoxContainer.new()
+	config_row_2.add_theme_constant_override("separation", 8)
+	config_row_2.alignment = BoxContainer.ALIGNMENT_CENTER
+	_config_row.add_child(config_row_2)
+
 	_config_builder = ConfigRowBuilder.new()
-	_config_builder.build(_config_row)
+	_config_builder.build_two_rows(config_row_1, config_row_2)
 	_connect_config_signals()
 
 	# ── 主行（按钮，始终可见） ──
 	var main_row := HBoxContainer.new()
-	main_row.add_theme_constant_override("separation", 10)
+	main_row.add_theme_constant_override("separation", 8)
 	main_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_child(main_row)
 
@@ -95,12 +104,12 @@ func _build_main_row(row: HBoxContainer, back_cb: Callable) -> void:
 	# 齿轮展开按钮
 	_toggle_btn = Button.new()
 	_toggle_btn.text = Locale.tr_key("config_expand")
-	_toggle_btn.custom_minimum_size = Vector2(165, 66)
-	_toggle_btn.add_theme_font_size_override("font_size", 30)
+	_toggle_btn.custom_minimum_size = Vector2(260, 75)
+	_toggle_btn.add_theme_font_size_override("font_size", 34)
 	_toggle_btn.add_theme_stylebox_override("normal", UiFactory.make_stylebox(
-		ControlPanelStyles.BG, 6, 12, ControlPanelStyles.BORDER, 1))
+		ControlPanelStyles.BG, 4, 8, ControlPanelStyles.BORDER, 1))
 	_toggle_btn.add_theme_stylebox_override("hover", UiFactory.make_stylebox(
-		ControlPanelStyles.HOVER_BG, 6, 12, ControlPanelStyles.HOVER_BORDER, 1))
+		ControlPanelStyles.HOVER_BG, 4, 8, ControlPanelStyles.HOVER_BORDER, 1))
 	_toggle_btn.add_theme_color_override("font_color", ControlPanelStyles.GOLD)
 	_toggle_btn.pressed.connect(_on_toggle)
 	row.add_child(_toggle_btn)
@@ -129,7 +138,7 @@ func _build_main_row(row: HBoxContainer, back_cb: Callable) -> void:
 
 	# 返回主菜单
 	var back_btn := ControlPanelStyles.make_action_btn(Locale.tr_key("back_to_menu"), ControlPanelStyles.BG, Color(0.55, 0.25, 0.15))
-	back_btn.custom_minimum_size = Vector2(210, 66)
+	back_btn.custom_minimum_size = Vector2(340, 75)
 	row.add_child(back_btn)
 	back_btn.pressed.connect(back_cb)
 

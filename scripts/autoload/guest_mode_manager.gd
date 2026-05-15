@@ -5,16 +5,29 @@ extends Node
 
 signal guest_progress_changed()
 signal guest_ad_required()
+signal gate_lock_changed(locked: bool)
 
 const GUEST_QUESTIONS_PER_AD := 3
 const GUEST_PROGRESS_PATH := "user://guest_progress.json"
 
 var guest_questions_answered: int = 0
 var guest_ads_watched: int = 0
+var gate_locked: bool = false
 
 
 func _ready() -> void:
 	_load_guest_progress()
+	FirebaseAuth.services_loaded.connect(_on_services_loaded)
+	FirebaseAuth.logout_completed.connect(_on_logout_completed)
+
+
+func _on_services_loaded() -> void:
+	if is_subscribed() and gate_locked:
+		unlock_gate()
+
+
+func _on_logout_completed() -> void:
+	lock_gate()
 
 
 func _load_guest_progress() -> void:
@@ -32,6 +45,7 @@ func _load_guest_progress() -> void:
 		return
 	guest_questions_answered = int(data.get("questions_answered", 0))
 	guest_ads_watched = int(data.get("ads_watched", 0))
+	gate_locked = bool(data.get("gate_locked", false))
 
 
 func _save_guest_progress() -> void:
@@ -41,6 +55,7 @@ func _save_guest_progress() -> void:
 	f.store_string(JSON.stringify({
 		"questions_answered": guest_questions_answered,
 		"ads_watched": guest_ads_watched,
+		"gate_locked": gate_locked,
 	}))
 	f.close()
 
@@ -48,11 +63,11 @@ func _save_guest_progress() -> void:
 func _reset_guest_progress() -> void:
 	guest_questions_answered = 0
 	guest_ads_watched = 0
+	gate_locked = false
 	_save_guest_progress()
 
 
 func increment_guest_question() -> void:
-	"""Called after each question submission for non-subscribed users"""
 	if is_subscribed():
 		return
 	guest_questions_answered += 1
@@ -60,22 +75,42 @@ func increment_guest_question() -> void:
 	guest_progress_changed.emit()
 	if guest_questions_answered >= GUEST_QUESTIONS_PER_AD:
 		guest_questions_answered = 0
-		_save_guest_progress()
+		lock_gate()
 		guest_ad_required.emit()
 
 
 func on_guest_ad_watched() -> void:
-	"""Called after user watches a rewarded ad"""
 	guest_ads_watched += 1
 	guest_questions_answered = 0
-	_save_guest_progress()
+	unlock_gate()
 	guest_progress_changed.emit()
 
 
 func is_subscribed() -> bool:
-	"""Check if user has active subscription (no ads needed)"""
 	if not FirebaseAuth.is_logged_in:
 		return false
+	if FirebaseAuth.is_admin():
+		return true
+	if FirebaseAuth.is_legacy_user():
+		return true
 	if FirebaseAuth.has_pot_trainer():
 		return true
 	return false
+
+
+func lock_gate() -> void:
+	gate_locked = true
+	_save_guest_progress()
+	gate_lock_changed.emit(true)
+
+
+func unlock_gate() -> void:
+	gate_locked = false
+	_save_guest_progress()
+	gate_lock_changed.emit(false)
+
+
+func is_gate_locked() -> bool:
+	if is_subscribed():
+		return false
+	return gate_locked
