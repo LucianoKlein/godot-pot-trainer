@@ -36,6 +36,8 @@ func _ready() -> void:
 	SubscriptionManager.subscription_changed.connect(_on_subscription_changed)
 	SubscriptionManager.purchase_success.connect(_on_purchase_success)
 	SubscriptionManager.purchase_failed.connect(_on_purchase_failed_ui)
+	if FirebaseAuth.is_logged_in:
+		_try_use_cached_permissions()
 	if GameManager.open_subscription_on_menu:
 		GameManager.open_subscription_on_menu = false
 		_entry_panel.visible = false
@@ -220,7 +222,10 @@ func _build_login_status() -> void:
 
 	if FirebaseAuth.is_logged_in:
 		_login_status_lbl = Label.new()
-		_login_status_lbl.text = FirebaseAuth.user_email
+		if not FirebaseAuth.user_display_name.is_empty():
+			_login_status_lbl.text = FirebaseAuth.user_display_name
+		else:
+			_login_status_lbl.text = FirebaseAuth.user_email
 		_login_status_lbl.add_theme_font_size_override("font_size", 24)
 		_login_status_lbl.add_theme_color_override("font_color", Color(0.88, 0.74, 0.30))
 		_login_status_lbl.clip_text = true
@@ -501,6 +506,19 @@ func _on_services_loaded() -> void:
 			_refresh_subscription_panel()
 		else:
 			SubscriptionManager.purchase()
+
+
+## 尝试使用本地缓存的权限（App启动时有缓存直接用，后台静默刷新）
+func _try_use_cached_permissions() -> void:
+	var cache = FirebaseAuth.load_permissions_cache()
+	if cache == null:
+		SubscriptionManager._dlog("MENU _try_use_cached_permissions → no valid cache")
+		return
+	SubscriptionManager._dlog("MENU _try_use_cached_permissions → applying cache")
+	FirebaseAuth.apply_permissions_cache(cache)
+	_build_login_status()
+	_refresh_subscription_panel()
+	FirebaseAuth.resolve_permissions()
 
 
 func _on_subscription_changed(_is_active: bool) -> void:

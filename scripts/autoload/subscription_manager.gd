@@ -50,6 +50,7 @@ func _ready() -> void:
 		subscription_changed.emit(is_active)
 		rc_logout()
 	)
+	FirebaseAuth.login_succeeded.connect(_on_firebase_login_succeeded)
 
 
 # ============================================================================
@@ -74,14 +75,20 @@ func get_price_display() -> String:
 func login(user_id: String) -> void:
 	if _plugin == null:
 		return
-	_plugin.call("login", user_id)
+	if OS.get_name() == "iOS":
+		_plugin.login(user_id)
+	else:
+		_plugin.call("login", user_id)
 
 
 ## Logout from RevenueCat (call on Firebase logout)
 func rc_logout() -> void:
 	if _plugin == null:
 		return
-	_plugin.call("logout")
+	if OS.get_name() == "iOS":
+		_plugin.logout()
+	else:
+		_plugin.call("logout")
 	is_active = false
 	expires_at = 0.0
 	_save_cache()
@@ -100,7 +107,10 @@ func purchase() -> void:
 		return
 	_purchase_pending = true
 	_dlog("purchase: calling plugin.purchase('%s')" % PRODUCT_ID)
-	_plugin.call("purchase", PRODUCT_ID)
+	if OS.get_name() == "iOS":
+		_plugin.purchase(PRODUCT_ID)
+	else:
+		_plugin.call("purchase", PRODUCT_ID)
 	_purchase_timeout_timer = get_tree().create_timer(30.0)
 	_purchase_timeout_timer.timeout.connect(_on_purchase_timeout)
 
@@ -110,14 +120,20 @@ func restore_purchases() -> void:
 	if _plugin == null:
 		restore_completed.emit(is_active)
 		return
-	_plugin.call("restore_purchases")
+	if OS.get_name() == "iOS":
+		_plugin.restorePurchases()
+	else:
+		_plugin.call("restore_purchases")
 
 
 ## Refresh subscription status from RevenueCat
 func refresh_status() -> void:
 	if _plugin == null:
 		return
-	_plugin.call("get_customer_info")
+	if OS.get_name() == "iOS":
+		_plugin.getCustomerInfo()
+	else:
+		_plugin.call("get_customer_info")
 
 
 ## Update from Firebase services (server-side authority)
@@ -172,28 +188,34 @@ func _init_plugin() -> void:
 			_dlog("FAIL: Android plugin not found")
 			return
 	elif OS.get_name() == "iOS":
-		var has_it := Engine.has_singleton("RevenueCatPlugin")
-		_dlog("iOS: has_singleton(RevenueCatPlugin)=%s" % str(has_it))
+		var has_it := ClassDB.class_exists("NativePlugin")
+		_dlog("iOS: ClassDB.class_exists(NativePlugin)=%s" % str(has_it))
 		if has_it:
-			_plugin = Engine.get_singleton("RevenueCatPlugin")
+			_plugin = ClassDB.instantiate("NativePlugin")
 			api_key = RC_API_KEY_IOS
 		else:
-			push_warning("SubscriptionManager: RevenueCatPlugin iOS plugin not found")
-			_dlog("FAIL: iOS plugin not found")
+			push_warning("SubscriptionManager: NativePlugin not found (iOS)")
+			_dlog("FAIL: iOS NativePlugin not found")
 			return
 	else:
 		_dlog("Desktop/editor — no plugin")
 		return
 
 	_plugin.connect("configured", _on_configured)
-	_plugin.connect("offerings_received", _on_offerings_received)
+	if OS.get_name() == "iOS":
+		_plugin.connect("offerings_loaded", _on_offerings_received)
+	else:
+		_plugin.connect("offerings_received", _on_offerings_received)
 	_plugin.connect("purchase_completed", _on_purchase_completed)
 	_plugin.connect("purchase_failed", _on_purchase_failed)
 	_plugin.connect("customer_info_updated", _on_customer_info_updated)
 	_plugin.connect("restore_completed", _on_restore_completed)
 
 	_dlog("calling configure() key=%s...%s" % [api_key.left(8), api_key.right(4)])
-	_plugin.call("configure", api_key)
+	if OS.get_name() == "iOS":
+		_plugin.initializeRevenueCat(api_key)
+	else:
+		_plugin.call("configure", api_key)
 
 
 func _on_configured() -> void:
@@ -204,11 +226,20 @@ func _on_configured() -> void:
 	fetch_offerings()
 
 
+func _on_firebase_login_succeeded(_email: String) -> void:
+	if _initialized and not FirebaseAuth.user_id.is_empty():
+		_dlog("Firebase login → RC login uid=%s" % FirebaseAuth.user_id.left(12))
+		login(FirebaseAuth.user_id)
+
+
 func fetch_offerings() -> void:
 	_dlog("fetch_offerings() plugin=%s" % str(_plugin != null))
 	if _plugin == null:
 		return
-	_plugin.call("get_offerings")
+	if OS.get_name() == "iOS":
+		_plugin.fetchOfferings()
+	else:
+		_plugin.call("get_offerings")
 
 
 func _on_offerings_received(data: String) -> void:

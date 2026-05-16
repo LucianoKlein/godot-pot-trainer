@@ -387,8 +387,8 @@ func _on_apple_pressed() -> void:
 	AppleSignIn.sign_in()
 
 
-func _on_apple_ok(id_token: String) -> void:
-	FirebaseAuth.login_apple(id_token)
+func _on_apple_ok(id_token: String, _display_name: String = "") -> void:
+	FirebaseAuth.login_apple(id_token, _display_name)
 
 
 func _on_apple_fail(error_msg: String) -> void:

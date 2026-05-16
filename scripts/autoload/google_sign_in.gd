@@ -7,69 +7,69 @@ signal sign_in_success(id_token: String)
 signal sign_in_failed(error_msg: String)
 signal sign_in_cancelled
 
-# OAuth 2.0 Web Client ID from Google Cloud Console
 const WEB_CLIENT_ID := "525819571029-u15gh7tqq4dsikopbh64g2ul2jbsnth1.apps.googleusercontent.com"
+const IOS_CLIENT_ID := "TODO_IOS_CLIENT_ID.apps.googleusercontent.com"  # TODO: 替换为实际 iOS Client ID
 
 var _plugin = null
-var _auth_plugin = null  # SwiftGodot GDExtension
 var _is_configured := false
+var _is_ios := false
 
 
 func _ready() -> void:
-	# 方式1: 原生模块 (Android Kotlin 插件 / 编译进引擎)
+	# Android: Kotlin 插件
 	if Engine.has_singleton("GoogleSignIn"):
 		_plugin = Engine.get_singleton("GoogleSignIn")
 		_plugin.connect("google_sign_in_success", _on_sign_in_success)
 		_plugin.connect("google_sign_in_failed", _on_sign_in_failed)
 		_plugin.connect("google_sign_in_cancelled", _on_sign_in_cancelled)
-		print("[GoogleSignIn] Native plugin loaded")
+		print("[GoogleSignIn] Native plugin loaded (Android)")
 		return
 
-	# 方式2: SwiftGodot GDExtension (iOS)
-	if ClassDB.class_exists("AuthPlugin"):
-		_auth_plugin = ClassDB.instantiate("AuthPlugin")
-		_auth_plugin.connect("google_sign_in_success", _on_sign_in_success)
-		_auth_plugin.connect("google_sign_in_failed", _on_sign_in_failed)
-		_auth_plugin.connect("google_sign_in_cancelled", _on_sign_in_cancelled)
-		print("[GoogleSignIn] GDExtension plugin loaded")
+	# iOS: NativePlugin GDExtension
+	if ClassDB.class_exists("NativePlugin"):
+		_plugin = ClassDB.instantiate("NativePlugin")
+		_plugin.connect("google_sign_in_success", _on_sign_in_success)
+		_plugin.connect("google_sign_in_failed", _on_sign_in_failed)
+		_plugin.connect("google_sign_in_cancelled", _on_sign_in_cancelled)
+		_is_ios = true
+		print("[GoogleSignIn] NativePlugin loaded (iOS)")
 		return
 
-	print("[GoogleSignIn] Plugin not available (desktop/web build?)")
+	print("[GoogleSignIn] Plugin not available (platform=%s)" % OS.get_name())
 
 
-## Configure Google Sign-In with Web Client ID
 func configure() -> void:
 	if _plugin == null:
 		return
 	if _is_configured:
 		return
-	_plugin.configure(WEB_CLIENT_ID)
+	if not _is_ios:
+		_plugin.configure(WEB_CLIENT_ID)
 	_is_configured = true
 
 
-## Start Google Sign-In flow
 func sign_in() -> void:
 	if _plugin:
-		if not _is_configured:
-			configure()
-		_plugin.signIn()
-	elif _auth_plugin:
-		_auth_plugin.googleSignIn(WEB_CLIENT_ID)
+		if _is_ios:
+			_plugin.googleSignIn(IOS_CLIENT_ID, WEB_CLIENT_ID)
+		else:
+			if not _is_configured:
+				configure()
+			_plugin.signIn()
 	else:
 		sign_in_failed.emit("Google Sign-In not available on this platform")
 
 
-## Sign out from Google
 func sign_out() -> void:
 	if _plugin:
-		_plugin.signOut()
-	elif _auth_plugin:
-		_auth_plugin.googleSignOut()
+		if _is_ios:
+			_plugin.googleSignOut()
+		else:
+			_plugin.signOut()
 
 
-## Check if plugin is available
 func is_available() -> bool:
-	return _plugin != null or _auth_plugin != null
+	return _plugin != null
 
 
 # ============================================================================

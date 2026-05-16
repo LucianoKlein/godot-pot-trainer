@@ -1,0 +1,11 @@
+[configuration]
+entry_symbol = "swift_entry_point"
+compatibility_minimum = "4.3"
+
+[libraries]
+ios.release = "res://ios/native_plugin/Bin/NativePlugin.framework"
+ios.debug = "res://ios/native_plugin/Bin/NativePlugin.framework"
+
+[dependencies]
+ios.release = {"res://ios/native_plugin/Bin/SwiftGodot.framework" : ""}
+ios.debug = {"res://ios/native_plugin/Bin/SwiftGodot.framework" : ""}

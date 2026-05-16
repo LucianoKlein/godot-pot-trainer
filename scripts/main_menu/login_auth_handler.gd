@@ -107,8 +107,8 @@ func _on_google_sign_in_cancelled() -> void:
 	login_error.emit(Locale.tr_key("err_google_cancelled"))
 
 
-func _on_apple_sign_in_success(id_token: String) -> void:
-	FirebaseAuth.login_apple(id_token)
+func _on_apple_sign_in_success(id_token: String, _display_name: String = "") -> void:
+	FirebaseAuth.login_apple(id_token, _display_name)
 
 
 func _on_apple_sign_in_failed(error_msg: String) -> void:
