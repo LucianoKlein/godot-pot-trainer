@@ -620,7 +620,7 @@ func _create_subscribe_popup() -> void:
 		overlay.queue_free()
 		if not FirebaseAuth.is_logged_in:
 			_pending_purchase = true
-			_on_gate_login_pressed()
+			call_deferred("_on_gate_login_pressed")
 		else:
 			SubscriptionManager.purchase()
 	)
@@ -659,7 +659,7 @@ func _create_subscribe_popup() -> void:
 		login_link.pressed.connect(func() -> void:
 			_play_sfx("res://assets/music/sounds_effect/button.ogg")
 			overlay.queue_free()
-			_on_gate_login_pressed()
+			call_deferred("_on_gate_login_pressed")
 		)
 		login_row.add_child(login_link)
 

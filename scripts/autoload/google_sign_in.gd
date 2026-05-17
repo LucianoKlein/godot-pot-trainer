@@ -8,7 +8,7 @@ signal sign_in_failed(error_msg: String)
 signal sign_in_cancelled
 
 const WEB_CLIENT_ID := "525819571029-u15gh7tqq4dsikopbh64g2ul2jbsnth1.apps.googleusercontent.com"
-const IOS_CLIENT_ID := "TODO_IOS_CLIENT_ID.apps.googleusercontent.com"  # TODO: 替换为实际 iOS Client ID
+const IOS_CLIENT_ID := "525819571029-annmo16git9ksimi2g3epmgjiop6b7k0.apps.googleusercontent.com"
 
 var _plugin = null
 var _is_configured := false

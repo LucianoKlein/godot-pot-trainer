@@ -15,7 +15,7 @@ const PRODUCT_PRICE_ZH := "$12.99"
 
 # --- RevenueCat API Keys ---
 const RC_API_KEY_ANDROID := "goog_OLNdDDEObSjfsgokvLPSnIampaL"
-const RC_API_KEY_IOS := "YOUR_REVENUECAT_IOS_API_KEY"  # TODO: 替换
+const RC_API_KEY_IOS := "appl_DeawsyDgODHDpysQjiSokdqXOCX"
 
 # --- State ---
 var is_active := false

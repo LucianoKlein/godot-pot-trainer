@@ -20,7 +20,7 @@ if [ -f "$PLIST_PATH" ]; then
 
     # GADApplicationIdentifier
     if ! /usr/libexec/PlistBuddy -c "Print :GADApplicationIdentifier" "$PLIST_PATH" 2>/dev/null; then
-        /usr/libexec/PlistBuddy -c "Add :GADApplicationIdentifier string ca-app-pub-XXXXXXXX~XXXXXXXXXX" "$PLIST_PATH"
+        /usr/libexec/PlistBuddy -c "Add :GADApplicationIdentifier string ca-app-pub-6026501864639451~5211364613" "$PLIST_PATH"
         echo "  + Added GADApplicationIdentifier (TODO: replace placeholder)"
     fi
 
@@ -98,7 +98,7 @@ if [ -f "$PLIST_PATH" ]; then
     fi
 
     # Google Sign-In URL Scheme (TODO: replace with actual reversed client ID)
-    GOOGLE_REVERSED_CLIENT_ID="com.googleusercontent.apps.TODO-IOS-CLIENT-ID"
+    GOOGLE_REVERSED_CLIENT_ID="com.googleusercontent.apps.525819571029-annmo16git9ksimi2g3epmgjiop6b7k0"
     if ! /usr/libexec/PlistBuddy -c "Print :CFBundleURLTypes" "$PLIST_PATH" 2>/dev/null; then
         /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$PLIST_PATH"
     fi

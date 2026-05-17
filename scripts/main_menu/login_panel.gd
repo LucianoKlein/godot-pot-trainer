@@ -240,8 +240,8 @@ func _create_login_panel() -> void:
 	google_btn.pressed.connect(_on_google_login_pressed)
 	vbox.add_child(google_btn)
 
-	# Apple login button (iOS only)
-	if OS.get_name() == "iOS":
+	# Apple login button (hide on Android)
+	if OS.get_name() != "Android":
 		var apple_btn: Button = _make_entry_btn.call(Locale.tr_key("apple_login"), Color(0.08, 0.08, 0.10, 0.82), Color(0.50, 0.40, 0.16))
 		apple_btn.name = "AppleBtn"
 		apple_btn.custom_minimum_size = Vector2(0, 72)

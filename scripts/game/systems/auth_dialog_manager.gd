@@ -270,18 +270,19 @@ func _build_dialog() -> void:
 	)
 	vbox.add_child(google_btn)
 
-	var apple_btn := Button.new()
-	apple_btn.name = "AppleBtn"
-	apple_btn.text = _t("  Sign in with Apple", "  使用 Apple 登录")
-	apple_btn.custom_minimum_size = Vector2(0, 56)
-	apple_btn.add_theme_font_size_override("font_size", 22)
-	apple_btn.add_theme_color_override("font_color", Color(0.90, 0.80, 0.55))
-	apple_btn.add_theme_stylebox_override("normal", btn_s.duplicate())
-	apple_btn.pressed.connect(func() -> void:
-		_play_sfx("res://assets/music/sounds_effect/button.ogg")
-		_on_apple_pressed()
-	)
-	vbox.add_child(apple_btn)
+	if OS.get_name() != "Android":
+		var apple_btn := Button.new()
+		apple_btn.name = "AppleBtn"
+		apple_btn.text = _t("  Sign in with Apple", "  使用 Apple 登录")
+		apple_btn.custom_minimum_size = Vector2(0, 56)
+		apple_btn.add_theme_font_size_override("font_size", 22)
+		apple_btn.add_theme_color_override("font_color", Color(0.90, 0.80, 0.55))
+		apple_btn.add_theme_stylebox_override("normal", btn_s.duplicate())
+		apple_btn.pressed.connect(func() -> void:
+			_play_sfx("res://assets/music/sounds_effect/button.ogg")
+			_on_apple_pressed()
+		)
+		vbox.add_child(apple_btn)
 
 	_toggle_btn = Button.new()
 	_toggle_btn.text = _t("No account? Register", "没有账号？注册")
