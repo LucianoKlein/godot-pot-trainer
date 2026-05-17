@@ -44,10 +44,12 @@ func build(back_to_menu_callback: Callable) -> void:
 	control_panel.set_anchors_preset(7) # PRESET_BOTTOM_CENTER
 	control_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	control_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	var safe_bottom := _get_safe_area_bottom()
+	var bottom_margin := 48 + safe_bottom
 	control_panel.offset_left = 0
-	control_panel.offset_top = -48
+	control_panel.offset_top = -bottom_margin
 	control_panel.offset_right = 0
-	control_panel.offset_bottom = -48
+	control_panel.offset_bottom = -bottom_margin
 	control_panel.add_theme_stylebox_override("panel", UiFactory.make_stylebox(
 		Color(0.08, 0.08, 0.10, 0.82), 4, 8, Color(0.50, 0.40, 0.16), 1))
 
@@ -175,3 +177,17 @@ func update_dealer_options() -> void:
 
 func _update_display_mode_styles() -> void:
 	_config_builder.update_display_mode_styles()
+
+
+func _get_safe_area_bottom() -> int:
+	if OS.get_name() not in ["Android", "iOS"]:
+		return 0
+	var screen_size := DisplayServer.screen_get_size()
+	var safe_area := DisplayServer.get_display_safe_area()
+	var bottom_inset := screen_size.y - safe_area.end.y
+	if bottom_inset <= 0:
+		return 0
+	# Convert physical pixels to viewport pixels
+	var viewport_h := float(ProjectSettings.get_setting("display/window/size/viewport_height", 1080))
+	var scale := viewport_h / float(screen_size.y)
+	return int(float(bottom_inset) * scale)
