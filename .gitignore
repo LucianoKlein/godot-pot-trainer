@@ -2,9 +2,10 @@
 .godot/
 *.import
 
-# Export
+# Export & build artifacts
 export/
 export_presets.cfg
+build/
 
 # VS Code
 .vscode/
@@ -16,6 +17,13 @@ Desktop.ini
 
 # Android build
 android/
+
+# iOS native plugin (build outputs & vendored dependencies)
+ios/native_plugin/Bin/
+ios/native_plugin/.build/
+ios/native_plugin/LocalSwiftGodot/
+ios/native_plugin/LocalGoogleSignIn/
+ios/native_plugin/Package.resolved
 
 # Reference implementation (Vue.js web app)
 poker table demonstrator/
