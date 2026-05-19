@@ -12,7 +12,7 @@ signal rewarded_ad_failed_to_show(error: String)
 
 # AdMob IDs
 const ANDROID_REWARDED_AD_UNIT_ID := "ca-app-pub-6026501864639451/7092183262"
-const IOS_REWARDED_AD_UNIT_ID := "ca-app-pub-6026501864639451/1978925522"
+const IOS_REWARDED_AD_UNIT_ID := "ca-app-pub-3940256099942544/5224354917"  # Google test ad (original: ca-app-pub-6026501864639451/1978925522)
 
 var _admob_plugin = null
 var _is_ad_loaded := false
