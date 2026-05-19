@@ -942,8 +942,7 @@ func resolve_permissions() -> void:
 	# 第一步：查 RevenueCat（5秒超时）
 	SubscriptionManager._dlog("AUTH resolve_permissions → step 1: check RevenueCat")
 	SubscriptionManager.check_revenuecat_active()
-	var rc_result: Array = await SubscriptionManager.revenuecat_check_completed
-	var rc_has_active: bool = rc_result[0]
+	var rc_has_active: bool = await SubscriptionManager.revenuecat_check_completed
 
 	# 如果已经超时被强制结束了，不继续
 	if not _resolving_permissions:

@@ -496,6 +496,7 @@ func _refresh_subscription_panel() -> void:
 
 
 func _on_services_loaded() -> void:
+	SubscriptionManager._dlog("MENU _on_services_loaded logged_in=%s pending=%s" % [str(FirebaseAuth.is_logged_in), str(_pending_purchase)])
 	if not FirebaseAuth.is_logged_in:
 		return
 	_build_login_status()
@@ -503,8 +504,10 @@ func _on_services_loaded() -> void:
 	if _pending_purchase:
 		_pending_purchase = false
 		if SubscriptionManager.is_subscribed():
+			SubscriptionManager._dlog("MENU already subscribed, skip purchase")
 			_refresh_subscription_panel()
 		else:
+			SubscriptionManager._dlog("MENU triggering deferred purchase")
 			SubscriptionManager.purchase()
 
 
@@ -533,6 +536,7 @@ func _on_purchase_success(_product_id: String) -> void:
 
 
 func _on_purchase_failed_ui(error_msg: String) -> void:
+	SubscriptionManager._dlog("MENU _on_purchase_failed_ui: %s" % error_msg)
 	if "cancel" in error_msg.to_lower() or "cancelled" in error_msg.to_lower():
 		return
 	var toast := Label.new()

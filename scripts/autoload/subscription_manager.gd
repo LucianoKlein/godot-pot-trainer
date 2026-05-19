@@ -111,6 +111,7 @@ func rc_logout() -> void:
 func purchase() -> void:
 	_dlog("purchase() plugin=%s init=%s" % [str(_plugin != null), str(_initialized)])
 	if _plugin == null:
+		_dlog("purchase ABORT: plugin is null (desktop/editor)")
 		purchase_failed.emit("Plugin not available")
 		return
 	if not _initialized:
