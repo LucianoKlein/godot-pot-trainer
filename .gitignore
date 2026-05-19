@@ -41,3 +41,7 @@ MOBILE_GOOGLE_LOGIN.md
 README_DOCS.md
 README_GOOGLE_LOGIN.md
 TODO_CONFIG.md
+
+# Firebase debug logs
+firebase-debug.log
+firebase-debug.*.log
