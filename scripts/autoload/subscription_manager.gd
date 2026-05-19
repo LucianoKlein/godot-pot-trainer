@@ -7,6 +7,7 @@ signal subscription_changed(is_active: bool)
 signal purchase_success(product_id: String)
 signal purchase_failed(error_msg: String)
 signal restore_completed(is_active: bool)
+signal revenuecat_check_completed(has_active: bool)
 
 # --- Product ID (must match RevenueCat / Store config) ---
 const PRODUCT_ID := "pot_trainer_monthly"
@@ -24,7 +25,17 @@ var _plugin = null
 var _initialized := false
 var _purchase_pending := false
 var _purchase_timeout_timer: SceneTreeTimer = null
-var _sync_loading_overlay: Control = null
+var _purchase_just_completed := false  # Guard: prevent customer_info_updated from overwriting
+var _pending_purchase_product_id := ""
+
+# --- Purchase Loading Overlay (two-phase) ---
+var _purchase_loading_overlay: Control = null
+var _purchase_loading_title: Label = null
+var _purchase_loading_msg: Label = null
+
+# --- RevenueCat check ---
+var _rc_check_pending := false
+var _rc_check_timer: SceneTreeTimer = null
 
 # --- Debug Panel ---
 const DEBUG_PURCHASE := true
@@ -73,6 +84,7 @@ func get_price_display() -> String:
 
 ## Initialize RevenueCat with user ID (call after Firebase login)
 func login(user_id: String) -> void:
+	_dlog("login() user_id=%s plugin=%s" % [user_id, str(_plugin != null)])
 	if _plugin == null:
 		return
 	if OS.get_name() == "iOS":
@@ -106,6 +118,7 @@ func purchase() -> void:
 		purchase_failed.emit("Store not ready, please try again")
 		return
 	_purchase_pending = true
+	_show_purchase_loading()
 	_dlog("purchase: calling plugin.purchase('%s')" % PRODUCT_ID)
 	if OS.get_name() == "iOS":
 		_plugin.purchase(PRODUCT_ID)
@@ -134,6 +147,23 @@ func refresh_status() -> void:
 		_plugin.getCustomerInfo()
 	else:
 		_plugin.call("get_customer_info")
+
+
+## Actively check RevenueCat for current subscription status (5s timeout)
+## Emits revenuecat_check_completed(has_active) when done or timed out
+func check_revenuecat_active() -> void:
+	_dlog("check_revenuecat_active() plugin=%s init=%s" % [str(_plugin != null), str(_initialized)])
+	if _plugin == null or not _initialized:
+		_dlog("  RC not available, emitting no-active (deferred)")
+		(func(): revenuecat_check_completed.emit(false)).call_deferred()
+		return
+	_rc_check_pending = true
+	if OS.get_name() == "iOS":
+		_plugin.getCustomerInfo()
+	else:
+		_plugin.call("get_customer_info")
+	_rc_check_timer = get_tree().create_timer(5.0)
+	_rc_check_timer.timeout.connect(_on_rc_check_timeout)
 
 
 ## Update from Firebase services (server-side authority)
@@ -254,33 +284,43 @@ func _on_purchase_completed(product_id: String) -> void:
 	_cancel_purchase_timeout()
 	_dlog("_on_purchase_completed: product=%s" % product_id)
 	if product_id == PRODUCT_ID:
+		_purchase_just_completed = true
 		is_active = true
 		expires_at = Time.get_unix_time_from_system() + 30.0 * 86400.0
 		_save_cache()
+		_dlog("is_active=true, emitting subscription_changed")
 		subscription_changed.emit(is_active)
-		_show_sync_loading()
+		# 购买成功后立即解锁广告门
+		GuestModeManager.unlock_gate()
+		_pending_purchase_product_id = product_id
+		_update_purchase_loading_phase2()
 		FirebaseAuth.update_subscription("pot_trainer", expires_at, product_id)
 		FirebaseAuth.subscription_write_completed.connect(_on_sync_done, CONNECT_ONE_SHOT)
 		var timeout := get_tree().create_timer(10.0)
 		timeout.timeout.connect(func() -> void:
-			if _sync_loading_overlay != null:
+			if _purchase_loading_overlay != null:
 				_on_sync_done(false)
 				if FirebaseAuth.subscription_write_completed.is_connected(_on_sync_done):
 					FirebaseAuth.subscription_write_completed.disconnect(_on_sync_done)
 		)
 	else:
+		_remove_purchase_loading()
 		purchase_success.emit(product_id)
 
 
 func _on_sync_done(_success: bool) -> void:
-	_remove_sync_loading()
+	_purchase_just_completed = false
+	_remove_purchase_loading()
 	_dlog("sync done, success=%s, emitting purchase_success" % str(_success))
-	purchase_success.emit(PRODUCT_ID)
+	purchase_success.emit(_pending_purchase_product_id if not _pending_purchase_product_id.is_empty() else PRODUCT_ID)
+	_pending_purchase_product_id = ""
 	FirebaseAuth.fetch_services()
 
 
 func _on_purchase_failed(error_code: int, error_msg: String) -> void:
 	_cancel_purchase_timeout()
+	_purchase_just_completed = false
+	_remove_purchase_loading()
 	_dlog("_on_purchase_failed: code=%d msg=%s" % [error_code, error_msg])
 	purchase_failed.emit(error_msg)
 
@@ -289,6 +329,8 @@ func _on_purchase_timeout() -> void:
 	if not _purchase_pending:
 		return
 	_purchase_pending = false
+	_purchase_just_completed = false
+	_remove_purchase_loading()
 	_dlog("_on_purchase_timeout: no response from plugin in 30s")
 	purchase_failed.emit("Purchase timeout — no response from store (30s)")
 
@@ -302,21 +344,34 @@ func _cancel_purchase_timeout() -> void:
 
 
 func _on_customer_info_updated(data: String) -> void:
+	_dlog("_on_customer_info_updated: len=%d purchase_guard=%s rc_check=%s" % [data.length(), str(_purchase_just_completed), str(_rc_check_pending)])
+	# 购买刚完成时，跳过 customer_info_updated 避免覆盖已设置的状态
+	if _purchase_just_completed:
+		_dlog("  skipped (purchase just completed, is_active already set)")
+		return
 	var parsed = JSON.parse_string(data)
 	if not parsed is Dictionary:
+		_dlog("  parse failed, not dict")
+		if _rc_check_pending:
+			_finish_rc_check(false)
 		return
 	var entitlements = parsed.get("entitlements", {})
+	_dlog("  entitlements keys=%s" % str(entitlements.keys()))
 	var old_active := is_active
 	is_active = false
 	expires_at = 0.0
 	if entitlements.has("pot_trainer") and entitlements["pot_trainer"].get("isActive", false):
 		is_active = true
 		expires_at = _parse_entitlement_expiry(entitlements["pot_trainer"])
+	_dlog("  result: is_active=%s (was %s) expires=%.0f" % [str(is_active), str(old_active), expires_at])
 	_save_cache()
 	if is_active != old_active:
 		subscription_changed.emit(is_active)
 	if is_active:
 		FirebaseAuth.update_subscription("pot_trainer", expires_at, PRODUCT_ID)
+	# If this was triggered by check_revenuecat_active(), emit the result
+	if _rc_check_pending:
+		_finish_rc_check(is_active)
 
 
 func _on_restore_completed(data: String) -> void:
@@ -324,11 +379,32 @@ func _on_restore_completed(data: String) -> void:
 	restore_completed.emit(is_active)
 
 
+func _on_rc_check_timeout() -> void:
+	if not _rc_check_pending:
+		return
+	_dlog("_on_rc_check_timeout: 5s elapsed, treating as no active subscription")
+	_finish_rc_check(false)
+
+
+func _finish_rc_check(has_active: bool) -> void:
+	if not _rc_check_pending:
+		return
+	_rc_check_pending = false
+	if _rc_check_timer != null:
+		if _rc_check_timer.timeout.is_connected(_on_rc_check_timeout):
+			_rc_check_timer.timeout.disconnect(_on_rc_check_timeout)
+		_rc_check_timer = null
+	_dlog("_finish_rc_check: has_active=%s" % str(has_active))
+	revenuecat_check_completed.emit(has_active)
+
+
 ## Parse expiration date from RevenueCat entitlement data
 func _parse_entitlement_expiry(entitlement: Dictionary) -> float:
-	var exp_str = entitlement.get("expirationDate", "")
-	if exp_str is String and not exp_str.is_empty():
-		return FirebaseAuth._parse_iso8601(exp_str)
+	var exp_val = entitlement.get("expirationDate", "")
+	if exp_val is String and not exp_val.is_empty():
+		return FirebaseAuth._parse_iso8601(exp_val)
+	if exp_val is float or exp_val is int:
+		return float(exp_val) / 1000.0
 	var exp_ms = entitlement.get("expirationDateMillis", 0)
 	if exp_ms > 0:
 		return float(exp_ms) / 1000.0
@@ -369,17 +445,17 @@ func _t(en: String, zh: String) -> String:
 
 
 # ============================================================================
-# Sync loading overlay
+# Purchase Loading Overlay (two-phase)
 # ============================================================================
 
-func _show_sync_loading() -> void:
-	if _sync_loading_overlay != null:
+func _show_purchase_loading() -> void:
+	if _purchase_loading_overlay != null:
 		return
 	var root := get_tree().root
 	var overlay := ColorRect.new()
-	overlay.name = "SyncLoadingOverlay"
+	overlay.name = "PurchaseLoadingOverlay"
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	overlay.color = Color(0.0, 0.0, 0.0, 0.7)
+	overlay.color = Color(0.0, 0.0, 0.0, 0.75)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	overlay.z_index = 500
 
@@ -388,43 +464,58 @@ func _show_sync_loading() -> void:
 	overlay.add_child(center)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(400, 0)
+	panel.custom_minimum_size = Vector2(460, 0)
 	var ps := StyleBoxFlat.new()
 	ps.bg_color = Color(0.08, 0.08, 0.10, 0.97)
 	ps.border_color = Color(0.82, 0.66, 0.26)
 	ps.set_border_width_all(2)
 	ps.set_corner_radius_all(12)
-	ps.set_content_margin_all(20)
+	ps.set_content_margin_all(28)
 	panel.add_theme_stylebox_override("panel", ps)
 	center.add_child(panel)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 12)
+	vbox.add_theme_constant_override("separation", 16)
 	panel.add_child(vbox)
 
 	var title := Label.new()
-	title.text = _t("Syncing...", "同步中...")
+	title.text = _t("Processing Purchase", "正在处理购买")
 	title.add_theme_font_size_override("font_size", 28)
 	title.add_theme_color_override("font_color", Color(0.95, 0.85, 0.55))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
+	_purchase_loading_title = title
 
 	var msg := Label.new()
-	msg.text = _t("Saving subscription data, please wait...", "正在保存订阅数据，请稍候...")
+	msg.text = _t(
+		"Please wait and do not close the app.\nYour subscription is being confirmed...",
+		"请耐心等待，不要关闭应用。\n正在确认您的订阅...")
 	msg.add_theme_font_size_override("font_size", 22)
-	msg.add_theme_color_override("font_color", Color(0.75, 0.65, 0.45))
+	msg.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75))
 	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(msg)
+	_purchase_loading_msg = msg
 
 	root.add_child(overlay)
-	_sync_loading_overlay = overlay
+	_purchase_loading_overlay = overlay
 
 
-func _remove_sync_loading() -> void:
-	if _sync_loading_overlay != null and is_instance_valid(_sync_loading_overlay):
-		_sync_loading_overlay.queue_free()
-	_sync_loading_overlay = null
+func _update_purchase_loading_phase2() -> void:
+	if _purchase_loading_title and is_instance_valid(_purchase_loading_title):
+		_purchase_loading_title.text = _t("Activating Subscription", "正在激活订阅")
+	if _purchase_loading_msg and is_instance_valid(_purchase_loading_msg):
+		_purchase_loading_msg.text = _t(
+			"Almost done. Saving your subscription data...",
+			"即将完成，正在保存订阅数据...")
+
+
+func _remove_purchase_loading() -> void:
+	if _purchase_loading_overlay != null and is_instance_valid(_purchase_loading_overlay):
+		_purchase_loading_overlay.queue_free()
+	_purchase_loading_overlay = null
+	_purchase_loading_title = null
+	_purchase_loading_msg = null
 
 
 # ============================================================================
@@ -438,10 +529,10 @@ func _build_debug_panel() -> void:
 
 	_debug_panel = PanelContainer.new()
 	_debug_panel.position = Vector2(10, 650)
-	_debug_panel.custom_minimum_size = Vector2(500, 40)
+	_debug_panel.custom_minimum_size = Vector2(560, 40)
 	_debug_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.0, 0.0, 0.0, 0.75)
+	style.bg_color = Color(0.0, 0.0, 0.0, 0.82)
 	style.set_corner_radius_all(6)
 	style.set_content_margin_all(8)
 	_debug_panel.add_theme_stylebox_override("panel", style)
@@ -454,8 +545,8 @@ func _build_debug_panel() -> void:
 	var header := HBoxContainer.new()
 	vbox.add_child(header)
 	var title := Label.new()
-	title.text = "[RC Debug] (drag to move)"
-	title.add_theme_font_size_override("font_size", 22)
+	title.text = "[Debug] RC|Pay (drag)"
+	title.add_theme_font_size_override("font_size", 20)
 	title.add_theme_color_override("font_color", Color(0.3, 1.0, 0.3))
 	header.add_child(title)
 	var spacer := Control.new()
@@ -469,9 +560,9 @@ func _build_debug_panel() -> void:
 		_debug_label.visible = not _debug_label.visible
 		toggle_btn.text = "—" if _debug_label.visible else "+"
 		if _debug_label.visible:
-			_debug_panel.custom_minimum_size = Vector2(500, 350)
+			_debug_panel.custom_minimum_size = Vector2(560, 380)
 		else:
-			_debug_panel.custom_minimum_size = Vector2(500, 40)
+			_debug_panel.custom_minimum_size = Vector2(560, 40)
 	)
 	header.add_child(toggle_btn)
 
@@ -480,13 +571,14 @@ func _build_debug_panel() -> void:
 	_debug_label.fit_content = false
 	_debug_label.scroll_following = true
 	_debug_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_debug_label.custom_minimum_size = Vector2(0, 300)
-	_debug_label.add_theme_font_size_override("normal_font_size", 20)
+	_debug_label.custom_minimum_size = Vector2(0, 330)
+	_debug_label.add_theme_font_size_override("normal_font_size", 18)
 	_debug_label.add_theme_color_override("default_color", Color(0.85, 0.85, 0.85))
 	_debug_label.visible = false
 	vbox.add_child(_debug_label)
 
-	_dlog("panel ready, OS=%s" % OS.get_name())
+	_dlog("=== Debug Panel Ready ===")
+	_dlog("OS=%s | debug=%s" % [OS.get_name(), str(OS.is_debug_build())])
 
 
 func _on_debug_panel_input(event: InputEvent) -> void:

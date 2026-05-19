@@ -928,6 +928,7 @@ func _on_update_profile_completed(result: int, response_code: int, _headers: Pac
 # ============================================================================
 
 ## 主编排函数：登录成功后调用，按优先级查询权限
+## 流程：RevenueCat(5s) → 两张Firestore表(10s) → 比较 → 确定权限
 func resolve_permissions() -> void:
 	if _resolving_permissions:
 		SubscriptionManager._dlog("AUTH resolve_permissions → already in progress, skip")
@@ -938,8 +939,29 @@ func resolve_permissions() -> void:
 	_resolve_timeout_timer = get_tree().create_timer(15.0)
 	_resolve_timeout_timer.timeout.connect(_on_resolve_timeout)
 
-	# 直接查两张 Firestore 表
-	SubscriptionManager._dlog("AUTH resolve_permissions → query both DBs")
+	# 第一步：查 RevenueCat（5秒超时）
+	SubscriptionManager._dlog("AUTH resolve_permissions → step 1: check RevenueCat")
+	SubscriptionManager.check_revenuecat_active()
+	var rc_result: Array = await SubscriptionManager.revenuecat_check_completed
+	var rc_has_active: bool = rc_result[0]
+
+	# 如果已经超时被强制结束了，不继续
+	if not _resolving_permissions:
+		return
+
+	if rc_has_active:
+		SubscriptionManager._dlog("AUTH resolve_permissions → RC has active subscription, done!")
+		_resolving_permissions = false
+		if _resolve_timeout_timer != null:
+			if _resolve_timeout_timer.timeout.is_connected(_on_resolve_timeout):
+				_resolve_timeout_timer.timeout.disconnect(_on_resolve_timeout)
+			_resolve_timeout_timer = null
+		_save_permissions_cache("revenuecat")
+		services_loaded.emit()
+		return
+
+	# 第二步：同时查两张 Firestore 表
+	SubscriptionManager._dlog("AUTH resolve_permissions → step 2: query both DBs")
 	_services_resolved = false
 	_old_db_done = false
 	_new_db_done = false

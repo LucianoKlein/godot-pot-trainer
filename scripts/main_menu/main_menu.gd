@@ -563,41 +563,56 @@ func _create_menu_purchase_success_dialog() -> void:
 	panel.set_anchors_preset(Control.PRESET_CENTER)
 	panel.offset_left = -220
 	panel.offset_right = 220
-	panel.offset_top = -180
-	panel.offset_bottom = 180
+	panel.offset_top = -200
+	panel.offset_bottom = 200
 	var ps := StyleBoxFlat.new()
 	ps.bg_color = Color(0.08, 0.08, 0.10, 0.97)
 	ps.border_color = Color(0.90, 0.72, 0.28)
 	ps.set_border_width_all(2)
 	ps.set_corner_radius_all(12)
-	ps.set_content_margin_all(24)
+	ps.set_content_margin_all(28)
 	panel.add_theme_stylebox_override("panel", ps)
 	overlay.add_child(panel)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 16)
+	vbox.add_theme_constant_override("separation", 18)
 	panel.add_child(vbox)
 
+	# Checkmark with pop-in animation
 	var check := Label.new()
 	check.text = "✓"
-	check.add_theme_font_size_override("font_size", 64)
+	check.add_theme_font_size_override("font_size", 72)
 	check.add_theme_color_override("font_color", Color(0.90, 0.72, 0.28))
 	check.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(check)
+	check.scale = Vector2(0.3, 0.3)
+	check.pivot_offset = Vector2(check.size.x / 2.0, check.size.y / 2.0)
+	var pop_tw := check.create_tween()
+	pop_tw.tween_property(check, "scale", Vector2(1.0, 1.0), 0.35).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 
 	var title := Label.new()
-	title.text = _t("Subscription Activated!", "订阅已激活！")
-	title.add_theme_font_size_override("font_size", 28)
+	title.text = _t("Subscription Activated", "订阅成功")
+	title.add_theme_font_size_override("font_size", 32)
 	title.add_theme_color_override("font_color", Color(0.95, 0.85, 0.55))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
-	var tier_lbl := Label.new()
-	tier_lbl.text = "Pot Trainer Pro"
-	tier_lbl.add_theme_font_size_override("font_size", 24)
-	tier_lbl.add_theme_color_override("font_color", Color(0.90, 0.72, 0.28))
-	tier_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(tier_lbl)
+	# Tier name + expiry date
+	var expiry_text := ""
+	if SubscriptionManager.expires_at > 0.0:
+		var dt := Time.get_datetime_dict_from_unix_time(int(SubscriptionManager.expires_at))
+		expiry_text = "%04d-%02d-%02d" % [dt["year"], dt["month"], dt["day"]]
+	else:
+		var dt := Time.get_datetime_dict_from_unix_time(int(Time.get_unix_time_from_system()) + 30 * 86400)
+		expiry_text = "%04d-%02d-%02d" % [dt["year"], dt["month"], dt["day"]]
+
+	var info_lbl := Label.new()
+	info_lbl.text = "Pot Trainer Pro  ·  " + _t("Valid until ", "有效期至 ") + expiry_text
+	info_lbl.add_theme_font_size_override("font_size", 24)
+	info_lbl.add_theme_color_override("font_color", Color(0.75, 0.65, 0.45))
+	info_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	info_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(info_lbl)
 
 	var ok_btn := Button.new()
 	ok_btn.text = _t("Get Started", "开始使用")
@@ -617,6 +632,7 @@ func _create_menu_purchase_success_dialog() -> void:
 	ok_btn.add_theme_stylebox_override("hover", ok_hover)
 	ok_btn.add_theme_stylebox_override("pressed", ok_hover)
 	ok_btn.pressed.connect(func() -> void:
+		_play_sfx("res://assets/music/sounds_effect/button.ogg")
 		overlay.queue_free()
 	)
 	vbox.add_child(ok_btn)
